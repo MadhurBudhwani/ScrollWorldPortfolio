@@ -1,0 +1,194 @@
+{
+  "pass": true,
+  "compactCases": 22,
+  "desktopCases": 5,
+  "design": [
+    1600,
+    900
+  ],
+  "checks": [
+    "uniform aspect ratio and scale",
+    "whole composition inside safe areas",
+    "screen-to-scene hand/pointer/portal alignment",
+    "desktop dimensions unchanged",
+    "shared fitter on main and destination pages"
+  ],
+  "cases": [
+    {
+      "viewport": [
+        568,
+        320
+      ],
+      "safeArea": false,
+      "scale": 0.355
+    },
+    {
+      "viewport": [
+        568,
+        320
+      ],
+      "safeArea": true,
+      "scale": 0.3
+    },
+    {
+      "viewport": [
+        667,
+        375
+      ],
+      "safeArea": false,
+      "scale": 0.4166666666666667
+    },
+    {
+      "viewport": [
+        667,
+        375
+      ],
+      "safeArea": true,
+      "scale": 0.361875
+    },
+    {
+      "viewport": [
+        740,
+        360
+      ],
+      "safeArea": false,
+      "scale": 0.4
+    },
+    {
+      "viewport": [
+        740,
+        360
+      ],
+      "safeArea": true,
+      "scale": 0.37666666666666665
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safeArea": false,
+      "scale": 0.43333333333333335
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "safeArea": true,
+      "scale": 0.41
+    },
+    {
+      "viewport": [
+        896,
+        414
+      ],
+      "safeArea": false,
+      "scale": 0.46
+    },
+    {
+      "viewport": [
+        896,
+        414
+      ],
+      "safeArea": true,
+      "scale": 0.43666666666666665
+    },
+    {
+      "viewport": [
+        915,
+        412
+      ],
+      "safeArea": false,
+      "scale": 0.4577777777777778
+    },
+    {
+      "viewport": [
+        915,
+        412
+      ],
+      "safeArea": true,
+      "scale": 0.43444444444444447
+    },
+    {
+      "viewport": [
+        932,
+        430
+      ],
+      "safeArea": false,
+      "scale": 0.4777777777777778
+    },
+    {
+      "viewport": [
+        932,
+        430
+      ],
+      "safeArea": true,
+      "scale": 0.45444444444444443
+    },
+    {
+      "viewport": [
+        1024,
+        768
+      ],
+      "safeArea": false,
+      "scale": 0.64
+    },
+    {
+      "viewport": [
+        1024,
+        768
+      ],
+      "safeArea": true,
+      "scale": 0.585
+    },
+    {
+      "viewport": [
+        1180,
+        820
+      ],
+      "safeArea": false,
+      "scale": 0.7375
+    },
+    {
+      "viewport": [
+        1180,
+        820
+      ],
+      "safeArea": true,
+      "scale": 0.6825
+    },
+    {
+      "viewport": [
+        1366,
+        1024
+      ],
+      "safeArea": false,
+      "scale": 0.85375
+    },
+    {
+      "viewport": [
+        1366,
+        1024
+      ],
+      "safeArea": true,
+      "scale": 0.79875
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safeArea": false,
+      "scale": 0.24375
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "safeArea": true,
+      "scale": 0.18875
+    }
+  ]
+}

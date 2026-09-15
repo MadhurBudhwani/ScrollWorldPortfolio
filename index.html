@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Madhur Budhwani | Backend &amp; GenAI Engineer</title>
     <meta
       name="description"
@@ -30,6 +30,7 @@
 
     <main id="start">
       <section class="scroll-movie" aria-label="Cinematic 8-bit portfolio scrollworld">
+        <div class="scene-viewport" id="sceneViewport">
         <div class="stage" id="stage">
           <canvas id="universe" aria-hidden="true"></canvas>
           <canvas id="foreground" aria-hidden="true"></canvas>
@@ -83,9 +84,12 @@
 
           <div class="progress-rail" aria-hidden="true"><span id="progressBar"></span></div>
         </div>
+        </div>
       </section>
     </main>
 
+    <script src="./orientation.js"></script>
+    <script src="./scene-viewport.js"></script>
     <script src="./assets/lenis.min.js"></script>
     <script src="./assets/lucide.min.js"></script>
     <script src="./avatar.js"></script>

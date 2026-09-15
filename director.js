@@ -1,6 +1,7 @@
 const canvas = document.querySelector('#universe');
 const ctx = canvas.getContext('2d', { alpha: false });
 const stage = document.querySelector('#stage');
+const sceneViewport = new SceneViewport(document.querySelector('#sceneViewport'), stage);
 const movie = document.querySelector('.scroll-movie');
 const copy = document.querySelector('#storyCopy');
 const player = document.querySelector('#player');
@@ -116,15 +117,23 @@ const state = { w:0, h:0, dpr:1, travel:1, top:0, progress:0, scene:-1, time:0, 
 const lenis = new Lenis({ autoRaf:false, smoothWheel:false, syncTouch:false });
 const scrollPacer=new ScrollPacer();
 function resize() {
-  state.w = stage.clientWidth; state.h = stage.clientHeight;
+  const hadLayout=state.w>0,progress=state.progress,relativeX=state.w?state.x/state.w:.2;
+  const layout=sceneViewport.resize();
+  state.w = layout.width; state.h = layout.height;
   state.dpr = Math.min(devicePixelRatio || 1, 1.5);
   canvas.width = Math.round(state.w * state.dpr); canvas.height = Math.round(state.h * state.dpr);
   resizeRevision();
   ctx.setTransform(state.dpr,0,0,state.dpr,0,0); ctx.imageSmoothingEnabled = false;
-  state.travel = movie.offsetHeight - state.h;
+  // Document travel uses the physical sticky viewport, never the design height.
+  state.travel = movie.offsetHeight - layout.viewportHeight;
   state.top = movie.getBoundingClientRect().top + scrollY;
-  state.x = clamp(state.x || state.w*.2, 30, state.w-30);
+  state.x = clamp(relativeX*state.w, 30, state.w-30);
   lenis.resize();
+  if(hadLayout){
+    scrollPacer.cancel();
+    lenis.scrollTo(state.top+state.travel*progress,{immediate:true});
+    state.actorSample=null;mascot.x=null;mascot.pointer=null;
+  }
 }
 function imageObject(texture,x,y,scale=1,angle=0,alpha=1) {
   if(alpha<=0 || scale<=0 || x < -800*scale || x > state.w+800*scale) return;
@@ -183,7 +192,7 @@ function procession(s,p) {
 }
 function reel(s,p) {
   drawReelRope();
-  const mobile=state.w<1000, scale=mobile?.76:1.1, gap=270*scale;
+  const mobile=state.w<1000, scale=(mobile?.76:1.1)*actorViewportScale(), gap=270*scale;
   const anchorX=state.w*(mobile?.52:.72), anchorY=state.h*(mobile?.75:.60);
   ctx.save();
   // A continuous physical strip with synchronized sprockets and frames.
@@ -293,7 +302,7 @@ function closeMenu(focus = false) {
 }
 function nearestPortal() {
   return portals.find(portal=>{
-    const r=portal.querySelector('.portal-mouth').getBoundingClientRect();
+    const r=sceneViewport.bounds(portal.querySelector('.portal-mouth'));
     return Math.abs(state.x-r.left-r.width/2)<r.width*.45;
   });
 }
@@ -314,7 +323,7 @@ function cancelEntry() {
 function updateEntry(dt) {
   const exit=state.exit;if(!exit)return;
   if(exit.phase==='navigating')return;
-  const r=exit.portal.querySelector('.portal-mouth').getBoundingClientRect();
+  const r=sceneViewport.bounds(exit.portal.querySelector('.portal-mouth'));
   const target=r.left+r.width/2;
   if(exit.phase==='approach'){
     const delta=target-state.x;
@@ -352,7 +361,7 @@ function updatePlayer(dt,paintForeground=true) {
     if(!state.exit||state.exit.phase==='approach'){
       state.vy-=1550*dt;state.y=Math.max(0,state.y+state.vy*dt);if(state.y===0)state.vy=0;
     }
-    if(!transition.mode)pose={x:state.x,feet:state.h-82-state.y,scale:state.w<700?.67:.82,mode:'idle',direction:movement};
+    if(!transition.mode)pose={x:state.x,feet:state.h-82-state.y,scale:(state.w<700?.67:.82)*actorViewportScale(),mode:'idle',direction:movement};
     portals.forEach(p=>p.classList.toggle('is-near',p===nearestPortal()));
   } else {
     state.y=0;state.vy=0;state.jumpDelay=0;
@@ -461,6 +470,11 @@ document.querySelectorAll('[data-control]').forEach(button=>{
 function frame(time) {
   const dt=Math.min((time-state.time)/1000||1/60,.05);
   state.frameMs=mix(state.frameMs,dt*1000,.05);state.time=time;
+  if(window.landscapePrompt?.blocked){
+    state.pausedAt??=time;state.keys.clear();scrollPacer.cancel();
+    requestAnimationFrame(frame);return;
+  }
+  if(state.pausedAt!==undefined){mascot.lastMotion+=time-state.pausedAt;delete state.pausedAt;}
   lenis.raf(time);
   scrollPacer.tick(time,dt);
   state.previousProgress=state.progress;

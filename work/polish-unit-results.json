@@ -1,9 +1,27 @@
 {
   "pass": true,
-  "sceneSamples": 162,
-  "widths": [
-    1440,
-    390
+  "sceneSamples": 405,
+  "viewports": [
+    [
+      1440,
+      900
+    ],
+    [
+      390,
+      844
+    ],
+    [
+      844,
+      390
+    ],
+    [
+      667,
+      375
+    ],
+    [
+      1024,
+      768
+    ]
   ],
   "scrollDistances": [
     154.6666666666647,
@@ -31,6 +49,8 @@
     "five-second idle sitting",
     "no automatic transform",
     "nodes cover connectors",
-    "rope split between avatar foreground and reel background with shared current hand"
+    "rope split between avatar foreground and reel background with shared current hand",
+    "rotation preserves chapter progress",
+    "short landscape geometry"
   ]
 }

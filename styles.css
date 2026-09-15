@@ -37,7 +37,8 @@ a:focus-visible, button:focus-visible { outline: 2px solid #f3cc70; outline-offs
 .hud.menu-open nav { opacity: 1; visibility: visible; transform: none; }
 .hud nav a:hover { background: #18312b; }
 .scroll-movie { height: 2350vh; height: 2350svh; }
-.stage { position: sticky; top: 0; width: 100%; height: 100vh; height: 100svh; overflow: hidden; isolation: isolate; background: var(--void); }
+.scene-viewport { position: sticky; top: 0; width: 100%; height: 100vh; height: 100svh; overflow: hidden; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); background: var(--void); }
+.stage { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; isolation: isolate; background: var(--void); transform-origin: 0 0; container: scene / size; }
 #universe { position: absolute; inset: 0; width: 100%; height: 100%; }
 .crt { position: fixed; inset: 0; z-index: 90; pointer-events: none; opacity: .035; background: repeating-linear-gradient(0deg, transparent 0 3px, #d3eee9 3px 4px); }
 .chapter-meter { position: absolute; left: 34px; bottom: 24px; z-index: 40; display: flex; align-items: center; gap: 12px; font-family: monospace; }
@@ -70,7 +71,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid #f3cc70; outline-offs
 .stage[data-mode="circuit"] .story-copy h1 { font-size: 42px; }
 .stage[data-mode="circuit"] .story-copy div { max-width: 750px; }
 .stage[data-mode="fusion"] .story-copy h1 { font-size: 48px; }
-@media(max-width:699px) {
+@container scene (max-width:699px) {
   .stage[data-mode="circuit"] .story-copy { top: 8%; }
   .stage[data-mode="circuit"] .story-copy h1 { font-size: 27px; margin-bottom: 12px; }
   .stage[data-mode="circuit"] .story-copy div { font-size: 13px; line-height: 1.4; }
@@ -97,12 +98,11 @@ a:focus-visible, button:focus-visible { outline: 2px solid #f3cc70; outline-offs
 .game-controls svg { width: 20px; height: 20px; }
 .stage[data-scene="hub"] .chapter-meter { display: none; }
 @media (pointer: coarse) { .game-controls.is-live { display: flex; } }
-@media(max-width:699px) {
+@container scene (max-width:699px) {
   .ground-portal { width: 110px; }
   .portal-work { left: 18%; }.portal-ai { left: 50%; }.portal-hobbies { left: 82%; }
   .ground-portal strong { font-size: 11px; }
   .portal-mouth { height: 36px; top: 2px; border-width: 4px; }
-  .hud.is-compact { inset: 14px 16px auto auto; }
 }
 .hub-note { position: absolute; left: 8%; top: 20%; width: min(640px, 84%); }
 .hub-note h2 { font-size: 64px; line-height: 1.05; margin: 0 0 20px; }
@@ -110,8 +110,10 @@ a:focus-visible, button:focus-visible { outline: 2px solid #f3cc70; outline-offs
 .progress-rail { position: absolute; z-index: 60; right: 16px; top: 25%; height: 50%; width: 2px; background: #293335; }
 .progress-rail span { display: block; height: 100%; width: 100%; background: var(--accent); transform: scaleY(0); transform-origin: top; }
 @keyframes stride { 0%,100% { transform: scaleX(var(--facing, 1)) translateY(0) rotate(-1deg); } 50% { transform: scaleX(var(--facing, 1)) translateY(-5px) rotate(1deg); } }
-@media (min-width: 1700px) { .story-copy { top: 18%; left: 10%; }.story-copy h1 { font-size: 76px; }.stage[data-scene="boot"] .story-copy h1 { font-size: 88px; } }
-@media (max-width: 1000px) {
+/* Responsive artwork follows the scene's logical size, not the phone's screen.
+   The entire 1600 x 900 mobile composition is scaled by its parent transform. */
+@container scene (min-width: 1700px) { .story-copy { top: 18%; left: 10%; }.story-copy h1 { font-size: 76px; }.stage[data-scene="boot"] .story-copy h1 { font-size: 88px; } }
+@container scene (max-width: 1000px) {
   .story-copy h1 { font-size: 48px; }
   .stage[data-scene="boot"] .story-copy h1 { font-size: 52px; }
   .stage[data-mode="reel"] .story-copy h1 { font-size: 42px; }
@@ -121,6 +123,9 @@ a:focus-visible, button:focus-visible { outline: 2px solid #f3cc70; outline-offs
   .hud { inset: 14px 18px auto; height: 46px; }
   .hud nav { gap: 14px; }.hud nav a { display: none; }.hud nav a:last-child { display: block; }
   .mark strong { font-size: 13px; }
+  .hud.is-compact { inset: 14px 16px auto auto; }
+}
+@container scene (max-width: 699px) {
   .story-copy, .stage[data-mode="reel"] .story-copy { left: 24px; top: 15%; width: calc(100% - 48px); }
   .story-copy h1, .stage[data-scene="boot"] .story-copy h1, .stage[data-mode="reel"] .story-copy h1 { font-size: 36px; line-height: 1.08; margin-bottom: 18px; }
   .story-copy p { font-size: 10px; margin-bottom: 16px; }
@@ -134,10 +139,28 @@ a:focus-visible, button:focus-visible { outline: 2px solid #f3cc70; outline-offs
   .pipe-card { right: 24px; }
   .progress-rail { right: 8px; }
 }
-@media (max-width: 370px) { .story-copy h1, .stage[data-scene="boot"] .story-copy h1, .stage[data-mode="reel"] .story-copy h1 { font-size: 30px; } }
-@media (max-height: 700px) and (min-width: 700px) {
+@container scene (max-width: 370px) { .story-copy h1, .stage[data-scene="boot"] .story-copy h1, .stage[data-mode="reel"] .story-copy h1 { font-size: 30px; } }
+@container scene (max-height: 700px) and (min-width: 700px) {
   .story-copy { top: 18%; }.story-copy h1, .stage[data-scene="boot"] .story-copy h1 { font-size: 44px; }.story-copy div { font-size: 15px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+html.orientation-paused { overflow: hidden; overscroll-behavior: none; }
+.landscape-prompt { width: min(440px, calc(100% - 40px)); max-height: calc(100dvh - 40px); overflow: auto; padding: 32px 24px; color: var(--ink); background: #0b181e; border: 1px solid #4c776a; border-radius: 10px; text-align: center; box-shadow: 0 20px 80px #0009; }
+.landscape-prompt::backdrop { background: #070d11f5; }
+.landscape-kicker { margin: 22px 0 12px; color: #84f5ad; font: 11px/1.5 monospace; text-transform: uppercase; }
+.landscape-prompt h2 { margin: 0 0 16px; font-size: clamp(24px, 7vw, 32px); line-height: 1.15; }
+.landscape-prompt p { line-height: 1.6; }
+#landscapeDescription { color: var(--soft); font-size: 14px; }
+.landscape-resume { font-size: 12px; color: #8ba39c; }
+.landscape-prompt button { margin-top: 12px; padding: 12px 18px; min-height: 44px; color: #d5ebe2; background: #142b2c; border: 1px solid #4c776a; border-radius: 4px; font-size: 13px; }
+.rotate-device { position: relative; width: 106px; height: 76px; margin: 0 auto; }
+.rotate-device span { position: absolute; width: 70px; height: 42px; left: 8px; top: 20px; border: 3px solid #84f5ad; border-radius: 7px; box-shadow: inset -8px 0 #214638; rotate: -12deg; }
+.rotate-device i { position: absolute; right: 0; top: -8px; color: #67daf5; font: normal 52px/1 sans-serif; }
+@media (orientation: landscape) and (max-height: 550px) {
+  .hud { inset: max(8px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) auto max(18px, env(safe-area-inset-left)); height: 36px; }
+  .hud.is-compact { inset: 8px max(14px, env(safe-area-inset-right)) auto auto; }
+}
+/* Touch controls keep their usable screen size while the artwork scales. */
+.stage.is-fitted .game-controls { right: calc(16px / var(--scene-scale)); transform: scale(calc(1 / var(--scene-scale))); transform-origin: right bottom; }

@@ -80,13 +80,13 @@ function chapterTransition(index,p,pose){
 }
 function revisionPose(index,p){
   if(index===5){
-    const layout=routerLayout(),t=shotTime(p),base=state.w<700?.60:.82;
+    const layout=routerLayout(),t=shotTime(p),base=(state.w<700?.60:.82)*actorViewportScale();
     const x=t<.25?mix(layout.front[0].x,layout.front[2].x,ease(t/.25)):t<.65?layout.front[2].x:mix(layout.front[2].x,layout.respond.x,ease((t-.65)/.25));
     return {x,feet:state.h*(state.w<700?.995:.94),scale:base,mode:t<.06?'tap':t<.15?'read':t<.25?'walk':t<.65?'read':t<.88?'walk':'present',direction:1,phase:t*10};
   }
   if(index===7){
     const t=shotTime(p),i=Math.min(5,Math.floor(t*6));
-    return {x:state.w*.5,feet:state.h*.91,scale:state.w<700?.67:.82,mode:['read','sing','game','sketch','design','edit'][i],direction:1,phase:t*24};
+    return {x:state.w*.5,feet:state.h*.91,scale:(state.w<700?.67:.82)*actorViewportScale(),mode:['read','sing','game','sketch','design','edit'][i],direction:1,phase:t*24};
   }
   const pose=scenePose(index,p);
   return pose;
@@ -108,7 +108,7 @@ function renderForeground(pose,transition,dt){
 // layers share this geometry, including when the pull cycle runs in reverse.
 function pullRopeGeometry(hand){
   if(state.scene!==2||state.local<.15||state.local>.85||!hand)return null;
-  const r=stage.getBoundingClientRect(),x=hand.x-r.left,y=hand.y-r.top;
+  const {x,y}=sceneViewport.point(hand.x,hand.y);
   return {x,y,pulleyY:Math.min(state.h*.48,y-30),reelX:state.w*(state.w<1000?.52:.72),phase:state.directedLocal};
 }
 // The horizontal run and reel-side attachment are covered by the reel.

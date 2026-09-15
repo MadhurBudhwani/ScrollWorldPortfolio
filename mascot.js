@@ -28,7 +28,7 @@ function initMascot(){
   const root=document.createElement('div');root.id='mascotTargets';root.setAttribute('aria-label','Explore mascot transformations');stage.append(root);mascot.root=root;
   stage.addEventListener('pointermove',e=>{
     if(e.pointerType==='touch')return;
-    const r=stage.getBoundingClientRect();mascot.pointer={x:e.clientX-r.left,y:e.clientY-r.top};mascot.tapped=null;mascot.focused=null;
+    mascot.pointer=sceneViewport.point(e.clientX,e.clientY);mascot.tapped=null;mascot.focused=null;
   });
   stage.addEventListener('pointerleave',()=>{mascot.pointer=null;mascot.focused=null;});
   window.addEventListener('blur',()=>{mascot.pointer=null;mascot.focused=null;mascot.tapped=null;});

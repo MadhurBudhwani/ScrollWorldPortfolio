@@ -1,7 +1,8 @@
 // Every shot shares its geometry with the avatar's contact points.
 const shotTime = p => clamp((p - .10) / .80);
+const actorViewportScale = () => Math.min(1,state.h/650);
 function trainGeometry(p) {
-  const scale = state.w < 700 ? .64 : Math.min(1.05, state.w / 1400, state.h / 1000);
+  const scale = state.w < 700 ? Math.min(.64,state.h/1000) : Math.min(1.05, state.w / 1400, state.h / 1000);
   const gap = 400 * scale;
   const travel = clamp((p - .16) / .69) * (scenes[1].skills.length - 1);
   const start=state.w<700?state.w*.25+gap-18:state.w*.52+gap*.15;
@@ -176,9 +177,9 @@ function rope(s,p,pose) {
   ctx.restore();
 }
 function scenePose(index,p) {
-  const baseScale=state.w<700?.67:.82;
+  const baseScale=(state.w<700?.67:.82)*actorViewportScale();
   const idle={x:state.w*.14,feet:state.h-82,scale:baseScale,mode:'idle',direction:1,phase:p*5};
-  if(index===0)return {...idle,scale:state.w<700?.56:.64};
+  if(index===0)return {...idle,scale:(state.w<700?.56:.64)*actorViewportScale()};
   if(index===1){
     const g=trainGeometry(p),roof=g.y-100*g.scale;
     const landX=trainGeometry(0).x-g.gap+18;
