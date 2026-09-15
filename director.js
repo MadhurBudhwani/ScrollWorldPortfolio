@@ -116,6 +116,7 @@ const state = { w:0, h:0, dpr:1, travel:1, top:0, progress:0, scene:-1, time:0, 
 // ScrollPacer owns wheel/touch/key speed. Lenis maintains the document position.
 const lenis = new Lenis({ autoRaf:false, smoothWheel:false, syncTouch:false });
 const scrollPacer=new ScrollPacer();
+scrollPacer.bindButtons(document.querySelectorAll('[data-scroll-direction]'));
 function resize() {
   const hadLayout=state.w>0,progress=state.progress,relativeX=state.w?state.x/state.w:.2;
   const layout=sceneViewport.resize();

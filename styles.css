@@ -164,3 +164,10 @@ html.orientation-paused { overflow: hidden; overscroll-behavior: none; }
 }
 /* Touch controls keep their usable screen size while the artwork scales. */
 .stage.is-fitted .game-controls { right: calc(16px / var(--scene-scale)); transform: scale(calc(1 / var(--scene-scale))); transform-origin: right bottom; }
+/* Screen-sized controls sit in the left margin, outside the scaled artwork. */
+.scroll-controls { position: absolute; z-index: 70; left: max(12px, env(safe-area-inset-left)); top: 50%; transform: translateY(-50%); display: none; flex-direction: column; align-items: center; gap: 12px; }
+.scroll-controls button { display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 1px solid #628d80; border-radius: 8px; background: #102622ed; color: #a0f6c0; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.scroll-controls button.is-held, .scroll-controls button:active { background: #244c3e; border-color: #84f5ad; color: #f1fff6; }
+.scroll-controls svg { width: 24px; height: 24px; pointer-events: none; }
+.scroll-controls span { color: #91b3a7; font: 9px/1.2 monospace; pointer-events: none; }
+@media (any-pointer: coarse), (max-width: 1099px), (max-height: 599px) { .scroll-controls { display: flex; } }

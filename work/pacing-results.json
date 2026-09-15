@@ -1,6 +1,7 @@
 {
   "pass": true,
   "equalSpeedCases": 480,
+  "buttonParityCases": 48,
   "gestureGapMs": 72,
   "comparisons": [
     {
@@ -161,6 +162,11 @@
     "immediate reversal",
     "touchend, keyup and blur stop",
     "pinch zoom preserved",
-    "navigation seeks immediately"
+    "navigation seeks immediately",
+    "48 screen-button/keyboard speed comparisons",
+    "button release, cancel and capture loss stop immediately",
+    "button keyboard/assistive activation and reduced-motion support",
+    "hub reverse scrolling and portrait/portal guards",
+    "button finger movement does not queue a swipe"
   ]
 }
