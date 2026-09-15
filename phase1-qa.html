@@ -1,0 +1,49 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Phase 1 verification</title>
+<style>body{margin:0;background:#162024;color:#fff;font:13px monospace}header{height:40px;display:flex;align-items:center;gap:16px;padding:0 18px}iframe{border:0;display:block}pre{white-space:pre-wrap;padding:18px}button,select,input{font:inherit}#result{margin:0}</style></head>
+<body><header><label>Chapter <select id="scene"><option>boot</option><option>backend</option><option>azure</option><option>security</option><option>search</option><option>genai</option><option>delivery</option><option>writing</option><option>hub</option></select></label><label>Progress <input id="phase" type="range" min="0.01" max="0.99" step="0.01" value="0.5"></label><button id="run">Run checks</button></header><iframe title="Phase 1 preview" src="./index.html"></iframe><pre id="result"></pre>
+<script>
+const f=document.querySelector('iframe'),params=new URLSearchParams(location.search),keys=['boot','backend','azure','security','search','genai','delivery','writing','hub'];
+f.style.width=(Number(params.get('width'))||1440)+'px';f.style.height=(Number(params.get('height'))||900)+'px';
+const nextFrames=n=>new Promise(resolve=>{const tick=()=>--n>0?f.contentWindow.requestAnimationFrame(tick):resolve();f.contentWindow.requestAnimationFrame(tick)});
+function seek(){f.contentWindow.navigate(document.querySelector('#scene').value,true,Number(document.querySelector('#phase').value));}
+document.querySelector('#scene').onchange=seek;document.querySelector('#phase').oninput=seek;
+f.onload=async()=>{if(!f.contentWindow.navigate)return;await nextFrames(3);if(params.has('scene'))document.querySelector('#scene').value=params.get('scene');seek();if(params.has('run'))run();};
+async function run(){
+  const results=[],w=f.contentWindow,d=w.document;
+  const check=(name,pass,details)=>results.push({name,pass,details});
+  try{
+    for(const width of [1440,390]){
+      f.style.width=width+'px';f.style.height=(width===390?844:900)+'px';await nextFrames(5);
+      for(let i=0;i<9;i++){
+        w.navigate(keys[i],true,.48);await nextFrames(4);
+        const diag=w.scrollworld.diagnostics,r=d.querySelector('#player').getBoundingClientRect();
+        check(width+' '+keys[i],diag.scene===keys[i]&&d.documentElement.scrollWidth<=width&&Number(w.getComputedStyle(d.querySelector('#player')).opacity)===1,{mode:diag.mode,actor:diag.actor,x:r.x,y:r.y});
+        check(width+' header '+i,d.querySelector('.hud').classList.contains('is-compact')===(i>0));
+        if(i===0)check(width+' boot nav hidden',w.getComputedStyle(d.querySelector('#chapterNavigation')).display==='none');
+        if(i===1){
+          d.querySelector('.menu-toggle').click();check(width+' disclosure opens',!d.querySelector('#chapterNavigation').inert&&d.querySelector('.menu-toggle').getAttribute('aria-expanded')==='true');
+          d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));check(width+' disclosure closes',d.querySelector('#chapterNavigation').inert);
+        }
+      }
+      check(width+' portal bounds',[...d.querySelectorAll('.ground-portal')].every(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=width}));
+    }
+    w.navigate('backend',true,.42);await nextFrames(6);const c=d.querySelector('canvas'),g=c.getContext('2d'),first=c.toDataURL(),firstPixels=g.getImageData(0,0,c.width,c.height).data,firstPosition=w.scrollworld.diagnostics;
+    w.navigate('backend',true,.55);await nextFrames(3);const second=d.querySelector('canvas').toDataURL();
+    w.navigate('backend',true,.42);await nextFrames(6);const reverse=d.querySelector('canvas').toDataURL(),reversePosition=w.scrollworld.diagnostics;
+    const reversePixels=g.getImageData(0,0,c.width,c.height).data;let changed=0,maxDelta=0,minX=c.width,minY=c.height,maxX=0,maxY=0;
+    for(let k=0;k<firstPixels.length;k+=4)if(firstPixels.slice(k,k+4).some((v,j)=>v!==reversePixels[k+j])){changed++;const x=k/4%c.width,y=Math.floor(k/4/c.width);minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);for(let j=0;j<3;j++)maxDelta=Math.max(maxDelta,Math.abs(firstPixels[k+j]-reversePixels[k+j]));}
+    check('scroll changes scene pixels',first!==second);check('reverse returns identical scenery',first===reverse,{firstPosition,reversePosition,changed,maxDelta,bounds:[minX,minY,maxX,maxY]});
+    w.navigate('hub',true,.6);await nextFrames(4);
+    const before=d.querySelector('#player').getBoundingClientRect().x;
+    d.body.dispatchEvent(new w.KeyboardEvent('keydown',{key:'d',bubbles:true}));await nextFrames(15);
+    d.body.dispatchEvent(new w.KeyboardEvent('keyup',{key:'d',bubbles:true}));
+    check('hub movement',d.querySelector('#player').getBoundingClientRect().x>before);
+    d.querySelector('[data-world="work"]').click();await nextFrames(5);
+    check('portal approach starts',Boolean(w.scrollworld.diagnostics.exit));
+    d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));check('entry cancellation',!w.scrollworld.diagnostics.exit);
+    check('no old pipes',d.querySelectorAll('.pipe').length===0);
+    document.querySelector('#result').textContent=JSON.stringify({passed:results.every(r=>r.pass),results},null,2);
+  }catch(e){document.querySelector('#result').textContent=e.stack;}
+}
+document.querySelector('#run').onclick=run;
+</script></body></html>

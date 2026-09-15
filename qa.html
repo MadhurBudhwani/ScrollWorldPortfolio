@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Scrollworld verification</title>
+<style>body{margin:0;background:#fff;color:#111;font:14px monospace}iframe{border:0;width:100%;height:900px}pre{white-space:pre-wrap;padding:20px}</style></head>
+<body><pre id="report">Running wheel, navigation, canvas and portal checks...</pre><iframe title="Preview under test" src="./index.html"></iframe>
+<script>
+const report=document.querySelector('#report');
+const frame=document.querySelector('iframe');
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+frame.onload=async()=>{
+  const w=frame.contentWindow,d=w.document,results=[];
+  try{
+    await wait(200);
+    const samples=[];
+    const sampling=new Promise(resolve=>{
+      let count=100;
+      function sample(t){samples.push({t,...w.scrollworld.diagnostics});if(--count)w.requestAnimationFrame(sample);else resolve();}
+      w.requestAnimationFrame(sample);
+    });
+    d.querySelector('#stage').dispatchEvent(new w.WheelEvent('wheel',{deltaY:850,bubbles:true,cancelable:true}));
+    await sampling;
+    const moving=samples.filter((s,i)=>i&&s.scroll-samples[i-1].scroll>.1);
+    const diffs=samples.slice(1).map((s,i)=>s.t-samples[i].t).sort((a,b)=>a-b);
+    results.push({test:'wheel easing',pass:moving.length>15,movingFrames:moving.length,finalScroll:samples.at(-1).scroll,p95FrameMs:diffs[Math.floor(diffs.length*.95)]});
+    const travel=d.querySelector('.scroll-movie').offsetHeight-w.innerHeight;
+    results.push({test:'one shared progress',pass:samples.every(s=>Math.abs(s.progress-s.scroll/travel)<1e-8)});
+    const image=d.querySelector('.player img');
+    results.push({test:'character asset',pass:image.complete&&image.naturalWidth>0});
+    for(let i=0;i<9;i++){
+      w.scrollTo(0,travel*(i+.45)/9);await wait(100);
+      const title=d.querySelector('h1').getBoundingClientRect();
+      const pixels=d.querySelector('canvas').getContext('2d').getImageData(0,0,100,100).data;
+      results.push({test:'chapter '+i,scene:w.scrollworld.diagnostics.scene,pass:d.documentElement.scrollWidth<=w.innerWidth&&title.left>=0&&title.right<=w.innerWidth&&pixels.some((v,j)=>j%4!==3&&v>0)});
+    }
+    d.querySelector('.pipe-ai').click();await wait(300);
+    results.push({test:'pipe click',pass:d.querySelector('#pipeCard').classList.contains('is-open')});
+    d.querySelector('.close-card').click();
+    d.querySelector('.hud a[href="#backend"]').click();await wait(1900);
+    results.push({test:'chapter anchor',pass:w.scrollworld.diagnostics.scene==='backend'});
+    frame.style.width='390px';frame.style.height='844px';await wait(250);
+    const mobileTravel=d.querySelector('.scroll-movie').offsetHeight-w.innerHeight;
+    for(let i=0;i<9;i++){
+      w.scrollTo(0,mobileTravel*(i+.45)/9);await wait(100);
+      const r=d.querySelector('h1').getBoundingClientRect();
+      results.push({test:'mobile chapter '+i,pass:d.documentElement.scrollWidth<=390&&r.left>=0&&r.right<=390});
+    }
+    results.push({test:'mobile pipes fit',pass:[...d.querySelectorAll('.pipe')].every(p=>{const r=p.getBoundingClientRect();return r.left>=0&&r.right<=390})});
+    d.querySelector('.pipe-write').click();await wait(300);
+    results.push({test:'mobile pipe click',pass:d.querySelector('#pipeCard').classList.contains('is-open')});
+    report.textContent=JSON.stringify({passed:results.every(r=>r.pass),results},null,2);
+  }catch(e){report.textContent=e.stack;}
+};
+</script></body></html>

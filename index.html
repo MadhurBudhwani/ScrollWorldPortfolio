@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Madhur Budhwani | Placeholder Teddy Scrollworld</title>
+    <meta
+      name="description"
+      content="A cinematic 8-bit scrollworld portfolio for Madhur Budhwani: backend engineering, GenAI systems, security, search, delivery, and Placeholder Teddy writing."
+    />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="crt" aria-hidden="true"></div>
+
+    <header class="hud" aria-label="Site navigation">
+      <a class="mark" href="#start" aria-label="Madhur Budhwani home">
+        <span>MB</span>
+        <strong>Placeholder Teddy</strong>
+      </a>
+      <button class="menu-toggle" aria-label="Open navigation" aria-expanded="false" aria-controls="chapterNavigation" title="Navigation"><i data-lucide="menu"></i></button>
+      <nav id="chapterNavigation" aria-label="Scroll chapters" inert>
+        <a href="#backend">Backend</a>
+        <a href="#genai">GenAI</a>
+        <a href="#writing">Writing</a>
+        <a href="#hub">Hub</a>
+      </nav>
+    </header>
+
+    <main id="start">
+      <section class="scroll-movie" aria-label="Cinematic 8-bit portfolio scrollworld">
+        <div class="stage" id="stage">
+          <canvas id="universe" aria-hidden="true"></canvas>
+
+
+          <aside class="chapter-meter" aria-hidden="true">
+            <span id="chapterNo">00</span>
+            <em id="chapterKey">BOOT</em>
+          </aside>
+
+          <section class="story-copy" id="storyCopy">
+            <p id="sceneKicker">Madhur Budhwani / Placeholder Teddy</p>
+            <h1 id="sceneTitle">Engineering systems. Writing worlds.</h1>
+            <div id="sceneBody">
+              Backend and GenAI engineer. Five years building with .NET, SQL Server and Azure. A storyteller after hours.
+            </div>
+          </section>
+
+
+          <div class="player" id="player" aria-hidden="true">
+            <img src="./assets/madhur-character.png" alt="" />
+          </div>
+
+          <section class="portal-hub" id="hub" aria-label="Playable portal hub">
+            <div class="hub-note">
+              <p>08 / Explore further</p>
+              <h2>Choose a world.</h2>
+              <span>Experience, intelligent systems, and everything beyond work.</span>
+            </div>
+            <button class="ground-portal portal-work" data-world="work" aria-label="Enter Work Experience">
+              <span class="portal-mouth" aria-hidden="true"></span><strong>Work Experience</strong>
+            </button>
+            <button class="ground-portal portal-ai" data-world="genai" aria-label="Enter GenAI Projects">
+              <span class="portal-mouth" aria-hidden="true"></span><strong>GenAI Projects</strong>
+            </button>
+            <button class="ground-portal portal-hobbies" data-world="hobbies" aria-label="Enter Hobbies">
+              <span class="portal-mouth" aria-hidden="true"></span><strong>Hobbies</strong>
+            </button>
+          </section>
+
+          <div class="dimension-transition" aria-hidden="true"></div>
+          <div class="game-controls" role="group" aria-label="Character controls">
+            <button data-control="a" aria-label="Move left" title="Move left"><i data-lucide="arrow-left"></i></button>
+            <button data-control="d" aria-label="Move right" title="Move right"><i data-lucide="arrow-right"></i></button>
+            <button data-control="w" aria-label="Jump" title="Jump"><i data-lucide="arrow-up"></i></button>
+            <button data-control="s" aria-label="Enter portal" title="Enter portal"><i data-lucide="arrow-down-to-line"></i></button>
+          </div>
+
+          <div class="progress-rail" aria-hidden="true"><span id="progressBar"></span></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./assets/lenis.min.js"></script>
+    <script src="./assets/lucide.min.js"></script>
+    <script src="./avatar.js"></script>
+    <script src="./choreography.js"></script>
+    <script src="./director.js"></script>
+  </body>
+</html>
