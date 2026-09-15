@@ -114,7 +114,7 @@
     }
 
     draw(frame, action = false) {
-      const facing = action === 'interaction' || action==='revision' ? 1 : this.facing;
+      const facing = action === 'interaction' || action==='revision' ? 1 : action ? frame < 5 ? this.facing : 1 : frame >= 4 ? this.facing : 1;
       if (frame === this.frame && action === this.drawnAction && facing === this.drawnFacing && !['enter','drop','emerge'].includes(this.mode)) return;
       this.frame = frame;
       this.drawnAction = action;

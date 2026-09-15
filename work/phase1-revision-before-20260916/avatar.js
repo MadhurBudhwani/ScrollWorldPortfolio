@@ -4,7 +4,7 @@
   if (new URLSearchParams(location.search).get('avatar') === 'original') return;
 
   const image = new Image();
-  image.src = './assets/madhur-avatar-atlas-v2.png';
+  image.src = './assets/madhur-avatar-atlas-v1.png';
   const ready = image.decode().then(() => true).catch(() => false);
   const actions = new Image();
   actions.src = './assets/madhur-avatar-actions-v1.png';
@@ -15,18 +15,6 @@
   let interactionsReady = false;
   interactions.decode().then(() => { interactionsReady = true; }).catch(() => {});
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
-  const revision = new Image();
-  revision.src = './assets/madhur-revision-poses-v1.png';
-  let revisionReady = false;
-  revision.decode().then(()=>{revisionReady=true;}).catch(()=>{});
-  const revisionFrames = [
-    [67,17,234,407,164,421],[373,17,222,407,468,421],
-    [697,17,182,407,788,421],[998,19,204,405,1100,421],
-    [71,434,195,402,164,832],[376,434,191,402,470,832],
-    [687,434,203,402,785,832],[998,434,232,402,1096,832],
-    [61,839,277,387,161,1223],[338,839,285,387,471,1223],
-    [686,932,230,295,795,1223],[947,836,284,358,1089,1193]
-  ];
   // Artist atlas registration: crop gutters, align body roots and share each cycle's scale.
   const frames = [
     [82,11,184,411,173,419], [383,11,184,411,474,419],
@@ -72,7 +60,7 @@
       });
     }
 
-    update(dt, { moving = false, direction = this.facing, airborne = false, verticalSpeed = 0, anticipating = false, crouching = false, entering = false, interaction = null, choreographyTime = null, transitionProgress=0 } = {}) {
+    update(dt, { moving = false, direction = this.facing, airborne = false, verticalSpeed = 0, anticipating = false, crouching = false, entering = false, interaction = null, choreographyTime = null } = {}) {
       if (!this.loaded) return;
       if (direction) this.facing = direction < 0 ? -1 : 1;
       if (this.wasAirborne && !airborne) this.landingTime = 0.13;
@@ -85,16 +73,10 @@
       }
       this.elapsed += dt;
       this.idleTime += dt;
-      this.transitionProgress=transitionProgress;
       let frame = 0;
       let action = false;
       if (!reduce.matches) {
-        if(revisionReady && ['sing','game','sketch','design','edit','tap','present','drop','emerge'].includes(mode)) {
-          action='revision';
-          const beat=Math.floor((choreographyTime??this.elapsed)*3)%2;
-          frame=mode==='sing'?beat:mode==='game'?2+beat:mode==='sketch'?4+beat:mode==='design'?6:mode==='edit'?7:mode==='tap'?8:mode==='present'?9:mode==='drop'?(transitionProgress<.35?10:11):transitionProgress<.7?11:9;
-        }
-        else if (interactionsReady && (mode === 'pull' || mode === 'read')) {
+        if (interactionsReady && (mode === 'pull' || mode === 'read')) {
           action = 'interaction';
           frame = mode === 'pull' ? Math.floor((choreographyTime ?? this.elapsed) * 2) % 2 : (choreographyTime ?? this.elapsed) < 1 ? 2 : 3;
         }
@@ -114,39 +96,25 @@
     }
 
     draw(frame, action = false) {
-      const facing = action === 'interaction' || action==='revision' ? 1 : this.facing;
-      if (frame === this.frame && action === this.drawnAction && facing === this.drawnFacing && !['enter','drop','emerge'].includes(this.mode)) return;
+      const facing = action === 'interaction' ? 1 : action ? frame < 5 ? this.facing : 1 : frame >= 4 ? this.facing : 1;
+      if (frame === this.frame && action === this.drawnAction && facing === this.drawnFacing && this.mode !== 'enter') return;
       this.frame = frame;
       this.drawnAction = action;
       this.drawnFacing = facing;
-      const source = action==='revision'?revision:action === 'interaction' ? interactions : action ? actions : image;
-      const [sx, sy, sw, sh, anchorX, baseline] = (action==='revision'?revisionFrames:action === 'interaction' ? interactionFrames : action ? actionFrames : frames)[frame];
+      const source = action === 'interaction' ? interactions : action ? actions : image;
+      const [sx, sy, sw, sh, anchorX, baseline] = (action === 'interaction' ? interactionFrames : action ? actionFrames : frames)[frame];
       const c = this.ctx;
       c.clearRect(0, 0, this.canvas.width, this.canvas.height);
       c.save();
       c.translate(this.canvas.width / 2, 0);
       c.scale(facing, 1);
       if (this.mode === 'enter' && !reduce.matches) c.translate(0, Math.max(0, this.elapsed - 0.18) * this.canvas.height * 2.7);
-      if(['drop','emerge'].includes(this.mode)&&!reduce.matches){
-        const t=this.transitionProgress;
-        const sink=this.mode==='drop'?Math.max(0,(t-.25)/.75):1-t;
-        c.translate(0,sink*720);
-      }
-      const scale = 576 * 0.94 / (action==='revision'?407:action === 'interaction' ? 757 : action ? 498 : frame < 4 ? 407 : 382);
+      const scale = 576 * 0.94 / (action === 'interaction' ? 757 : action ? 498 : frame < 4 ? 407 : 382);
       const ground = this.canvas.height - 576 * .02;
       c.drawImage(source, sx, sy, sw, sh, (sx - anchorX) * scale, ground - (baseline - sy) * scale, sw * scale, sh * scale);
-      this.registration={anchorX,baseline,scale,ground,facing};
       c.restore();
       this.element.dataset.avatarState = this.mode;
       this.element.dataset.avatarFrame = String(frame);
-    }
-
-    getHandAnchor() {
-      if(this.drawnAction!=='interaction'||this.mode!=='pull'||!this.registration)return null;
-      const sourceHand=this.frame===0?{x:245,y:51}:{x:655,y:352};
-      const a=this.registration,r=this.canvas.getBoundingClientRect();
-      return {x:r.left+(360+(sourceHand.x-a.anchorX)*a.scale*a.facing)*r.width/720,
-        y:r.top+(a.ground-(a.baseline-sourceHand.y)*a.scale)*r.height/720};
     }
   }
   window.AvatarAnimator = AvatarAnimator;

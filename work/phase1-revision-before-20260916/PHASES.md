@@ -9,10 +9,6 @@
 - Ground apertures: Work Experience, GenAI Projects, Hobbies. Walk to selected aperture, descend, transition to a routed arrival shell.
 - Restore point: `work/phase1-before-20260915` in the parent workspace.
 
-## Phase 1 Revision
-
-The 16 September change spec and mechanical transforming dog are now part of Phase 1. See `REVISION-20260916.md` for details, source prompts and rollback notes. The dog is not deferred to Phase 2. Boot sub-items are provisional resume-based lists, pending Madhur's final wording.
-
 ## Phase 2 Discussion Required
 
 When Phase 1 is complete, remind Madhur to discuss the interior worlds before designing them.

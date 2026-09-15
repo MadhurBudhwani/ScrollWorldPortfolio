@@ -18,14 +18,14 @@ const ease = n => { const t = clamp(n); return t * t * (3 - 2 * t); };
 const colors = ['#84f5ad', '#67daf5', '#f3cc70', '#f58caf'];
 
 const scenes = [
-  { key: 'boot', kicker: 'Backend & GenAI engineer', title: 'Engineering systems.\nWriting worlds.', body: 'Backend and GenAI engineer. Five years building with .NET, SQL Server and Azure. A storyteller after hours.', mode: 'orbit', skills: ['BACKEND', 'AZURE CLOUD', 'GEN AI', 'ARCHITECT'], color: 0 },
-  { key: 'backend', kicker: '01 / Backend engineering', title: 'Behind every request,\na working system.', body: '.NET Core, EF Core and SQL Server. Secure data access, background processing and production delivery.', mode: 'procession', skills: ['.NET CORE', 'EF CORE', 'SQL SERVER', 'RLS', 'DATABASE ENCRYPTION', 'EF INTERCEPTORS', 'SESSION INTERCEPTORS', 'REDIS', 'BACKGROUND JOBS', 'CI/CD', 'DESKTOP APPS'], color: 1 },
-  { key: 'azure', kicker: '02 / Cloud delivery', title: 'From a commit\nto the cloud.', body: 'App Services, Functions and Azure SQL. Connected through SignalR, API Management, Entra ID and Microsoft Graph.', mode: 'reel', skills: ['APP SERVICE', 'FUNCTIONS', 'AZURE SQL', 'BLOB STORAGE', 'SIGNALR', 'API MANAGEMENT', 'ENTRA ID', 'MICROSOFT GRAPH', 'COGNITIVE SERVICES'], color: 1 },
-  { key: 'security', kicker: '03 / Security architecture', title: 'The right data.\nThe right access.', body: 'Data access controls, role permissions and tenant isolation. Auditable execution and AES encryption.', mode: 'gates', skills: ['DATA ACCESS CONTROL', 'ROLE PERMISSIONS', 'MULTI-TENANT', 'AUDIT TRAIL', 'AES ENCRYPTION'], color: 2 },
+  { key: 'boot', kicker: 'Madhur Budhwani / Placeholder Teddy', title: 'Engineering systems.\nWriting worlds.', body: 'Backend and GenAI engineer. Five years building with .NET, SQL Server and Azure. A storyteller after hours.', mode: 'orbit', skills: ['.NET', 'AZURE', 'GEN AI', 'WRITING'], color: 0 },
+  { key: 'backend', kicker: '01 / Backend engineering', title: 'Behind every request,\na working system.', body: '.NET 8 and ASP.NET Core APIs, EF Core data access and SQL Server. From service boundaries to production releases.', mode: 'procession', skills: ['.NET 8', 'ASP.NET', 'EF CORE', 'SQL SERVER', 'REST API'], color: 1 },
+  { key: 'azure', kicker: '02 / Cloud delivery', title: 'From a commit\nto the cloud.', body: 'App Services, Functions, Azure SQL, Blob Storage and Redis. Instrumented with Application Insights.', mode: 'reel', skills: ['APP SERVICE', 'FUNCTIONS', 'AZURE SQL', 'BLOB', 'REDIS', 'INSIGHTS'], color: 1 },
+  { key: 'security', kicker: '03 / Security architecture', title: 'The right data.\nThe right access.', body: 'Row-level security, scoped permissions and tenant-aware execution. Access controls built into the backend.', mode: 'gates', skills: ['RLS', 'RBAC', 'TENANT SCOPE', 'AUDIT TRAIL'], color: 2 },
   { key: 'search', kicker: '04 / Search intelligence', title: 'Make knowledge\nfindable.', body: 'Azure AI Search across documents, attachments and work items. Exact, fuzzy, semantic and vector retrieval.', mode: 'spiral', skills: ['EXACT', 'FUZZY', 'SEMANTIC', 'VECTOR'], color: 1 },
-  { key: 'genai', kicker: '05 / Generative AI', title: 'From a question\nto a useful answer.', body: 'Schema RAG, NL-to-SQL, KPI catalogs, validation and correction loops, RLS-aware execution, semantic cache and full pipeline telemetry.', mode: 'circuit', skills: ['AUTH','INTENT','ROUTER','SCHEMA RAG','LLM','VALIDATE','CORRECT','RLS EXECUTE','VISUALIZE','RESPOND'], color: 0 },
+  { key: 'genai', kicker: '05 / Governed AI', title: 'From a question\nto a useful answer.', body: 'Azure OpenAI and schema RAG. NL-to-SQL agents with validation, correction loops and RLS-aware execution.', mode: 'circuit', skills: ['AZURE OPENAI', 'SCHEMA RAG', 'NL TO SQL', 'VALIDATION', 'AI FOUNDRY'], color: 0 },
   { key: 'delivery', kicker: '06 / Engineering ownership', title: 'Build. Review.\nRelease. Repeat.', body: '1,200+ commits and 400+ merged PRs. Client-facing API ownership and release coordination through QA, UAT and production.', mode: 'crossing', skills: ['DEV', 'REVIEW', 'QA', 'UAT', 'PRODUCTION'], color: 2 },
-  { key: 'writing', kicker: '07 / BEYOND CODE', title: 'The book keeps more than code.', body: 'Writing. Singing. Gaming. Drawing. Graphic design. Video editing. What the engineer does when nothing needs shipping.', mode: 'fusion', skills: ['WRITING', 'SINGING', 'GAMING', 'DRAWING', 'GRAPHIC DESIGN', 'VIDEO EDITING'], color: 3 },
+  { key: 'writing', kicker: '07 / Placeholder Teddy', title: 'There is another\nworld in the margins.', body: 'Stories, character fragments and the writing behind Placeholder Teddy.', mode: 'storybook', skills: ['PLACEHOLDER', 'TEDDY', 'STORIES', 'CHARACTERS', 'MANUSCRIPTS'], color: 3 },
   { key: 'hub', kicker: '08 / Explore further', title: 'Choose a world.', body: '', mode: 'hub', skills: [], color: 0 },
 ];
 
@@ -102,24 +102,23 @@ function sprite(label, tone, kind, index) {
     rect(64,212,40,28,'#081519');rect(280,212,40,28,'#081519');
     rect(76,216,16,16,'#89b3b3');rect(292,216,16,16,'#89b3b3');
   }
-  const unit = Math.min(4, 264 / (label.length * 6 - 1));
+  const unit = Math.min(4, Math.floor(264 / (label.length * 6 - 1)));
   const width = (label.length * 6 - 1) * unit;
   pixelText(c,label,(384-width)/2,112,unit,kind==='gates'?'#f1fff6':'#082124');
   pixelText(c,String(index+1).padStart(2,'0'),52,218,1.5,color);
   rect(290,216,40,4,color);
   return tex;
 }
-scenes.forEach(s => { s.textures = s.skills.map((label,i) => {const tex=sprite(label,(s.color+i%2)%4,s.mode,i);tex.mascotLabel=label;return tex;}); });
+scenes.forEach(s => { s.textures = s.skills.map((label,i) => sprite(label,(s.color+i%2)%4,s.mode,i)); });
 
 const state = { w:0, h:0, dpr:1, travel:1, top:0, progress:0, scene:-1, time:0, frameMs:16.7, hubLive:false, x:0, y:0, vy:0, keys:new Set() };
-// ScrollPacer owns wheel/touch/key speed. Lenis maintains the document position.
-const lenis = new Lenis({ autoRaf:false, smoothWheel:false, syncTouch:false });
-const scrollPacer=new ScrollPacer();
+// wheelMultiplier scales each wheel tick (lower = slower per-gesture advance).
+// lerp controls how fast smoothed scroll catches up to target (higher = snaps to stop faster).
+const lenis = new Lenis({ autoRaf:false, lerp:0.18, smoothWheel:!reducedMotion.matches, syncTouch:false, wheelMultiplier:0.15 });
 function resize() {
   state.w = stage.clientWidth; state.h = stage.clientHeight;
   state.dpr = Math.min(devicePixelRatio || 1, 1.5);
   canvas.width = Math.round(state.w * state.dpr); canvas.height = Math.round(state.h * state.dpr);
-  resizeRevision();
   ctx.setTransform(state.dpr,0,0,state.dpr,0,0); ctx.imageSmoothingEnabled = false;
   state.travel = movie.offsetHeight - state.h;
   state.top = movie.getBoundingClientRect().top + scrollY;
@@ -129,10 +128,6 @@ function resize() {
 function imageObject(texture,x,y,scale=1,angle=0,alpha=1) {
   if(alpha<=0 || scale<=0 || x < -800*scale || x > state.w+800*scale) return;
   ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(x,y); ctx.rotate(angle); ctx.scale(scale,scale);
-  if(texture.mascotLabel){
-    const textOnly=['orbit','spiral'].includes(scenes[state.scene]?.mode);
-    registerMascotTarget(texture.mascotLabel,0,textOnly?22:0,textOnly?Math.min(336,texture.mascotLabel.length*42):352,textOnly?100:216);
-  }
   ctx.drawImage(texture,-192,-124); ctx.restore();
 }
 function line(points,color,width=2) {
@@ -140,8 +135,7 @@ function line(points,color,width=2) {
   points.forEach(([x,y],i) => i ? ctx.lineTo(x,y) : ctx.moveTo(x,y)); ctx.stroke();
 }
 function backdrop(position) {
-  // Clear the full physical buffer, including the fractional-DPR edge pixel.
-  ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.fillStyle='#070d11';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.restore();
+  ctx.fillStyle='#070d11'; ctx.fillRect(0,0,state.w,state.h);
   celestialLayer(position);
   const horizon=state.h*(state.w<700?.64:.57);
   // Shared architecture travels continuously across all chapter boundaries.
@@ -182,7 +176,6 @@ function procession(s,p) {
   });
 }
 function reel(s,p) {
-  drawReelRope();
   const mobile=state.w<1000, scale=mobile?.76:1.1, gap=270*scale;
   const anchorX=state.w*(mobile?.52:.72), anchorY=state.h*(mobile?.75:.60);
   ctx.save();
@@ -233,23 +226,18 @@ function orbit(s,p) {
   const points=[];
   for(let i=0;i<=64;i++){const a=i/64*TAU;points.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r*.48]);}
   line(points,'#3c5b54',3);
-  const objects=s.textures.map((tex,i)=>{
+  s.textures.map((tex,i)=>{
     const a=i/s.skills.length*TAU+p*TAU*.55;
-    return {tex,i,x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r*.48,depth:Math.sin(a),scale:(mobile?.45:.66)+Math.sin(a)*.1};
-  });
-  updateOrbitTargets(objects,s);
-  objects.sort((a,b)=>a.depth-b.depth).forEach(o=>{
-    ctx.save();if(revisionUI.active===o.i){ctx.shadowColor=colors[0];ctx.shadowBlur=18;}
-    imageObject(o.tex,o.x,o.y,o.scale*(revisionUI.active===o.i?1.12:1));ctx.restore();
-  });
+    return {tex,x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r*.48,depth:Math.sin(a)};
+  }).sort((a,b)=>a.depth-b.depth).forEach(o=>imageObject(o.tex,o.x,o.y,(mobile?.45:.66)+o.depth*.1));
 }
 function draw(position,index,p) {
-  mascot.targets=[];
   backdrop(position);
   const scene=scenes[index], alpha=(index===0?1:ease(p/.10))*(1-ease((p-.9)/.1));
   ctx.save(); ctx.globalAlpha=alpha;
   const shotProgress=shotTime(state.directedLocal);
-  ({procession,reel,spiral,gates,orbit,circuit:routerCircuit,crossing,fusion:hobbyFusion}[scene.mode] || (()=>{}))(scene,shotProgress);
+  if(index===2)rope(scene,shotProgress,scenePose(index,state.directedLocal));
+  ({procession,reel,spiral,gates,orbit,circuit,crossing,storybook}[scene.mode] || (()=>{}))(scene,shotProgress);
   ctx.restore();
   if(scene.mode==='hub') {
     ctx.fillStyle='#84f5ad';ctx.fillRect(0,state.h-82,state.w,6);
@@ -335,11 +323,9 @@ function updateEntry(dt) {
     }
   }
 }
-function updatePlayer(dt,paintForeground=true) {
+function updatePlayer(dt) {
   let movement=0;
-  let pose=revisionPose(state.scene,state.directedLocal);
-  const transition=chapterTransition(state.scene,state.local,pose);
-  pose=transition.pose;
+  let pose=scenePose(state.scene,state.directedLocal);
   if(state.hubLive) {
     const before=state.x;
     if(state.exit)updateEntry(dt);
@@ -352,37 +338,13 @@ function updatePlayer(dt,paintForeground=true) {
     if(!state.exit||state.exit.phase==='approach'){
       state.vy-=1550*dt;state.y=Math.max(0,state.y+state.vy*dt);if(state.y===0)state.vy=0;
     }
-    if(!transition.mode)pose={x:state.x,feet:state.h-82-state.y,scale:state.w<700?.67:.82,mode:'idle',direction:movement};
+    pose={x:state.x,feet:state.h-82-state.y,scale:state.w<700?.67:.82,mode:'idle',direction:movement};
     portals.forEach(p=>p.classList.toggle('is-near',p===nearestPortal()));
   } else {
     state.y=0;state.vy=0;state.jumpDelay=0;
     movement=pose.mode==='walk'?pose.direction:0;
   }
   const scrollMotion=Math.abs(state.progress-state.previousProgress)>.000001;
-  if(scrollMotion)state.scrollDirection=Math.sign(state.progress-state.previousProgress);
-  const previous=state.actorSample;
-  const sameScene=previous&&previous.scene===state.scene;
-  const dx=sameScene?pose.x-previous.x:0;
-  const dy=sameScene?pose.feet-previous.feet:0;
-  const travelling=Math.abs(dx)>.015;
-  if(travelling)state.actorFacing=Math.sign(dx);
-  else if(!sameScene)state.actorFacing=pose.direction||1;
-  pose.direction=state.actorFacing||1;
-  if(!state.hubLive)movement=pose.mode==='walk'&&travelling?pose.direction:0;
-  pose.moving=movement!==0;
-  if(pose.moving)state.walkPhase=(state.walkPhase||0)+dt*1.5;
-  pose.walkPhase=state.walkPhase||0;
-  pose.verticalSpeed=sameScene?-dy/Math.max(dt,.001):0;
-  // Reverse portals preserve their exact geometry while using an emergence
-  // pose when rising and a descent pose when returning into the opening.
-  let transitionAction=transition.mode,transitionProgress=transition.progress;
-  if(state.scrollDirection<0&&transition.mode==='drop'){
-    transitionAction='emerge';transitionProgress=1-clamp((transition.progress-.25)/.75);
-  }else if(state.scrollDirection<0&&transition.mode==='emerge'){
-    transitionAction='drop';transitionProgress=.25+.75*(1-transition.progress);
-  }
-  if(scrollMotion||travelling||Math.abs(dy)>.015)state.lastMotionTime=state.time;
-  state.actorSample={scene:state.scene,x:pose.x,feet:pose.feet};
   player.style.left=pose.x+'px';
   player.style.bottom=(state.h-pose.feet-232*pose.scale*.02)+'px';
   player.style.setProperty('--player-s',pose.scale);
@@ -393,29 +355,21 @@ function updatePlayer(dt,paintForeground=true) {
     moving:movement!==0,
     direction:pose.direction,
     airborne:state.hubLive?state.y>0:pose.mode==='jump',
-    verticalSpeed:state.hubLive?state.vy:pose.verticalSpeed,
+    verticalSpeed:state.hubLive?state.vy:state.local<.08?300:-300,
     anticipating:state.jumpDelay>0,
     crouching:state.hubLive&&(state.keys.has('s')||state.keys.has('arrowdown')),
     entering:player.classList.contains('entering'),
-    interaction:transitionAction || (state.hubLive?null:['pull','read','sing','game','sketch','design','edit','tap','present'].includes(pose.mode)?pose.mode:null),
-    transitionProgress,
-    choreographyTime:pose.moving?pose.walkPhase:state.hubLive?null:pose.phase,
+    interaction:state.hubLive?null:pose.mode==='pull'?'pull':pose.mode==='read'?'read':null,
+    choreographyTime:state.hubLive?null:pose.phase,
     scrollMoving:scrollMotion
   });
-  state.pose=pose;
-  state.transition=transition;
-  state.reelRope=pullRopeGeometry(avatar?.getHandAnchor());
-  if(paintForeground)renderForeground(pose,transition,dt);
 }
 function navigate(key,immediate=false,local=.20) {
   const index=key==='start'?0:scenes.findIndex(s=>s.key===key);
   if(index<0)return;
   cancelEntry();closeMenu();
   const progress=index===0&&local===.20?0:(index+clamp(local,0,.99))/scenes.length;
-  scrollPacer.cancel();
-  const destination=state.top+state.travel*progress;
-  if(immediate||reducedMotion.matches)lenis.scrollTo(destination,{immediate:true});
-  else scrollPacer.go(destination);
+  lenis.scrollTo(state.top+state.travel*progress,{immediate:immediate||reducedMotion.matches,duration:1.6});
 }
 menuToggle.addEventListener('click',()=>{
   const open=!hud.classList.contains('menu-open');
@@ -449,7 +403,7 @@ window.addEventListener('blur',()=>state.keys.clear());
 window.addEventListener('resize',resize);
 window.addEventListener('hashchange',()=>navigate(location.hash.slice(1)));
 window.addEventListener('pageshow',e=>{if(e.persisted)cancelEntry();});
-reducedMotion.addEventListener('change',()=>scrollPacer.cancel());
+reducedMotion.addEventListener('change',()=>{lenis.options.smoothWheel=!reducedMotion.matches;});
 portals.forEach(p=>p.addEventListener('click',()=>enterPortal(p)));
 document.querySelectorAll('[data-control]').forEach(button=>{
   button.addEventListener('pointerdown',e=>{e.preventDefault();button.setPointerCapture(e.pointerId);keyDown(button.dataset.control);});
@@ -457,30 +411,24 @@ document.querySelectorAll('[data-control]').forEach(button=>{
   button.addEventListener('pointerup',release);button.addEventListener('pointercancel',release);button.addEventListener('lostpointercapture',release);
 });
 
-// One clock: input, actor pose, rear scenery, then foreground interactions.
+// One clock: Lenis smooths input, then scenery and actor sample the same position.
 function frame(time) {
   const dt=Math.min((time-state.time)/1000||1/60,.05);
   state.frameMs=mix(state.frameMs,dt*1000,.05);state.time=time;
   lenis.raf(time);
-  scrollPacer.tick(time,dt);
   state.previousProgress=state.progress;
   state.progress=clamp((lenis.animatedScroll-state.top)/state.travel);
   const position=Math.min(state.progress*scenes.length,scenes.length-.00001);
   const index=Math.floor(position),p=position-index;
   state.local=p;
-  state.directedLocal=reducedMotion.matches?.45:clamp((p-.15)/.70);
-  updateCopy(index,p);
-  updatePlayer(dt,false);
-  draw(position,index,p);
-  renderForeground(state.pose,state.transition,dt);
+  state.directedLocal=reducedMotion.matches?.45:p;
+  updateCopy(index,p);draw(position,index,p);updatePlayer(dt);
   requestAnimationFrame(frame);
 }
 Object.defineProperty(window,'scrollworld',{value:{
-  get diagnostics(){return {version:'phase-1-revision',scroll:lenis.animatedScroll,target:lenis.targetScroll,progress:state.progress,local:state.local,scene:scenes[state.scene]?.key,mode:scenes[state.scene]?.mode,frameMs:state.frameMs,actor:player.dataset.avatarState,exit:state.exit?.phase,companion:state.companionSkill,hand:avatar?.getHandAnchor(),pose:state.pose};}
+  get diagnostics(){return {version:'phase-1',scroll:lenis.animatedScroll,target:lenis.targetScroll,progress:state.progress,local:state.local,scene:scenes[state.scene]?.key,mode:scenes[state.scene]?.mode,frameMs:state.frameMs,actor:player.dataset.avatarState,exit:state.exit?.phase};}
 }});
 resize();
-initRevision();
-initMascot();
 window.lucide?.createIcons();
 if(location.hash)navigate(location.hash.slice(1),true);
 requestAnimationFrame(frame);

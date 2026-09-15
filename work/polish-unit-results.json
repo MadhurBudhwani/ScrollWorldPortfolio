@@ -1,0 +1,36 @@
+{
+  "pass": true,
+  "sceneSamples": 162,
+  "widths": [
+    1440,
+    390
+  ],
+  "scrollDistances": [
+    154.6666666666647,
+    154.6666666666647,
+    154.6666666666647
+  ],
+  "chapterSteps": [
+    4.8333333333332575,
+    2.685185185185219,
+    4.83333333333303,
+    4.83333333333394
+  ],
+  "forms": 80,
+  "required": 70,
+  "missing": [],
+  "checks": [
+    "scene geometry and portal continuity",
+    "same wheel speed at deltas 1,100,5000",
+    "bounded event gap and zero distance backlog",
+    "backend-only slowdown",
+    "unique form coverage",
+    "hover reversal and latest intent",
+    "reverse facing follows displacement",
+    "locked 0.60 dog/avatar height ratio",
+    "five-second idle sitting",
+    "no automatic transform",
+    "nodes cover connectors",
+    "rope split between avatar foreground and reel background with shared current hand"
+  ]
+}

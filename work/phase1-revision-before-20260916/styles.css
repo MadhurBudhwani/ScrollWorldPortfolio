@@ -53,29 +53,6 @@ a:focus-visible, button:focus-visible { outline: 2px solid #f3cc70; outline-offs
 .stage[data-mode="reel"] .story-copy div { max-width: 430px; }
 .stage[data-scene="boot"] .story-copy h1 { font-size: 72px; }
 .player { position: absolute; z-index: 38; width: 146px; height: 232px; translate: -50% 0; transform: scale(var(--player-s, .7)); transform-origin: 50% 100%; pointer-events: none; }
-.stage[data-scene="boot"] .player { pointer-events: auto; cursor: pointer; }
-#foreground { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 39; pointer-events: none; }
-#mascotTargets { position: absolute; inset: 0; z-index: 35; pointer-events: none; }
-.mascot-target { position: absolute; border: 0; padding: 0; background: transparent; pointer-events: auto; cursor: pointer; }
-.mascot-target:focus-visible { background: #67daf520; outline: 2px solid #67daf5; outline-offset: -2px; }
-.chapter-portal { position: absolute; width: 150px; height: 40px; z-index: 37; translate: -50% -50%; pointer-events: none; opacity: 0; --portal-color: #84f5ad; }
-.chapter-portal .portal-mouth { top: -10px; height: 64px; }
-#orbitTargets { position: absolute; inset: 0; z-index: 36; pointer-events: none; }
-.orbit-target { position: absolute; background: transparent; border: 0; pointer-events: auto; padding: 0; }
-.orbit-target:focus-visible { outline: 1px solid #84f5ad; outline-offset: 3px; }
-.speech-bubble { position: absolute; z-index: 65; width: 310px; max-width: calc(100% - 32px); background: #142826f5; border: 2px solid #84f5ad; box-shadow: 5px 5px #040c10; padding: 16px; pointer-events: none; font: 13px/1.5 monospace; }
-.speech-bubble[hidden] { display: none; }
-.speech-bubble::after { content: ''; position: absolute; left: var(--tail,32px); bottom: -10px; width: 16px; height: 16px; rotate: 45deg; background: #142826; border-right: 2px solid #84f5ad; border-bottom: 2px solid #84f5ad; }
-.speech-bubble strong { color: #84f5ad; }.speech-bubble p { margin: 8px 0 0; color: #e0ece8; }
-.stage[data-mode="circuit"] .story-copy h1 { font-size: 42px; }
-.stage[data-mode="circuit"] .story-copy div { max-width: 750px; }
-.stage[data-mode="fusion"] .story-copy h1 { font-size: 48px; }
-@media(max-width:699px) {
-  .stage[data-mode="circuit"] .story-copy { top: 8%; }
-  .stage[data-mode="circuit"] .story-copy h1 { font-size: 27px; margin-bottom: 12px; }
-  .stage[data-mode="circuit"] .story-copy div { font-size: 13px; line-height: 1.4; }
-  .stage[data-mode="fusion"] .story-copy h1 { font-size: 32px; }
-}
 .player img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; transform: scaleX(var(--facing, 1)); }
 .player .avatar-frames { position: absolute; left: 50%; top: -25%; width: auto; height: 125%; max-width: none; aspect-ratio: 1; transform: translateX(-50%); image-rendering: pixelated; }
 .player.is-animated img { visibility: hidden; animation: none; }

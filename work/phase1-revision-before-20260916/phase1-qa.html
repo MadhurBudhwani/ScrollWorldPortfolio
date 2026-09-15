@@ -7,7 +7,7 @@ f.style.width=(Number(params.get('width'))||1440)+'px';f.style.height=(Number(pa
 const nextFrames=n=>new Promise(resolve=>{const tick=()=>--n>0?f.contentWindow.requestAnimationFrame(tick):resolve();f.contentWindow.requestAnimationFrame(tick)});
 function seek(){f.contentWindow.navigate(document.querySelector('#scene').value,true,Number(document.querySelector('#phase').value));}
 document.querySelector('#scene').onchange=seek;document.querySelector('#phase').oninput=seek;
-f.onload=async()=>{if(!f.contentWindow.navigate)return;await nextFrames(3);if(params.has('scene'))document.querySelector('#scene').value=params.get('scene');if(params.has('phase'))document.querySelector('#phase').value=params.get('phase');seek();if(params.has('run'))run();};
+f.onload=async()=>{if(!f.contentWindow.navigate)return;await nextFrames(3);if(params.has('scene'))document.querySelector('#scene').value=params.get('scene');seek();if(params.has('run'))run();};
 async function run(){
   const results=[],w=f.contentWindow,d=w.document;
   const check=(name,pass,details)=>results.push({name,pass,details});
@@ -42,35 +42,6 @@ async function run(){
     check('portal approach starts',Boolean(w.scrollworld.diagnostics.exit));
     d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));check('entry cancellation',!w.scrollworld.diagnostics.exit);
     check('no old pipes',d.querySelectorAll('.pipe').length===0);
-    check('new browser title',d.title==='Madhur Budhwani | Backend & GenAI Engineer');
-    check('new brand',d.querySelector('.mark strong').textContent==='Madhur Budhwani');
-    for(let i=0;i<8;i++){
-      w.navigate(keys[i],true,.94);await nextFrames(3);
-      check('drop '+keys[i],w.scrollworld.diagnostics.actor==='drop'&&Number(d.querySelector('#chapterPortal').style.opacity)>0);
-      w.navigate(keys[i+1],true,.07);await nextFrames(3);
-      check('emerge '+keys[i+1],w.scrollworld.diagnostics.actor==='emerge'&&Number(d.querySelector('#chapterPortal').style.opacity)>0);
-    }
-    w.navigate('azure',true,.42);await nextFrames(4);
-    check('rope hand anchor',Boolean(w.scrollworld.diagnostics.hand)&&w.scrollworld.diagnostics.hand.y>0);
-    check('foreground above avatar',Number(w.getComputedStyle(d.querySelector('#foreground')).zIndex)>Number(w.getComputedStyle(d.querySelector('#player')).zIndex));
-    w.navigate('boot',true,.42);await nextFrames(4);
-    check('boot companion remains dog',w.scrollworld.diagnostics.companion==='MECHANICAL DOG');
-    d.querySelector('.orbit-target').click();check('skill bubble opens',!d.querySelector('#speechBubble').hidden&&d.querySelector('#speechBubble p').textContent.includes('SQL Server'));
-    d.body.click();check('outside tap dismisses',d.querySelector('#speechBubble').hidden);
-    d.querySelector('#player').click();check('intro bubble opens',d.querySelector('#speechBubble p').textContent.includes("I'm Madhur"));
-    d.body.click();
-    const hobbies=['read','sing','game','sketch','design','edit'];
-    for(let i=0;i<6;i++){
-      const local=.15+.7*(.1+.8*((i+.4)/6));w.navigate('writing',true,local);await nextFrames(4);
-      check('hobby pose '+hobbies[i],w.scrollworld.diagnostics.actor===hobbies[i]);
-    }
-    const expected={backend:['.NET CORE','EF CORE','SQL SERVER','RLS','DATABASE ENCRYPTION','EF INTERCEPTORS','SESSION INTERCEPTORS','REDIS','BACKGROUND JOBS','CI/CD','DESKTOP APPS'],azure:['APP SERVICE','FUNCTIONS','AZURE SQL','BLOB STORAGE','SIGNALR','API MANAGEMENT','ENTRA ID','MICROSOFT GRAPH','COGNITIVE SERVICES'],security:['DATA ACCESS CONTROL','ROLE PERMISSIONS','MULTI-TENANT','AUDIT TRAIL','AES ENCRYPTION']};
-    for(const [key,labels]of Object.entries(expected)){
-      const seen=new Set();for(let n=0;n<=60;n++){w.navigate(key,true,.15+.7*n/60);await nextFrames(2);seen.add(w.scrollworld.diagnostics.companion);}
-      check('all '+key+' companion forms reachable',labels.every(label=>seen.has(label)),[...seen]);
-    }
-    w.navigate('genai',true,.50);await nextFrames(3);const stillProgress=w.scrollworld.diagnostics.progress,ambientBefore=d.querySelector('#universe').toDataURL();await nextFrames(12);
-    check('proactive flow continues without scroll',w.scrollworld.diagnostics.progress===stillProgress&&d.querySelector('#universe').toDataURL()!==ambientBefore);
     document.querySelector('#result').textContent=JSON.stringify({passed:results.every(r=>r.pass),results},null,2);
   }catch(e){document.querySelector('#result').textContent=e.stack;}
 }

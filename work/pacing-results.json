@@ -1,0 +1,166 @@
+{
+  "pass": true,
+  "equalSpeedCases": 480,
+  "gestureGapMs": 72,
+  "comparisons": [
+    {
+      "chapter": 0,
+      "fps": 30,
+      "keyboard": 289.99999999999886,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 0,
+      "fps": 60,
+      "keyboard": 290.0000000000023,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 0,
+      "fps": 120,
+      "keyboard": 289.99999999999545,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 1,
+      "fps": 30,
+      "keyboard": 161.11111111111313,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 1,
+      "fps": 60,
+      "keyboard": 161.11111111111313,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 1,
+      "fps": 120,
+      "keyboard": 161.11111111111313,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 2,
+      "fps": 30,
+      "keyboard": 290.0000000000091,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 2,
+      "fps": 60,
+      "keyboard": 289.9999999999818,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 2,
+      "fps": 120,
+      "keyboard": 290.0000000000364,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 3,
+      "fps": 30,
+      "keyboard": 289.9999999999818,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 3,
+      "fps": 60,
+      "keyboard": 290.0000000000364,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 3,
+      "fps": 120,
+      "keyboard": 289.99999999992724,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 4,
+      "fps": 30,
+      "keyboard": 289.9999999999818,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 4,
+      "fps": 60,
+      "keyboard": 290.0000000000364,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 4,
+      "fps": 120,
+      "keyboard": 289.99999999992724,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 5,
+      "fps": 30,
+      "keyboard": 289.9999999999818,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 5,
+      "fps": 60,
+      "keyboard": 290.0000000000364,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 5,
+      "fps": 120,
+      "keyboard": 289.99999999992724,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 6,
+      "fps": 30,
+      "keyboard": 290.0000000000364,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 6,
+      "fps": 60,
+      "keyboard": 289.99999999992724,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 6,
+      "fps": 120,
+      "keyboard": 290.0000000001455,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 7,
+      "fps": 30,
+      "keyboard": 290.0000000000364,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 7,
+      "fps": 60,
+      "keyboard": 289.99999999992724,
+      "trackpad": "identical"
+    },
+    {
+      "chapter": 7,
+      "fps": 120,
+      "keyboard": 290.0000000001455,
+      "trackpad": "identical"
+    }
+  ],
+  "tails": [
+    24.166666666666856,
+    24.166666666666856
+  ],
+  "checks": [
+    "arrow and trackpad speed parity in every scroll chapter",
+    "tiny, large and diminishing deltas accepted",
+    "irregular event cadence bridged",
+    "30/60/120 Hz parity",
+    "event bursts cannot queue distance",
+    "immediate reversal",
+    "touchend, keyup and blur stop",
+    "pinch zoom preserved",
+    "navigation seeks immediately"
+  ]
+}

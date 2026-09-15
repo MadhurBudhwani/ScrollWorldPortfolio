@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Avatar review | Placeholder Teddy</title>
+  <link rel="stylesheet" href="./styles.css">
+  <style>
+    body { padding: 24px; min-height: 100vh; }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 20px; border-bottom: 1px solid #2b3a3e; padding-bottom: 18px; }
+    header h1 { margin: 0; font-size: 22px; } nav { display: flex; gap: 20px; font-size: 14px; }
+    main { width: min(960px,100%); margin: 32px auto; }
+    .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    h2 { margin: 0; font: 500 13px monospace; color: #a7b9bd; }
+    .preview { position: relative; height: 440px; border-bottom: 3px solid #84f5ad; overflow: hidden; }
+    .preview .player { left: 50%; bottom: 0; width: 244px; height: 388px; --player-s: 1; }
+    .modes { display: flex; flex-wrap: wrap; gap: 8px; margin: 28px 0; }
+    .modes button { border: 1px solid #3b5053; padding: 10px 14px; background: transparent; }
+    .modes button[aria-pressed="true"] { background: #84f5ad; border-color: #84f5ad; color: #07120e; }
+    label { font-size: 14px; display: flex; gap: 14px; align-items: center; }
+    input { accent-color: #84f5ad; }
+    #status { margin-top: 20px; color: #a7b9bd; font: 12px monospace; }
+    @media(max-width:600px) { body{padding:18px}header{align-items:flex-start}header h1{font-size:18px}nav{flex-direction:column;gap:8px}.comparison{gap:16px}.preview{height:320px}.preview .player{width:174px;height:277px}.modes button{padding:10px} }
+  </style>
+</head>
+<body>
+  <header><h1>Placeholder Teddy / Avatar</h1><nav><a href="./index.html#hub">Portfolio</a><a href="./index.html?avatar=original#hub">Original version</a></nav></header>
+  <main>
+    <div class="comparison">
+      <section><h2>ORIGINAL</h2><div class="preview"><div class="player"><img src="./assets/madhur-character.png" alt="Original Madhur avatar"></div></div></section>
+      <section><h2>ANIMATED</h2><div class="preview"><div class="player" id="animated"><img src="./assets/madhur-character.png" alt="Animated Madhur avatar"></div></div></section>
+    </div>
+    <div class="modes" role="group" aria-label="Animation">
+      <button data-mode="idle" aria-pressed="true">Idle</button>
+      <button data-mode="left" aria-pressed="false">Walk left</button>
+      <button data-mode="right" aria-pressed="false">Walk right</button>
+      <button data-mode="jump" aria-pressed="false">Jump</button>
+      <button data-mode="crouch" aria-pressed="false">Crouch</button>
+      <button data-mode="enter" aria-pressed="false">Portal</button>
+    </div>
+    <label>Playback <input id="speed" type="range" min="0.25" max="1.5" step="0.25" value="1"><output id="speedValue">1x</output></label>
+    <p id="status" role="status">Loading animation...</p>
+  </main>
+  <script src="./avatar.js"></script>
+  <script>
+    const element=document.querySelector('#animated');
+    const animator=new AvatarAnimator(element);
+    let mode='idle',last=0,elapsed=0;
+    document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>{
+      mode=button.dataset.mode;elapsed=0;
+      document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
+    }));
+    document.querySelector('#speed').addEventListener('input',e=>document.querySelector('#speedValue').value=e.target.value+'x');
+    function render(t){
+      const dt=Math.min((t-last)/1000||1/60,.05)*Number(document.querySelector('#speed').value);last=t;elapsed+=dt;
+      const jumpTime=elapsed%1.6;
+      const jumping=mode==='jump'&&jumpTime>.12&&jumpTime<1.12;
+      animator.update(dt,{moving:mode==='left'||mode==='right',direction:mode==='left'?-1:1,airborne:jumping,anticipating:mode==='jump'&&jumpTime<=.12,verticalSpeed:jumpTime<.62?300:-300,crouching:mode==='crouch',entering:mode==='enter'&&elapsed%1.8<.7});
+      element.style.bottom=jumping?Math.sin((jumpTime-.12)*Math.PI)*70+'px':'0';
+      document.querySelector('#status').textContent=animator.loaded?mode.toUpperCase():'Loading animation...';
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>

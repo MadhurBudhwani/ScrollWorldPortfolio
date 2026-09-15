@@ -3,10 +3,8 @@ const shotTime = p => clamp((p - .10) / .80);
 function trainGeometry(p) {
   const scale = state.w < 700 ? .64 : Math.min(1.05, state.w / 1400, state.h / 1000);
   const gap = 400 * scale;
-  const travel = clamp((p - .16) / .69) * (scenes[1].skills.length - 1);
-  const start=state.w<700?state.w*.25+gap-18:state.w*.52+gap*.15;
-  const mobileExitShift=state.w<700?(start-state.w*.52)*ease(travel/(scenes[1].skills.length-1)):0;
-  return {scale, gap, x:start-travel*gap-mobileExitShift, y:state.h*.84};
+  const travel = clamp((p - .16) / .78) * 4;
+  return {scale, gap, x:state.w*.52 + gap*.15 - travel*gap, y:state.h*.84};
 }
 function spiralObjects(s,p) {
   const mobile=state.w<1000, cx=state.w*(mobile?.52:.61), cy=state.h*(mobile?.79:.76);
@@ -21,7 +19,6 @@ function spiralObjects(s,p) {
 }
 function engine(g,p) {
   ctx.save();ctx.translate(g.x-g.gap,g.y);ctx.scale(g.scale,g.scale);
-  registerMascotTarget('BACKEND',0,0,360,240);
   const rect=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x,y,w,h);};
   rect(-180,-92,330,188,'#173b40');rect(-158,-80,286,152,'#67daf5');
   rect(36,-124,108,86,'#84f5ad');rect(56,-109,60,50,'#17343b');
@@ -124,7 +121,6 @@ function crossing(s,p) {
       const label=['DEV','REVIEW','QA','UAT','PROD'][i===19?4:i/5],u=state.w<700?1.5:2.5;
       ctx.fillStyle='#f3cc70';ctx.fillRect(at.x-2,at.y+20,4,30);
       pixelText(ctx,label,at.x-(label.length*6-1)*u/2,at.y+59,u,'#e9e3c3');
-      registerMascotTarget(label==='PROD'?'PRODUCTION':label,at.x,at.y+36,Math.max(65,w),95);
     }
   }
   if(p>.1&&p<.8)for(let j=0;j<6;j++){
@@ -181,11 +177,10 @@ function scenePose(index,p) {
   if(index===0)return {...idle,scale:state.w<700?.56:.64};
   if(index===1){
     const g=trainGeometry(p),roof=g.y-100*g.scale;
-    const landX=trainGeometry(0).x-g.gap+18;
+    const landX=(state.w*.52+g.gap*.15)-g.gap+18;
     if(p<.15){const t=ease(p/.15);return {...idle,x:mix(idle.x,landX,t),feet:mix(idle.feet,roof-24*g.scale,t)-Math.sin(t*Math.PI)*50,mode:'jump'};}
-    const lastX=trainGeometry(.85).x+(scenes[1].skills.length-1)*g.gap;
-    if(p>.85)return {...idle,x:lastX,feet:roof};
-    const x=mix(landX,lastX,(p-.15)/.70);
+    if(p>.85){const t=ease((p-.85)/.15);return {...idle,x:mix(state.w*.70,idle.x,t),feet:mix(roof,idle.feet,t)-Math.sin(t*Math.PI)*35,mode:t<.75?'walk':'jump',direction:-1};}
+    const x=mix(landX,state.w*.70,(p-.15)/.70);
     const n=(x-g.x)/g.gap, gap=Math.abs(n-Math.round(n));
     const hop=Math.max(0,(gap-.35)/.15);
     const onEngine=n<-.5;

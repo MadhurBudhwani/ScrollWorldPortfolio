@@ -1,0 +1,49 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Avatar verification</title>
+<style>body{background:#10181b;color:#eef9f2;font:14px monospace}iframe{width:900px;height:700px;border:0}pre{white-space:pre-wrap}</style></head>
+<body><pre id="report">Running avatar checks...</pre><iframe src="./index.html#hub" title="Avatar game test"></iframe>
+<script>
+const f=document.querySelector('iframe'),wait=ms=>new Promise(r=>setTimeout(r,ms));
+f.onload=async()=>{
+  const w=f.contentWindow,d=w.document,results=[];
+  const frames=n=>new Promise(resolve=>{const tick=()=>--n>0?w.requestAnimationFrame(tick):resolve();w.requestAnimationFrame(tick);});
+  try{
+    await wait(600);
+    const player=d.querySelector('#player');
+    results.push({test:'animated avatar loaded',pass:player.classList.contains('is-animated')});
+    const stage=d.querySelector('#stage');
+    const testElement=d.createElement('div');
+    const testAvatar=new w.AvatarAnimator(testElement);await wait(100);
+    const idle=new Set(),walk=new Set();
+    for(let i=0;i<320;i++){testAvatar.update(1/60);idle.add(testElement.dataset.avatarFrame)}
+    for(let i=0;i<70;i++){testAvatar.update(1/60,{moving:true,direction:1});walk.add(testElement.dataset.avatarFrame)}
+    results.push({test:'breathing and blink frames',pass:idle.size===4,frames:[...idle]});
+    results.push({test:'eight independent walk poses',pass:walk.size===8,frames:[...walk]});
+    testAvatar.update(.1,{moving:true,direction:-1});
+    results.push({test:'left-facing playback',pass:testAvatar.drawnFacing===-1});
+    testAvatar.update(.2,{crouching:true});
+    results.push({test:'dedicated crouch artwork',pass:testAvatar.drawnAction&&testAvatar.frame===5});
+    testAvatar.update(.2,{airborne:true,verticalSpeed:300});
+    results.push({test:'airborne artwork',pass:testAvatar.drawnAction&&testAvatar.frame===2});
+    testAvatar.update(.02,{airborne:false});
+    results.push({test:'landing pose',pass:testAvatar.drawnAction&&testAvatar.frame===4});
+    testAvatar.update(.25,{entering:true});
+    results.push({test:'portal tuck pose',pass:testAvatar.drawnAction&&testAvatar.frame===7});
+    const start=player.getBoundingClientRect().x;
+    d.querySelector('.hud a[href="#hub"]').focus();
+    d.activeElement.dispatchEvent(new w.KeyboardEvent('keydown',{key:'d',bubbles:true}));
+    await frames(20);
+    d.activeElement.dispatchEvent(new w.KeyboardEvent('keyup',{key:'d',bubbles:true}));
+    results.push({test:'movement after navigation focus',pass:player.getBoundingClientRect().x>start+10,start,end:player.getBoundingClientRect().x});
+    stage.dispatchEvent(new w.KeyboardEvent('keydown',{key:'w',bubbles:true}));
+    stage.dispatchEvent(new w.KeyboardEvent('keyup',{key:'w',bubbles:true}));
+    await frames(12);
+    results.push({test:'game jump state',pass:player.dataset.avatarState==='jump',state:player.dataset.avatarState});
+    await frames(65);
+    d.querySelector('.pipe-ai').click();await frames(12);
+    results.push({test:'game portal state',pass:player.dataset.avatarState==='enter'});
+    await wait(500);
+    results.push({test:'portal still opens',pass:d.querySelector('#pipeCard').classList.contains('is-open')});
+    document.querySelector('#report').textContent=JSON.stringify({passed:results.every(r=>r.pass),results},null,2);
+  }catch(e){document.querySelector('#report').textContent=e.stack;}
+};
+</script></body></html>
