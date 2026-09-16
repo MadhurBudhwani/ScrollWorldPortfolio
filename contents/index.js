@@ -13,20 +13,44 @@ window.HobbyContent = {
   "drawing": [],
   "design": [
     {
-      "title": "SAMVID ’17 — Cultural Fest",
-      "src": "./contents/graphic-design/cultural-events.png",
-      "note": "Event-poster composition: fiery wings frame the headline, while performance silhouettes and a bold type hierarchy introduce the festival programme."
+      "title": "SAMVID '17 — Cultural Fest",
+      "src": "./contents/graphic-design/cultural-fest.png",
+      "note": "Cultural-events master poster. Fiery winged emblem anchors the composition; performance silhouettes and bold orange type introduce eight cultural events in a two-column grid."
     },
     {
-      "title": "SAMVID ’17 — Model Making & Innovation",
+      "title": "Festa D'Addio — Farewell Party",
+      "src": "./contents/graphic-design/festa-daddio.png",
+      "note": "Farewell poster for CSE 6th. Neon hexagon frame over a cosmic backdrop, silhouette group under a city skyline, and layered micro-copy ('same people, brighter tomorrows' / 'goodbyes create bigger stories') that turns a single poster into a full farewell narrative."
+    },
+    {
+      "title": "SAMVID '17 — Model Making & My Innovation",
+      "src": "./contents/graphic-design/model-making.png",
+      "note": "Technical-event poster with hanging light-bulbs cascading over a deep-blue field. Gold neon type and a categorised registration grid ground the composition."
+    },
+    {
+      "title": "Rathi Consultancy — Business Card",
+      "src": "./contents/graphic-design/rathi-consultancy.png",
+      "note": "Two-sided business card for a civil-engineering consultancy. Front: blueprint fragment with a monogram crest and services list. Back: wireframe city panorama with tagline 'You Dream It, We build It.' A brand system, not a one-off poster."
+    },
+    {
+      "title": "SAMVID '17 — Singing Star",
+      "src": "./contents/graphic-design/singing-star.png",
+      "note": "Solo-round singing competition poster. Ethereal blue backdrop with a silhouetted performer, glowing script wordmark, and a clean two-column info bar for entry rules and contacts."
+    },
+    {
+      "title": "SAMVID '17 — Technical Events",
       "src": "./contents/graphic-design/technical-events.png",
-      "note": "A technical-event poster with hanging light bulbs, a deep blue background and gold accents. The lower grid groups entry categories and registration details."
+      "note": "Master poster for the technical arm of SAMVID '17. Ten events rendered as metallic gears in a clean grid, sidebar list on the left, unified silver/blue/black palette. Restraint over spectacle."
+    },
+    {
+      "title": "SAMVID '17 — Treasure Hunt",
+      "src": "./contents/graphic-design/treasure-hunt.png",
+      "note": "Event poster styled as an aged treasure map with a lantern, compass, and a dashed trail linking Round 1 (Treasure Hunt) to Round 2 (Scavenger Hunt). Tolkien-tinged tagline: 'not all those who wander are lost.'"
     },
     {
       "title": "The Trippy Monk",
-      "src": "./contents/graphic-design/TheTrippyMonk-edited.png",
-      "note": "Character illustration with orange robes and psychedelic patterns in the sunglasses. Compare the original and edited files from the design collection.",
-      "before": "./contents/graphic-design/TheTrippyMonk.before.png"
+      "src": "./contents/graphic-design/trippy-monk.png",
+      "note": "Character illustration. Serene monk in lotus pose against a psychedelic mandala backdrop, sun and moon in the sky, kaleidoscope patterns filling the sunglasses. Personal work."
     }
   ],
   "video": []
