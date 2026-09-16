@@ -1,0 +1,4 @@
+{
+  "name": "madhur-scrollworld", "private": true,
+  "scripts": {"dev": "node scripts/serve.cjs", "build": "node scripts/content-index.cjs --build", "content": "node scripts/content-index.cjs", "test": "node --test scripts/content-index.test.cjs"}
+}

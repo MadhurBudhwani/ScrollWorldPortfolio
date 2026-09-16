@@ -74,5 +74,5 @@ All forms use existing generated artwork. No new generation is needed.
 | CACHE | mascot-forms-4.png | 2, 3 | fast memory chip with layered drawers |
 | AUDIT | mascot-forms-4.png | 2, 4 | inspection ledger with timestamp stamp |
 | Work Experience | mascot-forms-5.png | 1, 4 | briefcase with engineering tools and timeline |
-| GenAI Projects | mascot-forms-5.png | 2, 1 | neural project cube with AI circuit paths |
+| GenAI Lab | mascot-forms-5.png | 2, 1 | neural project cube with AI circuit paths |
 | Hobbies | mascot-forms-5.png | 2, 2 | open creative toolbox with book music and gamepad |

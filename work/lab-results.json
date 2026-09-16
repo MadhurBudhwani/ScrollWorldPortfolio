@@ -1,0 +1,15 @@
+{
+  "pass": true,
+  "caseCombinations": 17,
+  "checks": [
+    "six distinct mapped utility stations",
+    "evidence and unsupported-answer branches",
+    "sample aggregations and four workflow combinations",
+    "permission denial and insufficient evidence",
+    "real session cache hit and bounded retry illustration",
+    "skip/replay/input cancellation and closed-panel cleanup",
+    "visibility/orientation pause and reduced motion",
+    "keyboard-native buttons and accessible result text"
+  ],
+  "limitation": "Canvas previews and mocked-DOM behavior verified; actual browser layout and physical mobile input remain unverified."
+}

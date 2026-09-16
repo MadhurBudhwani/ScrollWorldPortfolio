@@ -340,7 +340,7 @@ const mascotFormCatalog={
     "cell": 3,
     "meaning": "briefcase with engineering tools and timeline"
   },
-  "GenAI Projects": {
+  "GenAI Lab": {
     "sheet": 4,
     "cell": 4,
     "meaning": "neural project cube with AI circuit paths"

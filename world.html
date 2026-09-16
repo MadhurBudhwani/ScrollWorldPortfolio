@@ -1,8 +1,70 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>World | Placeholder Teddy</title><link rel="stylesheet" href="./styles.css">
-<style>body{height:100svh;overflow:hidden}.world-entry{position:relative;z-index:3;padding:calc(var(--scene-height, 100svh) * .18) 8% 0}.world-entry p{font:12px monospace;color:#84f5ad}.world-entry h1{font-size:64px;line-height:1.08;margin:22px 0 36px}.return-link{display:inline-flex;align-items:center;gap:10px;border-bottom:1px solid #62897b;padding-bottom:8px;font-size:14px}.return-link svg{width:18px;height:18px}.world-avatar{left:50%;bottom:82px;--player-s:.82}.arrival{position:absolute;inset:0;background:#030b12;z-index:10;pointer-events:none;animation:arrive .9s ease-out forwards}@keyframes arrive{to{opacity:0}}@container scene (max-width:699px){.world-entry h1{font-size:40px}.world-avatar{--player-s:.67}}</style>
-</head><body><div class="crt" aria-hidden="true"></div><div class="scene-viewport" id="sceneViewport"><div class="stage" id="stage"><canvas id="universe" aria-hidden="true"></canvas>
-<main class="world-entry"><p>PLACEHOLDER TEDDY</p><h1 id="worldTitle"></h1><a class="return-link" href="./index.html#hub"><i data-lucide="arrow-left"></i>Return to hub</a></main>
-<div class="player world-avatar" id="worldAvatar" aria-hidden="true"><img src="./assets/madhur-character.png" alt=""></div><div class="arrival" aria-hidden="true"></div>
-</div></div>
-<script src="./orientation.js"></script><script src="./scene-viewport.js"></script><script src="./assets/lucide.min.js"></script><script src="./avatar.js"></script><script src="./choreography.js"></script><script src="./world.js"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>World | Madhur Budhwani</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./world.css">
+  <link rel="stylesheet" href="./lunar-lab.css">
+  <link rel="stylesheet" href="./hobby-gallery.css">
+</head>
+<body class="playable-world">
+  <div class="crt" aria-hidden="true"></div>
+  <main class="scene-viewport world-viewport" id="sceneViewport" aria-label="Playable portfolio world">
+    <div class="stage" id="stage">
+      <canvas id="universe" aria-hidden="true"></canvas>
+      <div class="player world-avatar" id="worldAvatar" aria-hidden="true"><img src="./assets/madhur-character.png" alt=""></div>
+      <canvas id="foreground" aria-hidden="true"></canvas>
+    </div>
+    <header class="world-hud">
+      <a class="world-return" href="./index.html#hub" aria-label="Return to portal hub">← <span>Hub</span></a>
+      <div class="world-heading"><p id="worldSubtitle"></p><h1 id="worldTitle"></h1></div>
+      <div class="world-tools"><button id="rescueButton" title="Return to the last safe landing">Reset</button><button id="helpButton" title="Pause and view controls">Controls</button></div>
+    </header>
+    <div class="world-status"><span id="worldStatus" role="status" aria-live="polite"></span><span id="worldFuel" hidden>BOOST <meter min="0" max="1" value="1" aria-label="Jetpack fuel"></meter></span></div>
+    <p class="world-keyboard-hint" id="worldHint"></p>
+    <div class="world-touch world-movement" role="group" aria-label="Move character">
+      <button data-action="left" aria-label="Move left">←</button><button data-action="right" aria-label="Move right">→</button>
+    </div>
+    <div class="world-touch world-actions" role="group" aria-label="Character actions">
+      <button data-action="jump" aria-label="Jump (Space)"><b>↑</b><span>JUMP</span></button>
+      <button data-action="power" aria-label="Hold to use power"><b>◇</b><span id="powerLabel">WEB</span></button>
+      <button data-action="climb" aria-label="Hold to climb the attached web (W)" disabled><b>⇈</b><span>CLIMB</span></button>
+      <button data-action="descend" aria-label="Hold to descend with the jetpack (S)" hidden><b>↓</b><span>DOWN</span></button>
+      <button data-action="interact" aria-label="Open nearby exhibit" disabled><b>＋</b><span>OPEN</span></button>
+    </div>
+    <button id="nearbyExhibit" class="nearby-exhibit" hidden></button>
+  </main>
+  <dialog id="worldDialog" class="world-dialog" aria-labelledby="dialogTitle">
+    <button id="closeDialog" class="dialog-close" aria-label="Close and resume playing">✕</button>
+    <p class="dialog-kicker" id="dialogTag"></p><h2 id="dialogTitle"></h2><p id="dialogBody"></p>
+    <nav id="dialogLinks" aria-label="Project websites" hidden></nav>
+    <div id="dialogDemo" hidden><p>Illustrative local walkthrough</p><ol id="demoSteps"></ol><button id="demoNext">Next step</button></div>
+    <section id="lunarLab" hidden aria-label="Interactive lunar experiment">
+      <div class="lab-meta"><strong>LOCAL SIMULATION</strong><span>FICTIONAL SAMPLE DATA · NO LIVE SERVICES</span></div>
+      <div class="lab-workbench">
+        <aside class="lab-inputs" aria-label="Experiment inputs"><div id="labChoices"></div><button id="labRun" type="button">Run experiment</button></aside>
+        <div class="lab-display">
+          <div class="lab-scene-shell"><canvas id="labScene" width="960" height="360" aria-hidden="true"></canvas></div>
+          <ol id="labStages" class="lab-stages" aria-label="Experiment stages"></ol>
+          <p id="labStageDetail"></p>
+          <div class="lab-controls"><button id="labSkip" type="button" disabled>Skip to result</button><button id="labReplay" type="button" disabled>Replay</button></div>
+          <section id="labResult" class="lab-result" hidden aria-labelledby="labResultTitle">
+            <h3 id="labResultTitle"></h3><p id="labAnswer"></p><p id="labMetric"></p><div id="labEvidence"></div>
+          </section>
+        </div>
+      </div>
+      <details id="labBuild"><summary>How I build this</summary><p id="labSkills"></p><p id="labBuildText"></p><p id="labPrinciple"></p></details>
+      <p id="labStatus" class="lab-sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+    </section>
+    <p class="dialog-footnote">Close to resume exploring.</p>
+  </dialog>
+  <script src="./orientation.js"></script><script src="./scene-viewport.js"></script>
+  <script src="./avatar.js"></script><script src="./companion.js"></script>
+  <script src="./lunar-lab-data.js"></script><script src="./lunar-lab-scene.js"></script><script src="./lunar-lab.js"></script>
+  <script src="./contents/index.js"></script><script src="./hobby-gallery.js"></script>
+  <script src="./world-content.js"></script><script src="./world-physics.js"></script><script src="./world-web.js"></script><script src="./world.js"></script>
+</body>
+</html>

@@ -28,7 +28,7 @@ class ScrollPacer {
     window.addEventListener('keydown',e=>{
       if(reducedMotion.matches||this.editable(e)||state.hubLive||e.ctrlKey||e.metaKey||e.altKey)return;
       if(e.target instanceof Element&&e.target.closest('button,a')&&e.key===' ')return;
-      const directions={ArrowDown:1,ArrowUp:-1,PageDown:1,PageUp:-1,' ':e.shiftKey?-1:1};
+      const directions={ArrowDown:1,ArrowUp:-1,PageDown:1,PageUp:-1};
       if(directions[e.key]){e.preventDefault();this.endGesture();this.keys.set(e.key,directions[e.key]);}
       if(e.key==='Home'||e.key==='End'){e.preventDefault();this.go(e.key==='Home'?0:lenis.limit);}
     });

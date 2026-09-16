@@ -1,10 +1,11 @@
 // Keep compact screens on one desktop coordinate system. Canvas, DOM actors,
 // copy, portals and hit targets inherit the same uniform scale and offset.
 window.SceneViewport = class SceneViewport {
-  constructor(viewport, stage) {
+  constructor(viewport, stage, {fixed = false} = {}) {
     this.viewport = viewport;
     this.stage = stage;
     this.scale = 1;
+    this.fixed = fixed;
   }
 
   resize() {
@@ -17,7 +18,7 @@ window.SceneViewport = class SceneViewport {
     const bottom = parseFloat(css.paddingBottom) || 0;
     const availableWidth = Math.max(1, viewportWidth - left - right);
     const availableHeight = Math.max(1, viewportHeight - top - bottom);
-    const compact = availableWidth < 1100 || availableHeight < 600 ||
+    const compact = this.fixed || availableWidth < 1100 || availableHeight < 600 ||
       (matchMedia('(pointer: coarse)').matches && availableWidth <= 1366);
     const width = compact ? 1600 : availableWidth;
     const height = compact ? 900 : availableHeight;

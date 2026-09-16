@@ -1,0 +1,49 @@
+{
+  "pass": true,
+  "routes": {
+    "work": {
+      "seconds": 5.366666666666666,
+      "platforms": 4,
+      "webFrames": 188,
+      "reverseSeconds": 5.675
+    },
+    "genai": {
+      "seconds": 17.475,
+      "platforms": 6,
+      "webFrames": 0,
+      "reverseSeconds": 16.766666666666666
+    },
+    "frameReference": 497.3333333333319
+  },
+  "moonAirTime": 2.3583333333333276,
+  "earthAirTime": 0.8499999999999994,
+  "renders": [
+    {
+      "world": "work",
+      "images": 5
+    },
+    {
+      "world": "genai",
+      "images": 5
+    },
+    {
+      "world": "hobbies",
+      "images": 5
+    }
+  ],
+  "checks": [
+    "forward and reverse traversal",
+    "travelling web with no premature tension; cancelled shots stay cancelled",
+    "web climbing, minimum length, retained height and release momentum",
+    "safe landing recovery",
+    "fixed-step frame-rate parity",
+    "moon gravity, finite boost and recharge",
+    "uniform Space jump, W climb only",
+    "gallery unlimited flight, ceiling, hover, descent and airborne exhibits",
+    "keyboard, multi-touch and accessible jetpack toggle; repeat guard",
+    "transformation, pause, reset and rotation",
+    "wheel does not move world",
+    "existing avatar and pet canvas rendering"
+  ],
+  "limitation": "Canvas images use the real renderers with a mocked DOM; browser CSS and physical-device interaction remain unverified."
+}

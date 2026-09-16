@@ -441,7 +441,7 @@ document.querySelectorAll('.hud a').forEach(a=>a.addEventListener('click',e=>{
 function keyDown(key,repeat=false){
   if(!state.hubLive||state.exit)return;
   state.keys.add(key);
-  if(['w','arrowup',' '].includes(key)&&state.y===0&&!state.jumpDelay&&!repeat)state.jumpDelay=.09;
+  if([' ','jump'].includes(key)&&state.y===0&&!state.jumpDelay&&!repeat)state.jumpDelay=.09;
   if(['s','arrowdown','enter'].includes(key)&&!repeat)enterPortal(nearestPortal());
 }
 window.addEventListener('keydown',e=>{

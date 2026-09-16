@@ -1,0 +1,33 @@
+window.HobbyContent = {
+  "version": 1,
+  "writing": {
+    "title": "Placeholder Teddy",
+    "author": "Madhur Budhwani",
+    "heading": "A marriage. A promise. A life she never imagined.",
+    "summary": "Ananya wants the ordinary magic of companionship: late-night ice cream, random drives, and someone to call her person. An arranged match with Aarav seems to offer that future. But behind a wealthy family's carefully composed welcome, marriage holds secrets she never thought to ask about.",
+    "cover": "./contents/writing/placeholder-teddy-pixel.png",
+    "links": []
+  },
+  "singing": [],
+  "gaming": [],
+  "drawing": [],
+  "design": [
+    {
+      "title": "SAMVID ’17 — Cultural Fest",
+      "src": "./contents/graphic-design/cultural-events.png",
+      "note": "Event-poster composition: fiery wings frame the headline, while performance silhouettes and a bold type hierarchy introduce the festival programme."
+    },
+    {
+      "title": "SAMVID ’17 — Model Making & Innovation",
+      "src": "./contents/graphic-design/technical-events.png",
+      "note": "A technical-event poster with hanging light bulbs, a deep blue background and gold accents. The lower grid groups entry categories and registration details."
+    },
+    {
+      "title": "The Trippy Monk",
+      "src": "./contents/graphic-design/TheTrippyMonk-edited.png",
+      "note": "Character illustration with orange robes and psychedelic patterns in the sunglasses. Compare the original and edited files from the design collection.",
+      "before": "./contents/graphic-design/TheTrippyMonk.before.png"
+    }
+  ],
+  "video": []
+};

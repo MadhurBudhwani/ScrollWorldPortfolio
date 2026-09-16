@@ -94,9 +94,9 @@
           const beat=Math.floor((choreographyTime??this.elapsed)*3)%2;
           frame=mode==='sing'?beat:mode==='game'?2+beat:mode==='sketch'?4+beat:mode==='design'?6:mode==='edit'?7:mode==='tap'?8:mode==='present'?9:mode==='drop'?(transitionProgress<.35?10:11):transitionProgress<.7?11:9;
         }
-        else if (interactionsReady && (mode === 'pull' || mode === 'read')) {
+        else if (interactionsReady && ['pull','read','swing','webcast','climb'].includes(mode)) {
           action = 'interaction';
-          frame = mode === 'pull' ? Math.floor((choreographyTime ?? this.elapsed) * 2) % 2 : (choreographyTime ?? this.elapsed) < 1 ? 2 : 3;
+          frame = ['swing','webcast'].includes(mode) ? 0 : mode === 'climb' ? Math.floor((choreographyTime ?? this.elapsed)*2)%2 : mode === 'pull' ? Math.floor((choreographyTime ?? this.elapsed) * 2) % 2 : (choreographyTime ?? this.elapsed) < 1 ? 2 : 3;
         }
         else if (mode === 'walk') frame = 4 + (choreographyTime === null ? Math.floor(this.elapsed * 12) : Math.floor(choreographyTime * 8)) % 8;
         else if (actionsReady && ['anticipate', 'jump', 'land', 'crouch', 'enter'].includes(mode)) {
@@ -114,7 +114,7 @@
     }
 
     draw(frame, action = false) {
-      const facing = action === 'interaction' || action==='revision' ? 1 : this.facing;
+      const facing = (action === 'interaction' && !['swing','webcast','climb'].includes(this.mode)) || action==='revision' ? 1 : this.facing;
       if (frame === this.frame && action === this.drawnAction && facing === this.drawnFacing && !['enter','drop','emerge'].includes(this.mode)) return;
       this.frame = frame;
       this.drawnAction = action;
@@ -141,8 +141,18 @@
       this.element.dataset.avatarFrame = String(frame);
     }
 
+    getBackAnchor() {
+      if(!this.registration||!this.loaded)return null;
+      const a=this.registration,r=this.canvas.getBoundingClientRect();
+      // Registered to the atlas torso, so the equipment follows the active pose.
+      const reference=this.drawnAction==='revision'?407:this.drawnAction==='interaction'?757:this.drawnAction?498:this.frame<4?407:382;
+      const backX=a.anchorX-12,backY=a.baseline-reference*.63;
+      return {x:r.left+(360+(backX-a.anchorX)*a.scale*a.facing)*r.width/720,
+        y:r.top+(a.ground-(a.baseline-backY)*a.scale)*r.height/720};
+    }
+
     getHandAnchor() {
-      if(this.drawnAction!=='interaction'||this.mode!=='pull'||!this.registration)return null;
+      if(this.drawnAction!=='interaction'||!['pull','swing','webcast','climb'].includes(this.mode)||!this.registration)return null;
       const sourceHand=this.frame===0?{x:245,y:51}:{x:655,y:352};
       const a=this.registration,r=this.canvas.getBoundingClientRect();
       return {x:r.left+(360+(sourceHand.x-a.anchorX)*a.scale*a.facing)*r.width/720,

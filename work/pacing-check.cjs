@@ -10,6 +10,7 @@ vm.createContext(sandbox);vm.runInContext(fs.readFileSync('pacing.js','utf8')+'\
 const pacer=sandbox.pacer;
 function event(type,props={}){const e={target:new Element(),preventDefault(){this.prevented=true},stopImmediatePropagation(){},...props};for(const f of listeners[type]||[])f(e);return e;}
 function reset(chapter=0){pacer.cancel();now=0;lenis.animatedScroll=(chapter+.25)*state.travel/9;}
+reset();const spaceStart=lenis.animatedScroll;event('keydown',{key:' '});pacer.tick(0,1/60);event('keyup',{key:' '});assert.equal(lenis.animatedScroll,spaceStart,'Space is reserved for jumping, never cinematic scroll');
 function sample({chapter=0,fps=60,intervals=[16],delta=1,keyboard=false}){
  reset(chapter);const start=lenis.animatedScroll;let next=0,n=0;
  if(keyboard)event('keydown',{key:'ArrowDown'});

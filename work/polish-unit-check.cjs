@@ -13,6 +13,10 @@ const sandbox={console,Element,Lenis,Image:class{constructor(){this.complete=tru
 sandbox.window=sandbox;vm.createContext(sandbox);
 for(const file of ['scene-viewport.js','choreography.js','revision.js','companion.js','mascot-catalog.js','mascot-crops.js','mascot.js','pacing.js','director.js'])vm.runInContext(fs.readFileSync(file,'utf8'),sandbox,{filename:file});
 const run=s=>vm.runInContext(s,sandbox);
+run('state.hubLive=true;state.exit=null;state.y=0;state.jumpDelay=0;keyDown("w");keyDown("arrowup")');assert.equal(run('state.jumpDelay'),0,'W and up arrow never jump in the hub');
+run('keyDown(" ")');assert(run('state.jumpDelay')>0,'Space jumps in the hub');
+run('state.jumpDelay=0;keyDown("jump")');assert(run('state.jumpDelay')>0,'mobile jump uses the same action');
+run('state.hubLive=false;state.jumpDelay=0;state.keys.clear()');
 const viewports=[[1440,900],[390,844],[844,390],[667,375],[1024,768]];
 for(const [screenW,screenH] of viewports){
  element('#sceneViewport').clientWidth=screenW;element('#sceneViewport').clientHeight=screenH;run('resize()');
@@ -71,7 +75,7 @@ for(const scene of [1,4,5,6]){
 }
 run('state.scene=0;state.local=.4;state.directedLocal=.4;state.progress=.04;state.previousProgress=.04;state.time=10000;mascot.scene=-1;updatePlayer(.016);state.time=14999;updatePlayer(.016)');assert.notStrictEqual(run('state.mascotDiagnostics.pose'),'sit');
 run('state.time=15500;for(let i=0;i<30;i++)updatePlayer(.016)');assert.strictEqual(run('state.mascotDiagnostics.pose'),'sit');assert.strictEqual(run('mascot.phase'),0);
-const required=run('[...new Set([...scenes.flatMap(s=>s.skills),...routerLayout().lanes.flatMap(l=>l.map(n=>n.label)),"BACKEND","SCHEDULE","GRAPH SWEEP","INSIGHT","PROACTIVE PING","CACHE","AUDIT","Work Experience","GenAI Projects","Hobbies"])]');
+const required=run('[...new Set([...scenes.flatMap(s=>s.skills),...routerLayout().lanes.flatMap(l=>l.map(n=>n.label)),"BACKEND","SCHEDULE","GRAPH SWEEP","INSIGHT","PROACTIVE PING","CACHE","AUDIT","Work Experience","GenAI Lab","Hobbies"])]');
 // Regression: the hand-side rope must live only on the foreground canvas,
 // while its horizontal/reel-side run stays on the scenery canvas.
 const frontCalls=[];

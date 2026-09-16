@@ -1,0 +1,36 @@
+html:has(.playable-world), .playable-world { height: 100%; overflow: hidden; overscroll-behavior: none; }
+.world-viewport { touch-action: pinch-zoom; }
+.world-avatar { --player-s: .56; pointer-events: none !important; }
+.world-hud { position: absolute; inset: max(16px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) auto max(20px, env(safe-area-inset-left)); z-index: 60; display: flex; align-items: center; gap: 20px; pointer-events: none; }
+.world-hud a, .world-hud button { pointer-events: auto; }
+.world-return, .world-tools button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border: 1px solid #486b64; background: #0c1a20e8; border-radius: 6px; padding: 10px 14px; font: 12px monospace; }
+.world-return { gap: 8px; color: #84f5ad; }
+.world-heading p { margin: 0 0 4px; font: 10px monospace; color: #81a69c; letter-spacing: 1px; }
+.world-heading h1 { margin: 0; font-size: 24px; font-weight: 650; }
+.world-tools { margin-left: auto; display: flex; gap: 8px; }
+.world-status { position: absolute; right: max(24px, env(safe-area-inset-right)); top: 95px; z-index: 50; display: grid; justify-items: end; gap: 10px; color: #a8c1c8; font: 11px monospace; pointer-events: none; }
+#worldFuel { color: #67daf5; } #worldFuel meter { width: 90px; margin-left: 10px; vertical-align: middle; }
+.world-keyboard-hint { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); margin: 0; max-width: 90%; width: max-content; font: 11px/1.7 monospace; text-align: center; color: #a8c1c8; z-index: 50; pointer-events: none; }
+.world-touch { position: absolute; bottom: max(14px, env(safe-area-inset-bottom)); z-index: 65; display: none; gap: 10px; }
+.world-movement { left: max(18px, env(safe-area-inset-left)); }.world-actions { right: max(18px, env(safe-area-inset-right)); }
+.world-touch button { width: 52px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 1px solid #597c72; background: #0d2229ed; color: #b5fbd1; border-radius: 10px; font-size: 24px; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.world-touch b { font-size: 22px; line-height: 1; font-weight: normal; }.world-touch span { font: 8px monospace; }
+.world-touch button.is-held, .world-touch button[aria-pressed="true"] { background: #325d50; border-color: #a0ffc3; }.world-touch button:disabled { opacity: .3; }
+.world-touch button[hidden] { display: none; }
+.nearby-exhibit { position: absolute; z-index: 55; bottom: 88px; left: 50%; transform: translateX(-50%); padding: 12px 18px; border: 1px solid #84f5ad; border-radius: 6px; background: #0b2524ed; color: #baffd4; font: 12px monospace; min-height: 44px; }
+.nearby-exhibit[hidden] { display: none; }
+.world-dialog { color: #ecf7f1; background: #0e1c23; border: 1px solid #577e73; border-radius: 10px; padding: 36px; width: min(560px, calc(100% - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; }
+.world-dialog::backdrop { background: #020b12c9; }.world-dialog h2 { font-size: 30px; margin: 12px 0 20px; }
+.world-dialog p { color: #b1c3c7; font-size: 15px; line-height: 1.75; white-space: pre-line; }
+.world-dialog .dialog-kicker { font: 11px monospace; color: #84f5ad; margin-right: 30px; }.world-dialog .dialog-footnote { font-size: 11px; color: #7f9e99; margin-bottom: 0; }
+.world-dialog button { min-height: 44px; border: 1px solid #577e73; border-radius: 5px; color: #baffd4; background: #18342f; padding: 10px 14px; }
+.dialog-close { position: absolute; right: 12px; top: 12px; width: 44px; }
+#dialogLinks { margin: 20px 0; }#dialogLinks[hidden] { display: none; }
+#dialogLinks a { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 14px; border: 1px solid #577e73; border-radius: 5px; color: #baffd4; background: #18342f; font-size: 13px; }
+#dialogLinks a:hover { background: #244c40; }
+#dialogDemo { padding-top: 12px; border-top: 1px solid #314942; }#dialogDemo p { font: 11px monospace; }#demoSteps { padding-left: 22px; font: 13px/2 monospace; color: #718b85; }#demoSteps .is-complete { color: #84f5ad; }
+@media (any-pointer: coarse), (max-width: 1099px), (max-height: 599px) {
+  .world-touch { display: flex; }.world-keyboard-hint { display: none; }
+  .world-hud { top: max(8px, env(safe-area-inset-top)); gap: 12px; }.world-heading h1 { font-size: 17px; }.world-heading p { font-size: 8px; letter-spacing: 0; }
+  .world-status { top: 65px; font-size: 10px; }.world-tools button, .world-return { padding: 8px 10px; font-size: 11px; }
+}
