@@ -8,6 +8,7 @@ class ScrollPacer {
     this.editable=e=>e.target instanceof Element&&e.target.closest('input,textarea,select,[contenteditable="true"]');
     window.addEventListener('wheel',e=>{
       if(e.ctrlKey||reducedMotion.matches||this.editable(e)||!Number.isFinite(e.deltaY)||e.deltaY===0)return;
+      window.portfolioTour?.stop();
       e.preventDefault();e.stopImmediatePropagation();
       if(state.exit)return;
       this.pulse(Math.sign(e.deltaY));
@@ -18,6 +19,7 @@ class ScrollPacer {
     },{passive:true});
     window.addEventListener('touchmove',e=>{
       if(this.touchY===null||reducedMotion.matches||this.editable(e)||e.touches.length!==1)return;
+      window.portfolioTour?.stop();
       const y=e.touches[0].clientY,dy=this.touchY-y;this.touchY=y;
       e.preventDefault();e.stopImmediatePropagation();
       if(dy!==0&&!state.exit)this.pulse(Math.sign(dy));
@@ -81,7 +83,7 @@ class ScrollPacer {
     this.heldControl=null;this.direction=0;this.endGesture();
   }
   // Explicit navigation is a seek, never a long-running trip through chapters.
-  go(destination){this.cancel();lenis.scrollTo(destination,{immediate:true});}
+  go(destination){window.portfolioTour?.stop();this.cancel();lenis.scrollTo(destination,{immediate:true});}
   cancel(){this.releaseControl();this.touchY=null;this.keys.clear();}
   tick(time,dt){
     if(state.exit||window.landscapePrompt?.blocked||(reducedMotion.matches&&!this.heldControl)){this.cancel();return;}

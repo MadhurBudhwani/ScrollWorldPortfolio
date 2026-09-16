@@ -4,5 +4,23 @@
   "heading": "A marriage. A promise. A life she never imagined.",
   "summary": "Ananya wants the ordinary magic of companionship: late-night ice cream, random drives, and someone to call her person. An arranged match with Aarav seems to offer that future. But behind a wealthy family's carefully composed welcome, marriage holds secrets she never thought to ask about.",
   "cover": "placeholder-teddy-pixel.png",
-  "links": []
+  "pages": [
+    {
+      "heading": "She married the man she had never met.",
+      "paragraphs": ["The problem? He never showed up.", "Ananya had always wanted an ordinary marriage. Not the perfect wedding. Not the expensive lehenga. Just the little things that came after — sharing a room, fighting over blankets, annoying her husband for absolutely no reason."]
+    },
+    {
+      "heading": "Bahut achhe log hain.",
+      "paragraphs": ["Then she agrees to marry Aarav. He is funny on the phone. Surprisingly easy to talk to. And comes from the kind of family every relative describes with those sacred words.", "There is only one small problem. Aarav is missing from his own wedding. His family has explanations. Ananya has patience. At first."]
+    },
+    {
+      "heading": "Something to keep her company.",
+      "paragraphs": ["Days pass. Aarav still calls her every night, yet somehow never manages to come home. His family treats his absence as inconvenient rather than impossible.", "And sitting in Ananya's new bedroom is an old brown teddy bear. A gift from her absent husband. Something to keep her company until he returns. A placeholder."]
+    },
+    {
+      "heading": "Except sometimes…",
+      "paragraphs": ["Ananya could swear she left it facing the other way.", "And the longer she waits for her husband to come home… the less certain she becomes that she's actually alone."]
+    }
+  ],
+  "links": [{"label": "Read on Wattpad", "href": "https://www.wattpad.com/myworks/415969293-placeholder-teddy"}]
 }

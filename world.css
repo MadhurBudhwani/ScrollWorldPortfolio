@@ -34,3 +34,17 @@ html:has(.playable-world), .playable-world { height: 100%; overflow: hidden; ove
   .world-hud { top: max(8px, env(safe-area-inset-top)); gap: 12px; }.world-heading h1 { font-size: 17px; }.world-heading p { font-size: 8px; letter-spacing: 0; }
   .world-status { top: 65px; font-size: 10px; }.world-tools button, .world-return { padding: 8px 10px; font-size: 11px; }
 }
+/* Touch actions keep their full hit area, including on narrow portrait screens. */
+@media(max-width:540px){
+ .world-hud{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:8px 12px;left:14px;right:14px}
+ .world-heading{min-width:0}.world-heading h1{overflow-wrap:break-word}.world-heading p{line-height:1.4}
+ .world-tools{grid-column:1/3;justify-self:end;margin-left:0}
+ .world-status{top:126px;right:16px;font-size:11px}
+ .world-actions{display:grid;grid-template-columns:repeat(2,52px);gap:8px;right:max(14px,env(safe-area-inset-right))}
+ .world-movement{left:max(14px,env(safe-area-inset-left));gap:8px}
+ .nearby-exhibit{bottom:142px;max-width:calc(100% - 28px);white-space:normal;text-align:center}
+ .about-world .about-route{top:155px;left:14px;max-width:calc(100% - 28px)}
+ .about-world .about-route select{width:220px;max-width:100%}
+ .about-world .world-status{top:124px;left:14px;right:auto}
+ .about-world .world-heading h1,.about-world .world-heading p{max-width:none}
+}

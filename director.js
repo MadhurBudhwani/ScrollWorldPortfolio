@@ -117,6 +117,11 @@ const state = { w:0, h:0, dpr:1, travel:1, top:0, progress:0, scene:-1, time:0, 
 const lenis = new Lenis({ autoRaf:false, smoothWheel:false, syncTouch:false });
 const scrollPacer=new ScrollPacer();
 scrollPacer.bindButtons(document.querySelectorAll('[data-scroll-direction]'));
+const autoplayTour=window.portfolioTour=new AutoplayTour({
+  getState:()=>({scroll:lenis.animatedScroll,title:scenes[state.scene]?.key.toUpperCase()}),
+  seek:progress=>lenis.scrollTo(state.top+state.travel*progress,{immediate:true}),
+  cancelInput:()=>scrollPacer.cancel()
+});
 function resize() {
   const hadLayout=state.w>0,progress=state.progress,relativeX=state.w?state.x/state.w:.2;
   const layout=sceneViewport.resize();
@@ -472,14 +477,18 @@ function frame(time) {
   const dt=Math.min((time-state.time)/1000||1/60,.05);
   state.frameMs=mix(state.frameMs,dt*1000,.05);state.time=time;
   if(window.landscapePrompt?.blocked){
+    if(autoplayTour.active)autoplayTour.stop();
     state.pausedAt??=time;state.keys.clear();scrollPacer.cancel();
     requestAnimationFrame(frame);return;
   }
   if(state.pausedAt!==undefined){mascot.lastMotion+=time-state.pausedAt;delete state.pausedAt;}
   lenis.raf(time);
-  scrollPacer.tick(time,dt);
+  const autoplayFrame=autoplayTour.active;
+  if(autoplayFrame)autoplayTour.tick(dt);else scrollPacer.tick(time,dt);
   state.previousProgress=state.progress;
-  state.progress=clamp((lenis.animatedScroll-state.top)/state.travel);
+  // The browser rounds document scroll to pixels. Render guided playback from
+  // its precise playhead so that rounding cannot jitter the train or avatar.
+  state.progress=autoplayFrame?autoplayTour.progress:clamp((lenis.animatedScroll-state.top)/state.travel);
   const position=Math.min(state.progress*scenes.length,scenes.length-.00001);
   const index=Math.floor(position),p=position-index;
   state.local=p;

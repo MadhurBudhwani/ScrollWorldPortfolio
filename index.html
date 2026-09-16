@@ -26,6 +26,7 @@
         <a href="#writing">Hobbies</a>
         <a href="#hub">Hub</a>
       </nav>
+      <button id="autoplayStart" class="autoplay-start" type="button" hidden aria-label="Start guided tour with music">▶ Auto Play</button>
     </header>
 
     <main id="start">
@@ -61,7 +62,7 @@
             <div class="hub-note">
               <p>08 / Explore further</p>
               <h2>Choose a world.</h2>
-              <span>Experience, intelligent systems, and everything beyond work.</span>
+              <span>Experience, intelligent systems, life beyond code, and the person behind it all.</span>
             </div>
             <button class="ground-portal portal-work" data-world="work" aria-label="Enter Work Experience">
               <span class="portal-mouth" aria-hidden="true"></span><strong>Work Experience</strong>
@@ -71,6 +72,9 @@
             </button>
             <button class="ground-portal portal-hobbies" data-world="hobbies" aria-label="Enter Hobbies">
               <span class="portal-mouth" aria-hidden="true"></span><strong>Hobbies</strong>
+            </button>
+            <button class="ground-portal portal-about" data-world="about" aria-label="Enter About Me — the Curiosity Observatory">
+              <span class="portal-mouth" aria-hidden="true"></span><strong>About Me</strong>
             </button>
           </section>
 
@@ -93,6 +97,9 @@
       </section>
     </main>
 
+    <div id="autoplayControls" class="autoplay-controls" role="group" aria-label="Guided tour controls" hidden>
+      <span id="autoplayStatus"></span><button id="autoplayMute" type="button" aria-pressed="false">Mute</button><button id="autoplayStop" type="button">Stop tour ✕</button>
+    </div>
     <script src="./orientation.js"></script>
     <script src="./scene-viewport.js"></script>
     <script src="./assets/lenis.min.js"></script>
@@ -105,6 +112,7 @@
     <script src="./mascot-crops.js"></script>
     <script src="./mascot.js"></script>
     <script src="./pacing.js"></script>
+    <script src="./autoplay.js"></script>
     <script src="./director.js"></script>
   </body>
 </html>

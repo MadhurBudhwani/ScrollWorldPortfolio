@@ -171,3 +171,16 @@ html.orientation-paused { overflow: hidden; overscroll-behavior: none; }
 .scroll-controls svg { width: 24px; height: 24px; pointer-events: none; }
 .scroll-controls span { color: #91b3a7; font: 9px/1.2 monospace; pointer-events: none; }
 @media (any-pointer: coarse), (max-width: 1099px), (max-height: 599px) { .scroll-controls { display: flex; } }
+/* Four destinations share the ground, with the arrival lane kept clear. */
+.portal-work{left:26%}.portal-ai{left:46%}.portal-hobbies{left:66%}.portal-about{left:86%;--portal-color:#b7a0ff}
+.ground-portal{width:min(190px,18%)}
+.portal-about .portal-mouth::after{border-color:#e0d1ff;box-shadow:0 0 18px #b7a0ff55}
+@container scene (max-width:699px){.portal-work{left:14%}.portal-ai{left:38%}.portal-hobbies{left:62%}.portal-about{left:86%}.ground-portal{width:22%}.ground-portal strong{padding-inline:3px}}
+@media(prefers-reduced-motion:no-preference){.portal-about .portal-mouth::after{animation:about-portal-glow 3s ease-in-out infinite}@keyframes about-portal-glow{50%{opacity:.9;box-shadow:0 0 24px #b7a0ffaa}}}
+.autoplay-start{margin-left:auto;min-height:44px;padding:10px 18px;border:1px solid #84f5ad;border-radius:5px;background:#142d29;color:#c1ffdc;font:600 13px monospace;white-space:nowrap}
+.autoplay-start:hover{background:#244c3b;box-shadow:0 0 24px #84f5ad20}
+.autoplay-start[hidden],.autoplay-controls[hidden]{display:none!important}
+.hud.is-compact .autoplay-start{display:none}
+.autoplay-controls{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));z-index:100;display:flex;align-items:center;gap:10px;padding:10px;background:#0b1b24f5;border:1px solid #5d8c80;border-radius:7px;box-shadow:0 8px 35px #0008}
+.autoplay-controls span{font:11px monospace;color:#adc7c9}.autoplay-controls button{min-height:44px;padding:10px 12px;border:1px solid #5d8c80;background:#17332e;border-radius:4px;color:#c1ffdc;font:12px monospace}
+@media(max-width:540px){.autoplay-start{padding:8px 12px;font-size:12px}.autoplay-controls{left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));gap:6px}.autoplay-controls span{flex:1;min-width:0;line-height:1.5}.autoplay-controls button{padding:8px 10px}}

@@ -33,3 +33,9 @@ window.worldLevels={
       {x:3690,floor:740,title:'Video Editing',tag:'06 / MOTION',body:'A screening corner for edits and visual stories. Films have not been added yet.',art:5}
     ]}
 };
+if(window.AboutData)window.worldLevels.about={
+  title:AboutData.title,subtitle:AboutData.subtitle,kind:'observatory',width:4800,power:'LASER',
+  hint:'A / D move · Space jump · Press Shift to fire a palm laser · E explore · Use the station map to jump to an idea',
+  platforms:[{x:0,w:4800,y:740}],
+  exhibits:AboutData.stations.map((s,i)=>({x:440+i*760,floor:740,title:s.title,tag:s.tag,body:s.intro,about:i}))
+};

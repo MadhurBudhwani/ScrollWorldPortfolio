@@ -20,25 +20,70 @@
     }
     pauseMedia(){this.root.querySelectorAll('audio,video').forEach(n=>n.pause());}
     cleanup(){this.pauseMedia();this.cleanups.splice(0).forEach(fn=>fn());}
+    observe(node,fn){
+      let frame=0,last='';const observer=new ResizeObserver(()=>{const size=`${node.clientWidth}/${node.clientHeight}`;if(size===last)return;last=size;cancelAnimationFrame(frame);frame=requestAnimationFrame(fn);});
+      observer.observe(node);this.cleanups.push(()=>{observer.disconnect();cancelAnimationFrame(frame);});
+      frame=requestAnimationFrame(fn);
+    }
+    // Measure real typography; spill words onto another leaf, never into a scroll area.
+    paginate(host,blocks){
+      const pages=[];let current=[];host.replaceChildren();
+      const finish=()=>{if(current.length)pages.push(current);current=[];host.replaceChildren();};
+      for(const block of blocks){
+        let node=el(block.tag,block.cls),text='';host.append(node);
+        for(const word of block.text.split(/\s+/).filter(Boolean)){
+          node.textContent=text?text+' '+word:word;
+          if(host.scrollHeight>host.clientHeight+1 && (text||current.length)){
+            if(text)current.push({...block,text});finish();node=el(block.tag,block.cls,word);host.append(node);text=word;
+          }else text=node.textContent;
+        }
+        if(text)current.push({...block,text});
+      }
+      finish();return pages;
+    }
+    caption(){
+      const nodes=[...this.main.children].filter(n=>n.matches('.hobby-track-title,.hobby-note'));
+      if(!nodes.length)return;
+      const box=el('div','hobby-caption'),text=el('div','caption-text'),controls=el('div','caption-pages'),count=el('span','hobby-counter');
+      nodes[0].before(box);box.append(text,controls);text.append(...nodes);
+      let pages=[],index=0;
+      const blocks=()=>nodes.filter(n=>n.textContent).map(n=>({tag:n.tagName.toLowerCase(),cls:n.className,text:n.textContent}));
+      const show=p=>{index=Math.max(0,Math.min(p,pages.length-1));text.replaceChildren(...(pages[index]||[]).map(b=>el(b.tag,b.cls,b.text)));prev.disabled=index===0;next.disabled=index>=pages.length-1;count.textContent=`${index+1} / ${pages.length}`;};
+      const prev=button('←',()=>show(index-1)),next=button('→',()=>show(index+1));prev.setAttribute('aria-label','Previous details page');next.setAttribute('aria-label','Next details page');count.setAttribute('aria-live','polite');controls.append(prev,count,next);
+      const update=()=>{if(!box.clientHeight)return;if(matchMedia('(max-width:900px), (max-height:620px)').matches){pages=this.paginate(text,blocks());show(index);}else text.replaceChildren(...blocks().map(b=>el(b.tag,b.cls,b.text)));};
+      this.observe(text,update);
+      const observer=new MutationObserver(update);nodes.forEach(n=>observer.observe(n,{subtree:true,characterData:true,childList:true}));this.cleanups.push(()=>observer.disconnect());
+    }
     close(){this.cleanup();this.active=false;this.root.hidden=true;this.dialog.classList.remove('hobby-mode');}
     open(id){
       const i=typeof id==='number'?id:ids.indexOf(id);if(i<0)return;
       this.cleanup();this.active=true;this.id=ids[i];this.root.hidden=false;this.dialog.classList.add('hobby-mode');
       document.querySelector('#dialogTitle').textContent=titles[i];document.querySelector('#dialogTag').textContent=`0${i+1} / ${subtitles[i]}`;
-      this.root.replaceChildren();
+      this.root.replaceChildren();this.root.dataset.room=this.id;this.root.dataset.view='exhibit';
       const nav=el('nav','hobby-nav');nav.setAttribute('aria-label','Hobby rooms');
       titles.forEach((t,j)=>{const b=button(t,()=>this.open(j));b.setAttribute('aria-current',String(j===i));nav.append(b);});this.root.append(nav);
+      const select=el('select','hobby-room-select');select.setAttribute('aria-label','Hobby room');titles.forEach((t,j)=>{const option=el('option','',t);option.value=j;option.selected=j===i;select.append(option);});select.addEventListener('change',()=>this.open(Number(select.value)));this.root.append(select);
       const intro=['One story on the shelf. Open the book, turn its pages, and step into its world.','Choose a recording, then press Play. A small stage for the songs between everything else.','A little game break. Jump the obstacles for 30 seconds, then explore the games I enjoy.','Browse a sketchbook. Select a drawing and take a closer look.','Posters, illustration and composition. Select a piece to see the complete design.','Select a film, press Play, and follow the cut along the timeline.'][i];
       this.root.append(el('p','hobby-intro',intro));
       const grid=el('div','hobby-grid');this.main=el('div','hobby-main');this.side=el('aside','hobby-side');grid.append(this.main,this.side);this.root.append(grid);
       this[ids[i]]();
+      if(!this.main.querySelector('.hobby-caption'))this.caption();
+      const about=el('section','hobby-about');about.append(el('h3','hobby-track-title',subtitles[i]),el('p','',intro));grid.append(about);
+      const views=el('div','hobby-views');views.setAttribute('aria-label','Room views');
+      const modes=[['exhibit','Exhibit'],['collection',i===0?'Bookshelf':'Collection']];if(this.main.querySelector('.hobby-caption'))modes.push(['details','Details']);modes.push(['about','About']);
+      for(const [view,label] of modes){const b=button(label,()=>{this.root.dataset.view=view;[...views.children].forEach(n=>n.setAttribute('aria-pressed',String(n===b)));});b.setAttribute('aria-pressed',String(view==='exhibit'));views.append(b);}nav.after(views);
       const footer=el('div','hobby-toolbar');footer.append(button('← Back to gallery',()=>this.dialog.close()),el('span','hobby-counter',`0${i+1} / 06 · ${subtitles[i]}`));this.root.append(footer);
       if(this.pending){this.root.append(el('p','hobby-new','Collection updated. Select a recording to load the latest files.'));this.pending=false;}
     }
     list(items,onSelect,heading='COLLECTION'){
       this.side.append(el('h3','',heading));const list=el('div','hobby-list');this.side.append(list);
       if(!items.length)return;
-      items.forEach((item,i)=>{const b=button('',()=>{this.selected[this.id]=i;onSelect(item);for(const [j,n]of [...list.children].entries())n.setAttribute('aria-pressed',String(i===j));},'hobby-card');if(item.poster||/\.(png|jpe?g|webp|gif|avif)(?:$|\?)/i.test(item.src))b.append(img(item.poster||item.src,item.title));b.append(el('span','',item.title));b.setAttribute('aria-pressed',String(i===(this.selected[this.id]||0)));list.append(b);});
+      const cards=items.map((item,i)=>{const b=button('',()=>{this.selected[this.id]=i;onSelect(item);cards.forEach((n,j)=>n.setAttribute('aria-pressed',String(i===j)));this.root.dataset.view='exhibit';this.root.querySelectorAll('.hobby-views button').forEach((n,j)=>n.setAttribute('aria-pressed',String(j===0)));},'hobby-card');if(item.poster||/\.(png|jpe?g|webp|gif|avif)(?:$|\?)/i.test(item.src))b.append(img(item.poster||item.src,item.title));b.append(el('span','',item.title));b.setAttribute('aria-pressed',String(i===(this.selected[this.id]||0)));return b;});
+      let groups=[],atPage=0;
+      const pager=el('div','collection-pages'),count=el('span','hobby-counter');count.setAttribute('aria-live','polite');
+      const show=p=>{atPage=Math.max(0,Math.min(groups.length-1,p));cards.forEach(n=>n.hidden=true);(groups[atPage]||[]).forEach(n=>n.hidden=false);prev.disabled=atPage===0;next.disabled=atPage>=groups.length-1;count.textContent=`${atPage+1} / ${groups.length}`;};
+      const prev=button('←',()=>show(atPage-1)),next=button('→',()=>show(atPage+1));prev.setAttribute('aria-label','Previous collection page');next.setAttribute('aria-label','Next collection page');pager.append(prev,count,next);this.side.append(pager);
+      list.append(...cards);this.observe(list,()=>{if(!list.clientHeight)return;groups=[];let group=[];cards.forEach(n=>n.hidden=true);for(const card of cards){card.hidden=false;if(list.scrollHeight>list.clientHeight+1&&group.length){group.forEach(n=>n.hidden=true);groups.push(group);group=[];}group.push(card);}if(group.length)groups.push(group);show(Math.max(0,groups.findIndex(g=>g.includes(cards[this.selected[this.id]||0]))));});
       const at=Math.min(this.selected[this.id]||0,items.length-1);this.selected[this.id]=at;onSelect(items[at]);
     }
     room(canvas,kind,time=0,playing=false){
@@ -55,13 +100,25 @@
       const desk=el('div','book-desk'),page=el('article','book-page');desk.append(page);this.main.append(desk);
       const teddy=el('div','book-teddy');teddy.setAttribute('aria-hidden','true');const cv=el('canvas');cv.width=25;cv.height=30;const c=cv.getContext('2d');c.fillStyle='#ac7546';[[4,2,5,5],[17,2,5,5],[5,5,16,13],[6,18,14,10],[1,19,5,7],[20,19,5,7],[3,26,7,4],[16,26,7,4]].forEach(a=>c.fillRect(...a));c.fillStyle='#32271f';c.fillRect(9,9,2,2);c.fillRect(16,9,2,2);c.fillRect(12,13,3,2);c.fillRect(9,18,8,3);teddy.append(cv);desk.append(teddy);
       const controls=el('div','hobby-controls book-index');const prev=button('← Previous page',()=>show(this.page-1,-1)),next=button('Turn page →',()=>show(this.page+1,1)),count=el('span','hobby-counter');count.setAttribute('aria-live','polite');controls.append(prev,count,next);this.main.append(controls);
-      const show=(p,dir=0)=>{this.page=Math.max(0,Math.min(2,p));page.replaceChildren();page.className='book-page'+(this.page===0?' cover':'');
+      let leaves=[];
+      const show=(p,dir=0)=>{this.page=Math.max(0,Math.min(leaves.length+1,p));page.replaceChildren();page.className='book-page'+(this.page===0?' cover':'');
         if(this.page===0){if(book.cover)page.append(img(book.cover,'Placeholder Teddy — pixel-art cover with a bride and teddy'));else page.append(el('h3','',book.title));}
-        if(this.page===1){page.append(el('span','book-author',book.author||'Madhur Budhwani'),el('h3','',book.heading||book.title),el('p','',book.summary||'The story introduction will be here soon.'));}
-        if(this.page===2){page.append(el('span','book-author','CONTINUE THE STORY'),el('h3','','Read Placeholder Teddy'));if(book.links?.length){for(const link of book.links){const a=el('a','',link.label+' ↗');a.href=link.href;a.target='_blank';a.rel='noopener noreferrer';page.append(a);}}else page.append(el('p','','Reading and publication links will be added here when available.'));}
-        if(dir){void page.offsetWidth;page.classList.add(dir>0?'turn-next':'turn-prev');}prev.disabled=this.page===0;next.disabled=this.page===2;count.textContent=`${this.page+1} / 3`;};
-      this.side.append(el('h3','','ON THE SHELF'));const shelf=el('div','book-shelf');shelf.append(button('Placeholder Teddy',()=>show(0,-1),'book-spine'));this.side.append(shelf,el('p','hobby-note','A novel by Madhur Budhwani. Three pages: the cover, the story, and where to read it.'));show(this.page);
+        else if(this.page<=leaves.length){for(const block of leaves[this.page-1])page.append(el(block.tag,block.cls,block.text));}
+        else {page.append(el('span','book-author','CONTINUE THE STORY · '+book.title));if(book.links?.length){for(const link of book.links){const a=el('a','book-read-link',link.label+' ↗');a.href=link.href;a.target='_blank';a.rel='noopener noreferrer';page.append(a);}}else page.append(el('p','','Reading and publication links will be added here when available.'));}
+        if(dir){void page.offsetWidth;page.classList.add(dir>0?'turn-next':'turn-prev');}prev.disabled=this.page===0;next.disabled=this.page===leaves.length+1;count.textContent=`${this.page+1} / ${leaves.length+2}`;
+      };
+      this.side.append(el('h3','','ON THE SHELF'));const shelf=el('div','book-shelf');shelf.append(button('Placeholder Teddy',()=>show(0,-1),'book-spine'));this.side.append(shelf,el('p','hobby-note','A novel by Madhur Budhwani. Open the cover, turn through the story, and find the reading link on the final page.'));
+      this.observe(desk,()=>{
+        if(!desk.clientHeight)return;
+        const wasLast=this.page>0&&this.page===leaves.length+1;
+        page.className='book-page';leaves=[];
+        const chapters=[{heading:book.heading||book.title,paragraphs:[book.summary||'The story introduction will be here soon.']},...(book.pages||[])];
+        for(const chapter of chapters)leaves.push(...this.paginate(page,[{tag:'span',cls:'book-author',text:book.author||'Madhur Budhwani'},{tag:'h3',text:chapter.heading},...chapter.paragraphs.map(text=>({tag:'p',text}))]));
+        show(wasLast?leaves.length+1:this.page);
+      });
+      show(0);
     }
+
     singing(){
       const shell=el('div','listening-stage'),cv=el('canvas');cv.width=640;cv.height=240;shell.append(cv);this.main.append(shell);this.room(cv,1);
       const title=el('h3','hobby-track-title','The listening room'),note=el('p','hobby-note'),audio=el('audio','hobby-audio');audio.controls=true;audio.preload='metadata';audio.setAttribute('aria-label','Recording playback');this.main.append(title,note,audio);
@@ -80,14 +137,26 @@
       const doJump=()=>{if(running&&!paused&&y===0)vy=520;};
       const key=e=>{if(this.active&&this.id==='gaming'&&e.code==='Space'&&!e.target.closest('button,input')){e.preventDefault();if(!e.repeat)doJump();}};addEventListener('keydown',key);cv.addEventListener('pointerdown',doJump);
       const finish=win=>{running=false;jump.disabled=true;pause.disabled=true;start.textContent='Replay';state.textContent=win?`FINISH! ${score} obstacles cleared. Play again?`:`Three hits · ${score} obstacles cleared. Try again!`;};
-      const tick=t=>{const dt=Math.min(last?(t-last)/1000:0,.04);last=t;if(running&&!paused&&!document.hidden&&!window.landscapePrompt?.blocked){elapsed+=dt;invincible=Math.max(0,invincible-dt);y=Math.max(0,y+vy*dt);vy-=1400*dt;if(y===0)vy=0;
+      const tick=t=>{const dt=Math.min(last?(t-last)/1000:0,.04);last=t;if(running&&!paused&&!cab.hidden&&!document.hidden&&!window.landscapePrompt?.blocked){elapsed+=dt;invincible=Math.max(0,invincible-dt);y=Math.max(0,y+vy*dt);vy-=1400*dt;if(y===0)vy=0;
           if(elapsed>=nextSpawn){obstacles.push({x:670,w:25+(Math.floor(elapsed)%3)*9,h:30+(Math.floor(elapsed)%2)*18,counted:false});nextSpawn+=1.25+(Math.floor(elapsed)%3)*.18;}
           for(const o of obstacles){o.x-=(240+elapsed*3)*dt;if(!o.counted&&o.x+o.w<98){score++;o.counted=true;}if(!invincible&&o.x<126&&o.x+o.w>98&&y<o.h){hits++;invincible=1;state.textContent=`${3-hits} hearts left · Keep going`;if(hits===3)finish(false);}}obstacles=obstacles.filter(o=>o.x>-60);if(elapsed>=30&&running)finish(true);}
         c.fillStyle='#101d2c';c.fillRect(0,0,640,300);for(let i=0;i<25;i++){c.fillStyle=i%2?'#486677':'#90b8ba';c.fillRect((i*83-elapsed*12+1000)%660,i*23%150,2,2);}for(let i=0;i<9;i++){c.fillStyle='#243847';c.fillRect((i*98-elapsed*30+2000)%780-100,130+(i%3)*18,65,130);}c.fillStyle='#92c6a2';c.fillRect(0,250,640,4);c.fillStyle='#283b40';c.fillRect(0,254,640,46);
         c.fillStyle='#e7ac83';c.fillRect(98,208-y,25,20);c.fillStyle=invincible?'#ffc676':'#88ecc0';c.fillRect(96,228-y,30,18);c.fillStyle='#202731';c.fillRect(95,204-y,29,8);c.fillStyle='#17262d';c.fillRect(118,214-y,4,4);c.fillStyle='#b4c0b4';c.fillRect(98,246-y,10,5);c.fillRect(116,246-y,10,5);
         for(const o of obstacles){c.fillStyle='#b37c91';c.fillRect(o.x,250-o.h,o.w,o.h);c.fillStyle='#efb493';c.fillRect(o.x,250-o.h,o.w,5);}c.fillStyle='#d2efd8';c.font='14px monospace';c.fillText(`${Math.max(0,30-Math.floor(elapsed))}s`,20,28);c.fillText('♥'.repeat(Math.max(0,3-hits)),550,28);c.fillText(`CLEARED ${score}`,240,28);
         if(!running||paused){c.fillStyle='#07121acc';c.fillRect(170,96,300,85);c.fillStyle='#f0d195';c.font='bold 19px monospace';c.textAlign='center';c.fillText(paused?'PAUSED':elapsed?'TRY ANOTHER RUN':'READY, PLAYER?',320,133);c.font='12px monospace';c.fillText('SPACE / TAP TO JUMP',320,160);c.textAlign='left';}raf=requestAnimationFrame(tick);};raf=requestAnimationFrame(tick);this.cleanups.push(()=>{cancelAnimationFrame(raf);removeEventListener('keydown',key);});
-      const items=this.data.gaming||[];this.side.classList.add('hobby-games');const note=el('p','hobby-note');this.list(items,item=>{note.textContent=item.note||item.title;},'GAMES I ENJOY');this.side.append(note);if(!items.length)this.side.append(empty('More worlds to explore','My favourite-games collection is on its way.'));
+      const items=this.data.gaming||[];this.side.classList.add('hobby-games');
+      if(items.length){
+        const feature=el('div','game-feature'),art=img('', 'Selected game artwork');feature.append(art);
+        const title=el('h3','hobby-track-title'),note=el('p','hobby-note'),switcher=el('div','hobby-controls game-view-controls');
+        let selectedGame;
+        const show=mini=>{cab.hidden=!mini;feature.hidden=mini;artButton.setAttribute('aria-pressed',String(!mini));playButton.setAttribute('aria-pressed',String(mini));zoom.hidden=mini;};
+        const artButton=button('Game artwork',()=>show(false)),playButton=button('Play mini game',()=>show(true)),zoom=button('Full artwork ↗',()=>{
+          const d=el('dialog','hobby-zoom-dialog');d.setAttribute('aria-label',selectedGame.title+' artwork');d.append(button('← Return to arcade',()=>d.close()),img(selectedGame.src,selectedGame.title+' pixel artwork'));document.body.append(d);d.addEventListener('close',()=>d.remove(),{once:true});d.showModal();this.cleanups.push(()=>{if(d.open)d.close();d.remove();});
+        });
+        switcher.append(artButton,playButton,zoom);this.main.prepend(switcher);this.main.append(feature,title,note);
+        this.list(items,item=>{selectedGame=item;art.src=item.src;art.alt=item.title+' pixel artwork';title.textContent=item.title;note.textContent=item.note;show(false);},'GAMES I ENJOY');
+      }else{this.side.append(el('h3','','GAMES I ENJOY'),empty('More worlds to explore','My favourite-games collection is on its way.'));}
+
     }
     drawing(){this.art('drawing');}
     design(){this.art('design');}
@@ -99,6 +168,7 @@
         if(item.before){const wrap=el('div','art-compare'),after=img(item.src,item.title+' finished'),before=img(item.before,item.title+' earlier version'),line=el('i','compare-line');before.className='compare-before';wrap.append(after,before,line);view.replaceChildren(wrap);const labels=el('div','art-labels');labels.append(el('span','',design?'ORIGINAL / EARLIER VERSION':'SKETCH'),el('span','',design?'EDITED VERSION':'FINISHED'));desk.after(labels);const label=el('label','',design?'Compare versions':'Sketch → finished'),range=el('input');range.type='range';range.min='0';range.max='100';range.value='50';range.setAttribute('aria-label',design?'Compare original and edited design':'Compare sketch and finished drawing');range.addEventListener('input',()=>wrap.style.setProperty('--split',range.value+'%'));label.append(range);controls.append(label);}
         if(item.layers?.length){const layerButton=button('Show layers',()=>{const stack=el('div','layer-stack exploded');item.layers.forEach((src,i)=>{const layer=img(src,item.title+' layer '+(i+1));layer.style.setProperty('--layer',i);stack.append(layer);});view.replaceChildren(stack);controls.append(button('Assemble',()=>stack.classList.remove('exploded')));layerButton.disabled=true;});controls.append(layerButton);}
         if(item.process?.length){controls.append(button('Replay process',()=>{stopProcess();let step=0;const image=img(item.process[0],item.title+' process stage 1');view.replaceChildren(image);const timer=setInterval(()=>{step++;image.src=step<item.process.length?item.process[step]:item.src;image.alt=item.title+' process stage '+(step+1);if(step>=item.process.length)stopProcess();},matchMedia('(prefers-reduced-motion: reduce)').matches?100:900);stopProcess=()=>clearInterval(timer);}));}
+        this.caption();
       };
       this.list(items,select,design?'SELECTED WORK':'SKETCHBOOK');if(!items.length){this.scene(design?4:3);this.main.append(empty(design?'The studio is ready':'A fresh page','Original work will appear in this collection soon.'));}
     }

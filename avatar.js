@@ -88,7 +88,17 @@
       this.transitionProgress=transitionProgress;
       let frame = 0;
       let action = false;
-      if (!reduce.matches) {
+      // Flight uses the open, balanced pose in every direction. A jump's tucked
+      // apex frame moves the torso away from the equipment registration.
+      if (mode === 'blast' && revisionReady) {
+        action = 'revision';
+        frame = 8;
+      }
+      else if (mode === 'fly' && actionsReady) {
+        action = true;
+        frame = 3;
+      }
+      else if (!reduce.matches) {
         if(revisionReady && ['sing','game','sketch','design','edit','tap','present','drop','emerge'].includes(mode)) {
           action='revision';
           const beat=Math.floor((choreographyTime??this.elapsed)*3)%2;
@@ -114,7 +124,7 @@
     }
 
     draw(frame, action = false) {
-      const facing = (action === 'interaction' && !['swing','webcast','climb'].includes(this.mode)) || action==='revision' ? 1 : this.facing;
+      const facing = (action === 'interaction' && !['swing','webcast','climb'].includes(this.mode)) || (action==='revision' && this.mode!=='blast') ? 1 : this.facing;
       if (frame === this.frame && action === this.drawnAction && facing === this.drawnFacing && !['enter','drop','emerge'].includes(this.mode)) return;
       this.frame = frame;
       this.drawnAction = action;
@@ -139,6 +149,13 @@
       c.restore();
       this.element.dataset.avatarState = this.mode;
       this.element.dataset.avatarFrame = String(frame);
+    }
+
+    getPalmAnchor() {
+      if(this.mode!=='blast'||this.drawnAction!=='revision'||!this.registration)return null;
+      const a=this.registration,r=this.canvas.getBoundingClientRect();
+      return {x:r.left+(360+(276-a.anchorX)*a.scale*a.facing)*r.width/720,
+        y:r.top+(a.ground-(a.baseline-966)*a.scale)*r.height/720};
     }
 
     getBackAnchor() {

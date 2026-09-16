@@ -9,13 +9,15 @@
   const dialog=$('#worldDialog'),buttons=[...document.querySelectorAll('[data-action]')],keys=new Set(),pointers=new Map(),visited=new Set();
   const lab=new LunarLab(dialog);
   const hobbies=window.HobbyGallery?new HobbyGallery(dialog):null;
+  const about=window.AboutWorld?new AboutWorld(dialog):null;
+  const blaster=level.kind==='observatory'?new AboutBlaster(level):null;
   const camera={x:0,y:0},dog={x:95,y:740,facing:1,lastMotion:0,gait:0};
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');
   let last=0,accumulator=0,clock=0,jumpPending=false,dpr=1,demoIndex=0,wasGrounded=true,dust=0,lastRespawns=0;
   $('#worldTitle').textContent=level.title;$('#worldSubtitle').textContent=level.subtitle;$('#worldHint').textContent=level.hint;
   document.title=level.title+' | Madhur Budhwani';
   $('#powerLabel').textContent=level.power||'';$('[data-action="power"]').hidden=!level.power;
-  $('[data-action="power"]').setAttribute('aria-label',level.kind==='city'?'Hold to attach a web; release to launch':level.kind==='gallery'?'Toggle dog and jetpack':'Hold for jetpack boost');
+  $('[data-action="power"]').setAttribute('aria-label',level.kind==='city'?'Hold to attach a web; release to launch':level.kind==='gallery'?'Toggle dog and jetpack':level.kind==='observatory'?'Fire a blue palm laser at the nearest constellation':'Hold for jetpack boost');
   $('[data-action="climb"]').hidden=level.kind!=='city';
   $('[data-action="descend"]').hidden=level.kind!=='gallery';
   $('#worldFuel').hidden=level.kind!=='moon';
@@ -27,6 +29,7 @@
   function openPanel(title,tag,body,steps,links=[]){
     lab.close();
     hobbies?.close();
+    about?.close();
     clearInput();$('#dialogTitle').textContent=title;$('#dialogTag').textContent=tag;$('#dialogBody').textContent=body;
     const projectLinks=$('#dialogLinks');projectLinks.replaceChildren();projectLinks.hidden=!links.length;
     for(const link of links){const a=document.createElement('a');a.href=link.href;a.textContent=link.label+' ↗';a.target='_blank';a.rel='noopener noreferrer';a.setAttribute('aria-label',link.label+' (opens in a new tab)');projectLinks.append(a);}
@@ -34,10 +37,10 @@
     for(const text of steps||[]){const li=document.createElement('li');li.textContent=text;$('#demoSteps').append(li);}
     $('#demoNext').textContent='Next step';dialog.showModal();$('#closeDialog').focus();
   }
-  function interact(){const exhibit=game.nearby();if(!exhibit||blocked())return;visited.add(exhibit.title);game.player.vx=0;render(0);openPanel(exhibit.title,exhibit.tag,exhibit.body,exhibit.steps,exhibit.links);if(exhibit.lab)lab.open(exhibit.lab);if(level.kind==='gallery')hobbies?.open(exhibit.art);}
+  function interact(){const exhibit=game.nearby();if(!exhibit||blocked())return;visited.add(exhibit.title);game.player.vx=0;render(0);openPanel(exhibit.title,exhibit.tag,exhibit.body,exhibit.steps,exhibit.links);if(exhibit.lab)lab.open(exhibit.lab);if(level.kind==='gallery')hobbies?.open(exhibit.art);if(level.kind==='observatory')about?.open(exhibit.about);}
   $('#closeDialog').addEventListener('click',()=>dialog.close());dialog.addEventListener('close',clearInput);
   $('#demoNext').addEventListener('click',()=>{const items=[...$('#demoSteps').children];if(demoIndex===items.length){demoIndex=0;items.forEach(li=>li.classList.remove('is-complete'));}else items[demoIndex++].classList.add('is-complete');$('#demoNext').textContent=demoIndex===items.length?'Replay':'Next step';});
-  $('#helpButton').addEventListener('click',()=>openPanel('You are in control','PLAYABLE WORLD',level.hint.replaceAll(' · ','\n')+'\n\nTouch: hold the arrow buttons to move. '+(level.kind==='gallery'?'Tap JETPACK to transform your dog, then hold RISE or DOWN to fly. Release them to hover. Tap DOG to transform back. Boost is unlimited.': 'Tap JUMP; hold '+level.power+' as needed.')+(level.kind==='city'?' Once attached, hold CLIMB together with WEB to climb. Release CLIMB to swing at that height.':'')+' OPEN works near an exhibit.\n\nSpace is jump in every playable area; hold it to rise with the gallery jetpack. W is reserved for web climbing.\n\nR / Reset: return to the last safe landing. Falling recovers automatically. Wheel and swipe do not move the world.'));
+  $('#helpButton').addEventListener('click',()=>openPanel('You are in control','PLAYABLE WORLD',level.hint.replaceAll(' · ','\n')+'\n\nTouch: hold the arrow buttons to move. '+(level.kind==='gallery'?'Tap JETPACK to transform your dog, then hold RISE or DOWN to fly. Release them to hover. Tap DOG to transform back. Boost is unlimited.': level.kind==='observatory'?'Tap JUMP. Tap LASER to fire at the nearest constellation; its colour changes for three seconds.':'Tap JUMP; hold '+level.power+' as needed.')+(level.kind==='city'?' Once attached, hold CLIMB together with WEB to climb. Release CLIMB to swing at that height.':'')+' OPEN works near an exhibit.\n\nSpace is jump in every playable area; hold it to rise with the gallery jetpack. W is reserved for web climbing.\n\nR / Reset: return to the last safe landing. Falling recovers automatically. Wheel and swipe do not move the world.'));
   $('#rescueButton').addEventListener('click',()=>{clearInput();game.reset();camera.x=clamp(game.player.x-560,0,level.width-1600);camera.y=0;dog.x=game.player.x-80;dog.y=game.player.y;});
   $('#nearbyExhibit').addEventListener('click',interact);
   const keyActions={KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',Space:'jump',KeyW:'climb',KeyS:'descend',ArrowDown:'descend',ShiftLeft:'power',ShiftRight:'power',KeyE:'interact'};
@@ -49,6 +52,7 @@
     const action=keyActions[e.code];if(!action)return;e.preventDefault();
     if(action==='interact'){if(!e.repeat)interact();return;}
     if(action==='power'&&level.kind==='gallery'){if(!e.repeat)game.toggleJetpack();return;}
+    if(action==='power'&&blaster){if(!e.repeat)blaster.fire(game.player);return;}
     if(action==='jump'&&!e.repeat)jumpPending=true;
     keys.add(action);
   });
@@ -59,16 +63,17 @@
       if(e.button!==0||blocked()||button.disabled)return;e.preventDefault();
       if(action==='interact'){interact();return;}
       if(action==='power'&&level.kind==='gallery'){game.toggleJetpack();return;}
+      if(action==='power'&&blaster){blaster.fire(game.player);return;}
       pointers.set(e.pointerId,action);button.setPointerCapture(e.pointerId);button.classList.add('is-held');
       if(action==='jump')jumpPending=true;
     });
     const release=e=>{pointers.delete(e.pointerId);if(!held(action))button.classList.remove('is-held');if(action==='power'&&!held(action))game.release();};
     for(const name of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(name,release);
     button.addEventListener('contextmenu',e=>e.preventDefault());
-    button.addEventListener('keydown',e=>{if(![' ','Enter'].includes(e.key)||blocked())return;e.preventDefault();if(action==='interact'){if(!e.repeat)interact();return;}if(action==='power'&&level.kind==='gallery'){if(!e.repeat)game.toggleJetpack();return;}keys.add(action);button.classList.add('is-held');if(action==='jump'&&!e.repeat)jumpPending=true;});
+    button.addEventListener('keydown',e=>{if(![' ','Enter'].includes(e.key)||blocked())return;e.preventDefault();if(action==='interact'){if(!e.repeat)interact();return;}if(action==='power'&&level.kind==='gallery'){if(!e.repeat)game.toggleJetpack();return;}if(action==='power'&&blaster){if(!e.repeat)blaster.fire(game.player);return;}keys.add(action);button.classList.add('is-held');if(action==='jump'&&!e.repeat)jumpPending=true;});
     button.addEventListener('keyup',e=>{if(![' ','Enter'].includes(e.key))return;e.preventDefault();keys.delete(action);button.classList.remove('is-held');if(action==='power')game.release();});
     button.addEventListener('blur',()=>{keys.delete(action);for(const [id,a] of pointers)if(a===action)pointers.delete(id);button.classList.remove('is-held');if(action==='power')game.release();});
-    button.addEventListener('click',e=>{if(e.detail!==0||blocked())return;if(action==='interact')interact();if(action==='jump')jumpPending=true;if(action==='power'&&level.kind==='gallery')game.toggleJetpack();});
+    button.addEventListener('click',e=>{if(e.detail!==0||blocked())return;if(action==='interact')interact();if(action==='jump')jumpPending=true;if(action==='power'&&level.kind==='gallery')game.toggleJetpack();if(action==='power'&&blaster)blaster.fire(game.player);});
   }
   addEventListener('blur',clearInput);document.addEventListener('visibilitychange',clearInput);addEventListener('resize',resize);
   addEventListener('wheel',e=>{if(!e.ctrlKey&&!e.target.closest?.('dialog'))e.preventDefault();},{passive:false});
@@ -76,6 +81,7 @@
   function label(text,x,y,size=18,color='#dbece5',align='left'){c.font=`600 ${size}px monospace`;c.fillStyle=color;c.textAlign=align;c.fillText(text,x,y);}
   function line(points,color,width=2,context=c){context.strokeStyle=color;context.lineWidth=width;context.beginPath();points.forEach(([x,y],i)=>i?context.lineTo(x,y):context.moveTo(x,y));context.stroke();}
   function background(){
+    if(level.kind==='observatory'){AboutScene.sky(c,camera,reduced.matches?0:clock);return;}
     const gradient=c.createLinearGradient(0,0,0,900);gradient.addColorStop(0,level.kind==='gallery'?'#181b22':'#060d19');gradient.addColorStop(1,level.kind==='city'?'#162330':level.kind==='moon'?'#10212e':'#2b252a');c.fillStyle=gradient;c.fillRect(0,0,1600,900);
     if(level.kind==='gallery')return;
     for(let i=0;i<105;i++){const x=((i*173.41-camera.x*.07)%1600+1600)%1600,y=(i*91.73)%590;rect(x,y,i%9===0?4:2,i%9===0?4:2,i%4?'#516775':'#a9c9c6');}
@@ -132,6 +138,7 @@
     }
   }
   function stations(){
+    if(level.kind==='observatory')return;
     for(const e of level.exhibits){
       if(e.x<camera.x-500||e.x>camera.x+2000)continue;
       if(level.kind==='moon'){
@@ -226,13 +233,15 @@
   function render(dt){
     const p=game.player,targetX=clamp(p.x-560,0,level.width-1600),targetY=clamp(p.y-260,-650,0);
     camera.x+=(targetX-camera.x)*(1-Math.exp(-5*dt));camera.y+=(targetY-camera.y)*(1-Math.exp(-5*dt));
-    background();c.save();c.translate(-camera.x,-camera.y);if(level.kind==='city')city();else if(level.kind==='moon')moon();else gallery();stations();
+    blaster?.update();
+    if(blaster?.shot)p.facing=blaster.shot.facing;
+    background();c.save();c.translate(-camera.x,-camera.y);if(level.kind==='city')city();else if(level.kind==='moon')moon();else if(level.kind==='observatory'){AboutScene.world(c,level,camera,reduced.matches?0:clock,p,visited,0,blaster);}else gallery();stations();
     if(p.grounded){c.fillStyle='#02091166';c.beginPath();c.ellipse(p.x,p.y+2,38,7,0,0,Math.PI*2);c.fill();}
     if(!wasGrounded&&p.grounded)dust=.3;wasGrounded=p.grounded;dust=Math.max(0,dust-dt);
     if(dust&&!reduced.matches)for(let i=0;i<7;i++)rect(p.x+(i-3)*(20-dust*30),p.y-4-(i%3)*10*(1-dust/.3),4,4,level.kind==='moon'?'#b4c4c7':'#6a9594');
     c.restore();
     actor.style.left=(p.x-camera.x)+'px';actor.style.bottom=(900-p.y+camera.y)+'px';actor.style.setProperty('--facing',p.facing);
-    avatar?.update(dt,{moving:p.grounded&&Math.abs(p.vx)>12,direction:p.facing,airborne:!p.grounded,verticalSpeed:-p.vy,interaction:game.climbing?'climb':game.rope?'swing':game.webShot?'webcast':null,choreographyTime:game.climbing?game.climbPhase:null});
+    avatar?.update(dt,{moving:p.grounded&&Math.abs(p.vx)>12,direction:p.facing,airborne:!p.grounded,verticalSpeed:-p.vy,interaction:game.climbing?'climb':game.rope?'swing':game.webShot?'webcast':!p.grounded&&game.jetpackBlend>=.85?'fly':blaster?.shot?'blast':null,choreographyTime:game.climbing?game.climbPhase:null});
     jetpack();
     f.clearRect(0,0,1600,900);
     const web=game.rope||game.webShot;
@@ -240,6 +249,7 @@
     if(game.boosting){f.fillStyle='#67daf5';f.fillRect(p.x-camera.x-p.facing*23,p.y-camera.y-50,12,25+(Math.floor(clock*20)%2)*14);}
     pet(dt);
     jetpackStraps();
+    if(blaster?.shot){const palm=avatar?.getPalmAnchor();blaster.draw(f,palm?viewport.point(palm.x,palm.y):{x:p.x-camera.x+p.facing*37,y:p.y-camera.y-80},camera,reduced.matches);}
     const nearby=game.nearby(),button=$('#nearbyExhibit');button.hidden=!nearby;if(nearby)button.textContent='Open '+nearby.title+' · E';$('[data-action="interact"]').disabled=!nearby;
     $('[data-action="climb"]').disabled=!game.rope;
     if(level.kind==='gallery'){
@@ -261,5 +271,6 @@
     render(dt);requestAnimationFrame(frame);
   }
   window.playableWorld={game,get diagnostics(){return {world:key,player:{...game.player},camera:{...camera},web:!!game.rope,webLaunch:game.webShot?.progress||0,climbing:game.climbing,ropeLength:game.rope?.length,jetpack:game.jetpack,jetpackBlend:game.jetpackBlend,nearby:game.nearby()?.title,visited:[...visited],paused:blocked()};}};
+  if(level.kind==='observatory'){about.onExplore=i=>visited.add(level.exhibits[i].title);about.route(i=>{clearInput();const e=level.exhibits[i];Object.assign(game.player,{x:e.x,y:e.floor,vx:0,vy:0,grounded:true,platform:0});camera.x=clamp(e.x-560,0,level.width-1600);camera.y=0;dog.x=e.x-85;dog.y=e.floor;about.pulse();render(0);});}
   resize();dog.y=game.player.y;render(0);requestAnimationFrame(frame);
 })();

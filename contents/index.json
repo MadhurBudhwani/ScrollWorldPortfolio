@@ -6,10 +6,86 @@
     "heading": "A marriage. A promise. A life she never imagined.",
     "summary": "Ananya wants the ordinary magic of companionship: late-night ice cream, random drives, and someone to call her person. An arranged match with Aarav seems to offer that future. But behind a wealthy family's carefully composed welcome, marriage holds secrets she never thought to ask about.",
     "cover": "./contents/writing/placeholder-teddy-pixel.png",
-    "links": []
+    "pages": [
+      {
+        "heading": "She married the man she had never met.",
+        "paragraphs": [
+          "The problem? He never showed up.",
+          "Ananya had always wanted an ordinary marriage. Not the perfect wedding. Not the expensive lehenga. Just the little things that came after — sharing a room, fighting over blankets, annoying her husband for absolutely no reason."
+        ]
+      },
+      {
+        "heading": "Bahut achhe log hain.",
+        "paragraphs": [
+          "Then she agrees to marry Aarav. He is funny on the phone. Surprisingly easy to talk to. And comes from the kind of family every relative describes with those sacred words.",
+          "There is only one small problem. Aarav is missing from his own wedding. His family has explanations. Ananya has patience. At first."
+        ]
+      },
+      {
+        "heading": "Something to keep her company.",
+        "paragraphs": [
+          "Days pass. Aarav still calls her every night, yet somehow never manages to come home. His family treats his absence as inconvenient rather than impossible.",
+          "And sitting in Ananya's new bedroom is an old brown teddy bear. A gift from her absent husband. Something to keep her company until he returns. A placeholder."
+        ]
+      },
+      {
+        "heading": "Except sometimes…",
+        "paragraphs": [
+          "Ananya could swear she left it facing the other way.",
+          "And the longer she waits for her husband to come home… the less certain she becomes that she's actually alone."
+        ]
+      }
+    ],
+    "links": [
+      {
+        "label": "Read on Wattpad",
+        "href": "https://www.wattpad.com/myworks/415969293-placeholder-teddy"
+      }
+    ]
   },
   "singing": [],
-  "gaming": [],
+  "gaming": [
+    {
+      "title": "Assassin’s Creed",
+      "src": "./contents/gaming/assassins-creed.png",
+      "note": "Rooftops, hidden paths, and worlds that make you want to explore every corner."
+    },
+    {
+      "title": "Brawl Stars",
+      "src": "./contents/gaming/brawl-stars.png",
+      "note": "Bright colours, quick matches, and just enough chaos for one more game."
+    },
+    {
+      "title": "Clash of Clans",
+      "src": "./contents/gaming/clash-of-clans.png",
+      "note": "Build a village, rethink the defence, and send the next army into battle."
+    },
+    {
+      "title": "Gears of War",
+      "src": "./contents/gaming/gears-of-war.png",
+      "note": "Heavy armour, ruined cities, and battles that feel as massive as they look."
+    },
+    {
+      "title": "GTA: San Andreas",
+      "src": "./contents/gaming/gta-san-andreas.png",
+      "note": "Palm trees, city streets, and the freedom to take the long way to the next mission."
+    },
+    {
+      "title": "PUBG Mobile",
+      "src": "./contents/gaming/pubg-mobile.png",
+      "note": "A landing spot, a plan, and the scramble to keep both intact."
+    },
+    {
+      "title": "WWE SmackDown! Here Comes the Pain",
+      "src": "./contents/gaming/smackdown-here-comes-the-pain.png",
+      "note": "Big entrances, bigger rivalries, and the glorious chaos of the wrestling ring."
+    },
+    {
+      "title": "Valorant",
+      "src": "./contents/gaming/valorant.png",
+      "note": "Precision, quick decisions, and the tension of one more round."
+    }
+  ],
   "drawing": [],
   "design": [
     {

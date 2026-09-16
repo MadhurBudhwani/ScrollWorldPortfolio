@@ -12,3 +12,141 @@
 @keyframes exhibit-in{from{transform:scale(.88);opacity:.25}to{transform:scale(1);opacity:1}}@keyframes page-next{from{transform:rotateY(-35deg);opacity:.7}to{transform:rotateY(0);opacity:1}}@keyframes page-prev{from{transform:rotateY(25deg);opacity:.7}to{transform:rotateY(0);opacity:1}}@keyframes teddy-breathe{50%{transform:translateY(-3px)}}@keyframes strip-in{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0)}}
 @media(max-width:740px){.world-dialog.hobby-mode{padding:18px;width:calc(100% - 12px);max-height:calc(100dvh - 12px)}.hobby-grid{grid-template-columns:minmax(0,1fr)}.hobby-side{border-left:0;border-top:1px solid #475251;padding:16px 0 0;max-height:none}.hobby-list{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}.book-desk{padding:14px;min-height:340px}.book-page{padding:20px;min-height:330px}.book-page.cover{width:205px}.hobby-nav{gap:0}.world-dialog .hobby-nav button{font-size:10px;padding:7px}.art-viewport{height:320px}.hobby-toolbar{align-items:start}.hobby-counter{max-width:45%;text-align:right}.book-teddy{right:0;width:35px}.hobby-side .book-shelf{max-width:200px}.world-dialog.hobby-mode h2{padding-right:28px}}
 @media(prefers-reduced-motion:reduce){#hobbyGallery *,dialog.hobby-mode{animation:none!important;transition:none!important}}
+
+/* A bounded exhibit: the frame and navigation stay put while pages change. */
+.world-dialog.hobby-mode{box-sizing:border-box;width:min(1320px,calc(100% - 32px));height:calc(100dvh - 32px);max-height:900px;padding:20px 26px;overflow:hidden}
+.world-dialog.hobby-mode[open]{display:flex;flex-direction:column}
+.hobby-mode #dialogTag{margin:0 54px 2px 0;flex:none}
+.hobby-mode #dialogTitle{margin:2px 54px 0 0;flex:none}
+#hobbyGallery{display:flex;flex-direction:column;flex:1;min-height:0}
+.hobby-nav{flex:none;padding:10px 0;margin-bottom:10px}
+.hobby-room-select,.hobby-views,.hobby-about{display:none}
+.hobby-intro{flex:none;margin-bottom:10px!important}
+.hobby-grid{flex:1;min-height:0;grid-template-columns:minmax(0,1fr) 260px;gap:22px}
+.hobby-main{display:flex;flex-direction:column;min-height:0;gap:10px}
+.hobby-side{display:flex;flex-direction:column;min-height:0;max-height:none;overflow:hidden}
+.hobby-side h3{flex:none;margin-bottom:12px}
+.hobby-list{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.hobby-card{flex:none}
+.collection-pages{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:10px;flex:none}
+.collection-pages button{min-width:44px}
+.hobby-toolbar{flex:none;margin-top:12px;padding-top:10px;border-top:1px solid #40484b}
+.hobby-controls{flex:none;margin-top:0}
+.hobby-main>.hobby-note{flex:none;margin:0!important}
+.hobby-main>.hobby-track-title{flex:none;margin:0}
+.hobby-main>.hobby-empty{flex:none}
+.book-desk{flex:1;min-height:0;padding:16px 36px 22px;overflow:hidden}
+.book-page{box-sizing:border-box;width:min(100%,560px);height:100%;min-height:0;padding:22px 30px;overflow:hidden}
+.book-page.cover{height:100%;width:auto;max-width:100%;min-height:0;padding:0;aspect-ratio:2/3}
+.book-page.cover img{height:100%;width:100%;object-fit:contain}
+.book-page h3{margin:12px 0 16px}
+.book-page p{margin:0 0 14px;color:#4e3d2c;font-size:15px;line-height:1.8}
+.book-author{display:block}
+.book-index{margin-top:0}
+.book-index .hobby-counter{max-width:none}
+.book-shelf{margin-bottom:12px;flex:none}
+.hobby-stage,.listening-stage,.art-desk,.editing-monitor{flex:1;min-height:0;overflow:hidden}
+.hobby-stage canvas,.listening-stage canvas{height:100%;width:100%;object-fit:contain}
+.listening-stage{margin:0}
+.hobby-audio{flex:none;margin:0;height:54px}
+.eq{flex:none}
+.arcade-cabinet{flex:1;min-height:0;display:flex;flex-direction:column;padding:10px;border-bottom-width:12px}
+.arcade-marquee{flex:none;padding:8px;margin-bottom:10px}
+.arcade-cabinet canvas{flex:1;min-height:0;object-fit:contain}
+.arcade-status{flex:none}
+.arcade-cabinet .hobby-controls{margin-top:8px}
+.art-desk{padding:12px;display:flex}
+.art-viewport{height:100%;min-height:0;overflow:hidden}
+.art-viewport>img{width:100%;height:100%;min-height:0}
+.layer-stack{height:100%}
+.art-labels{flex:none;margin:0}
+.editing-monitor video{height:100%;max-height:100%;min-height:0;object-fit:contain}
+.filmstrip{flex:none;overflow:hidden;margin:0;padding:6px 8px}
+.filmstrip span{min-width:0;height:24px}
+.edit-timeline{flex:none;height:32px;margin-top:0}
+.edit-time{flex:none;margin:0}
+.hobby-zoom-dialog{box-sizing:border-box;overflow:hidden}
+.hobby-zoom-dialog img{max-height:calc(95dvh - 100px)}
+
+/* Collections become another room view when two columns would crowd the exhibit. */
+@media(max-width:900px),(max-height:620px){
+  .world-dialog.hobby-mode{width:calc(100% - 16px);height:calc(100dvh - 16px);max-height:calc(100dvh - 16px);padding:12px 16px}
+  .hobby-mode #dialogTitle{font-size:24px;padding-right:0}
+  .hobby-mode #dialogTag{position:absolute;top:20px;left:220px;right:50px}
+  .hobby-nav{display:none}
+  .hobby-room-select{display:block;position:absolute;top:12px;right:68px;max-width:180px;min-height:36px;background:#202c30;color:#ffe5b5;border:1px solid #ad8c61;padding:6px 10px;font:13px monospace}
+  .hobby-mode #dialogTag{display:none}
+  .hobby-views{display:flex;gap:6px;padding:8px 0;flex:none}
+  .world-dialog .hobby-views button{min-height:36px;padding:6px 12px;font:12px monospace;background:transparent;border-color:#46514e;color:#b1c3c7}
+  .world-dialog .hobby-views button[aria-pressed=true]{color:#ffe5b5;border-color:#ad8c61;background:#3b332b}
+  .hobby-intro{display:none}
+  .hobby-grid{display:flex;gap:0}
+  .hobby-main,.hobby-side,.hobby-about{width:100%;min-width:0}
+  .hobby-side{display:none;border:0;padding:0}
+  #hobbyGallery[data-view=collection] .hobby-main,#hobbyGallery[data-view=about] .hobby-main{display:none}
+  #hobbyGallery[data-view=collection] .hobby-side{display:flex}
+  #hobbyGallery[data-view=about] .hobby-about{display:block}
+  .hobby-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}
+  .hobby-side .book-shelf{max-width:260px;padding:8px 0;margin:0}
+  .world-dialog .book-spine{min-height:72px}
+  .book-desk{padding:12px 28px 18px}
+  .book-page{padding:16px 24px;width:min(100%,680px)}
+  .book-page.cover{width:auto}
+  .hobby-toolbar{margin-top:8px;padding-top:8px}
+  .hobby-counter{max-width:none}
+  .hobby-main{gap:8px}
+  .hobby-empty{padding:14px}
+}
+@media(max-width:520px){
+  .hobby-room-select{max-width:140px}
+  .hobby-mode #dialogTitle{font-size:24px;max-width:calc(100% - 170px)}
+  .hobby-list{display:flex}
+  .hobby-toolbar>.hobby-counter{max-width:45%}
+  .book-desk{padding:10px 18px 16px}
+  .book-page{padding:16px}
+  .book-page h3{font-size:30px}
+}
+@media(max-height:480px){
+  .world-dialog.hobby-mode{padding:8px 12px}
+  .hobby-mode #dialogTitle{font-size:24px}
+  .hobby-room-select{top:8px}
+  .hobby-views{padding:5px 0}
+  .hobby-toolbar{margin-top:6px;padding-top:6px}
+  .hobby-toolbar>.hobby-counter{display:none}
+  .book-desk{padding:8px 20px 10px;border-width:4px}
+  .book-page{padding:10px 18px}
+  .book-page h3{margin:6px 0 10px}
+  .book-page p{margin-bottom:8px}
+  .arcade-cabinet{padding:5px;border-width:5px}
+  .arcade-marquee{padding:4px;margin-bottom:4px}
+  .arcade-status{margin:4px 0!important}
+  .arcade-cabinet .hobby-controls{margin-top:4px}
+  .eq{height:20px}
+  .filmstrip span{height:12px}
+  .edit-timeline{height:22px}
+}
+.hobby-caption{flex:none}
+.caption-text>.hobby-track-title{margin:0 0 4px}
+.caption-text>.hobby-note{margin:0!important}
+.caption-pages{display:none}
+.book-page .book-read-link{font:30px/1.2 Georgia,serif;padding:16px 0}
+@media(max-width:900px),(max-height:620px){
+  #hobbyGallery[data-view=exhibit] .hobby-caption{display:none}
+  #hobbyGallery[data-view=details] .hobby-main>:not(.hobby-caption){display:none}
+  #hobbyGallery[data-view=details] .hobby-caption{display:flex;flex-direction:column;flex:1;min-height:0;padding:12px 18px;border:1px solid #655846;background:#202628}
+  #hobbyGallery[data-view=details] .caption-text{flex:1;min-height:0;overflow:hidden}
+  #hobbyGallery[data-view=details] .caption-pages{display:flex;flex:none;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+  #hobbyGallery[data-view=exhibit] .hobby-main>.hobby-empty{padding:10px}
+  .editing-monitor{border-width:6px}
+}
+@media(max-width:520px){
+  .world-dialog.hobby-mode{padding:10px}
+  .hobby-mode #dialogTitle{max-width:calc(100% - 155px)}
+  .hobby-room-select{max-width:125px;right:60px}
+  .hobby-mode .dialog-close{right:8px;top:8px;width:40px;padding:8px;min-height:36px}
+}
+.game-feature{display:flex;flex:1;min-height:0;align-items:center;justify-content:center;padding:10px;border:6px solid #584061;background:radial-gradient(ellipse at center,#34273e,#101a27);box-shadow:inset 0 0 0 2px #ab7ba0}
+.game-feature img{width:100%;height:100%;min-height:0;object-fit:contain;image-rendering:auto}
+.game-view-controls{flex:none}.world-dialog .game-view-controls button[aria-pressed=true]{border-color:#edc98c;background:#463745}
+@media(max-width:540px){.game-view-controls{gap:6px}.world-dialog .game-view-controls button{padding:8px;font-size:12px;flex:1}.game-feature{padding:6px;border-width:4px}}
+@media(max-height:480px){.world-dialog .game-view-controls button{min-height:36px;padding:8px 12px}.game-feature{padding:4px;border-width:4px}}
