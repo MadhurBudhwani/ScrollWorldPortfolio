@@ -150,3 +150,10 @@
 .game-view-controls{flex:none}.world-dialog .game-view-controls button[aria-pressed=true]{border-color:#edc98c;background:#463745}
 @media(max-width:540px){.game-view-controls{gap:6px}.world-dialog .game-view-controls button{padding:8px;font-size:12px;flex:1}.game-feature{padding:6px;border-width:4px}}
 @media(max-height:480px){.world-dialog .game-view-controls button{min-height:36px;padding:8px 12px}.game-feature{padding:4px;border-width:4px}}
+
+/* Mobile: cap decorative stages so empty rooms don't overwhelm and mini-game doesn't letterbox. */
+@media(max-width:900px),(max-height:620px){
+  #hobbyGallery .hobby-stage,
+  #hobbyGallery .listening-stage{flex:none;max-height:min(38vh,300px);aspect-ratio:4/3}
+  #hobbyGallery .arcade-cabinet{flex:none;max-height:min(60vh,480px)}
+}
