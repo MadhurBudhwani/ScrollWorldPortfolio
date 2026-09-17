@@ -9,7 +9,18 @@
       content="A cinematic 8-bit scrollworld portfolio for Madhur Budhwani: backend engineering, GenAI systems, security, search, delivery, and Placeholder Teddy writing."
     />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <link rel="stylesheet" href="./styles.css" />
+    <script>
+      /* 5-minute cache-bust: browser refetches JS/CSS at most once per 5 min. */
+      (function(){
+        var v = Math.floor(Date.now()/300000);
+        window.__v = v;
+        ['./styles.css'].forEach(function(f){
+          var l = document.createElement('link');
+          l.rel = 'stylesheet'; l.href = f + '?v=' + v;
+          document.head.appendChild(l);
+        });
+      })();
+    </script>
   </head>
   <body>
     <div class="crt" aria-hidden="true"></div>
@@ -100,19 +111,15 @@
     <div id="autoplayControls" class="autoplay-controls" role="group" aria-label="Guided tour controls" hidden>
       <span id="autoplayStatus"></span><button id="autoplayMute" type="button" aria-pressed="false">Mute</button><button id="autoplayStop" type="button">Stop tour ✕</button>
     </div>
-    <script src="./orientation.js"></script>
-    <script src="./scene-viewport.js"></script>
-    <script src="./assets/lenis.min.js"></script>
-    <script src="./assets/lucide.min.js"></script>
-    <script src="./avatar.js"></script>
-    <script src="./choreography.js"></script>
-    <script src="./revision.js"></script>
-    <script src="./companion.js"></script>
-    <script src="./mascot-catalog.js"></script>
-    <script src="./mascot-crops.js"></script>
-    <script src="./mascot.js"></script>
-    <script src="./pacing.js"></script>
-    <script src="./autoplay.js"></script>
-    <script src="./director.js"></script>
+    <script>
+      (function(){
+        var v = window.__v || Math.floor(Date.now()/300000);
+        ['./orientation.js','./scene-viewport.js','./assets/lenis.min.js','./assets/lucide.min.js','./avatar.js','./choreography.js','./revision.js','./companion.js','./mascot-catalog.js','./mascot-crops.js','./mascot.js','./pacing.js','./autoplay.js','./director.js'].forEach(function(f){
+          var s = document.createElement('script');
+          s.src = f + '?v=' + v; s.async = false;
+          document.body.appendChild(s);
+        });
+      })();
+    </script>
   </body>
 </html>

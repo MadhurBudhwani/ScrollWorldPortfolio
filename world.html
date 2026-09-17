@@ -5,12 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>World | Madhur Budhwani</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
-  <link rel="stylesheet" href="./styles.css">
-  <link rel="stylesheet" href="./world.css">
-  <link rel="stylesheet" href="./lunar-lab.css">
-  <link rel="stylesheet" href="./hobby-gallery.css">
-  <link rel="stylesheet" href="./paged-reader.css">
-  <link rel="stylesheet" href="./about-world.css">
+  <script>
+    /* 5-minute cache-bust: browser refetches JS/CSS at most once per 5 min. */
+    (function(){
+      var v = Math.floor(Date.now()/300000);
+      window.__v = v;
+      ['./styles.css','./world.css','./lunar-lab.css','./hobby-gallery.css','./paged-reader.css','./about-world.css'].forEach(function(f){
+        var l = document.createElement('link');
+        l.rel = 'stylesheet'; l.href = f + '?v=' + v;
+        document.head.appendChild(l);
+      });
+    })();
+  </script>
 </head>
 <body class="playable-world">
   <div class="crt" aria-hidden="true"></div>
@@ -63,12 +69,15 @@
     </section>
     <p class="dialog-footnote">Close to resume exploring.</p>
   </dialog>
-  <script src="./orientation.js"></script><script src="./scene-viewport.js"></script>
-  <script src="./avatar.js"></script><script src="./companion.js"></script>
-  <script src="./paged-reader.js"></script><script src="./lunar-deck.js"></script>
-  <script src="./lunar-lab-data.js"></script><script src="./lunar-lab-scene.js"></script><script src="./lunar-lab.js"></script>
-  <script src="./about-data.js"></script><script src="./about-scene.js"></script><script src="./about-world.js"></script><script src="./about-blaster.js"></script>
-  <script src="./contents/index.js"></script><script src="./hobby-gallery.js"></script>
-  <script src="./world-content.js"></script><script src="./world-physics.js"></script><script src="./world-web.js"></script><script src="./world.js"></script>
+  <script>
+    (function(){
+      var v = window.__v || Math.floor(Date.now()/300000);
+      ['./orientation.js','./scene-viewport.js','./avatar.js','./companion.js','./paged-reader.js','./lunar-deck.js','./lunar-lab-data.js','./lunar-lab-scene.js','./lunar-lab.js','./about-data.js','./about-scene.js','./about-world.js','./about-blaster.js','./contents/index.js','./hobby-gallery.js','./world-content.js','./world-physics.js','./world-web.js','./world.js'].forEach(function(f){
+        var s = document.createElement('script');
+        s.src = f + '?v=' + v; s.async = false;
+        document.body.appendChild(s);
+      });
+    })();
+  </script>
 </body>
 </html>
