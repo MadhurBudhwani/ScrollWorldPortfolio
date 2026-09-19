@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>GYROSCOPE — architecture + security (proto v3)</title>
+<style>
+  :root{ --teal:#67daf5; --mint:#84f5ad; --gold:#f3cc70; --pink:#f58caf; --violet:#bf8cff;
+    --ink:#eaf4ff; --dim:#9fb6c8; --mono:"SFMono-Regular",Consolas,"Roboto Mono",monospace; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#000;overflow:hidden;font-family:"Segoe UI",system-ui,sans-serif;color:var(--ink)}
+  body{position:fixed;inset:0;display:flex;justify-content:center}
+  .device{position:relative;width:100%;max-width:460px;height:100dvh;overflow:hidden;background:#05060f;touch-action:none;user-select:none;-webkit-user-select:none;cursor:pointer}
+  .bgstage{position:absolute;inset:0;animation:breathe 12s ease-in-out infinite}
+  @keyframes breathe{0%,100%{filter:saturate(1.12) hue-rotate(-8deg)}50%{filter:saturate(1.28) hue-rotate(8deg)}}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #bg{}
+  #chroma{mix-blend-mode:screen;opacity:.32}
+  #fx{z-index:5}
+  .crt{position:absolute;inset:0;pointer-events:none;z-index:8;background:repeating-linear-gradient(0deg,rgba(0,0,0,.12) 0 1px,transparent 1px 3px);mix-blend-mode:multiply;opacity:.4}
+  .vignette{position:absolute;inset:0;pointer-events:none;z-index:7;box-shadow:inset 0 0 170px 46px #000d}
+
+  .hud{position:absolute;inset:0;z-index:20;pointer-events:none;padding:max(16px,env(safe-area-inset-top)) 16px 16px;display:flex;flex-direction:column;justify-content:space-between}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .beat .no{font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--dim)}
+  .beat .ttl{font-size:18px;font-weight:800;letter-spacing:1.5px;margin-top:2px;color:#fff;text-shadow:0 0 4px #000,0 0 16px var(--acc,#bf8cff)}
+  .tele{font-family:var(--mono);font-size:10px;line-height:1.7;text-align:right;color:#cdeafd;text-shadow:0 0 6px #000}
+  .tele b{color:var(--mint)} .tele .k{color:var(--gold)}
+  .prog{align-self:flex-start;font-family:var(--mono);font-size:11px;letter-spacing:1px;color:var(--acc,#bf8cff);
+    background:#060b16b0;border:1px solid #ffffff18;border-left:2px solid var(--acc,#bf8cff);padding:5px 10px;border-radius:3px;margin-bottom:8px;text-shadow:0 0 6px #000}
+  .cap{font-family:var(--mono);font-size:12px;line-height:1.5;color:#eaf6ff;max-width:88%;min-height:34px;
+    background:linear-gradient(90deg,#060b16e6,#060b1666 70%,transparent);padding:9px 11px;border-left:2px solid var(--acc,#bf8cff);border-radius:2px;text-shadow:0 0 6px #000;transition:opacity .2s}
+  .hint{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;color:var(--dim);text-align:center;margin-top:9px;text-shadow:0 0 6px #000}
+  .btns{position:absolute;z-index:22;left:16px;bottom:14px;display:flex;gap:8px}
+  .btns button{pointer-events:auto;font-family:var(--mono);font-size:11px;letter-spacing:1px;color:var(--ink);background:#08111ecc;border:1px solid #2c4a56;border-radius:9px;padding:9px 12px;cursor:pointer;backdrop-filter:blur(3px)}
+  #tiltBtn{border-color:var(--violet);color:#e7d9ff;box-shadow:0 0 16px -4px var(--violet)}
+  .dots{position:absolute;z-index:22;right:16px;bottom:20px;display:flex;flex-direction:column;gap:7px}
+  .dots i{width:7px;height:7px;border-radius:50%;background:#2c4a56;transition:all .3s}
+  .dots i.on{background:var(--acc,#bf8cff);box-shadow:0 0 10px var(--acc,#bf8cff)}
+  .load{position:absolute;inset:0;z-index:30;display:grid;place-items:center;font-family:var(--mono);font-size:12px;color:var(--dim);background:#05060f}
+</style>
+</head>
+<body>
+<div class="device" id="device">
+  <div class="bgstage"><canvas id="bg"></canvas><canvas id="chroma"></canvas></div>
+  <canvas id="fx"></canvas>
+  <div class="vignette"></div>
+  <div class="crt"></div>
+  <div class="load" id="load">decrypting vault…</div>
+
+  <div class="hud">
+    <div class="top">
+      <div class="beat"><div class="no" id="beatNo">01 / 03</div><div class="ttl" id="beatTtl">IDENTITY AURA</div></div>
+      <div class="tele" id="tele"></div>
+    </div>
+    <div>
+      <div class="prog" id="prog">identity 0 / 5</div>
+      <div class="cap" id="cap">Tap each shard to stamp it into your SESSION_CONTEXT.</div>
+      <div class="hint" id="hint">TAP THE SHARDS · TILT TO LOOK AROUND</div>
+    </div>
+  </div>
+  <div class="btns">
+    <button id="backBtn">← HUB</button>
+    <button id="tiltBtn" hidden>ENABLE TILT</button>
+    <button id="replayBtn">↺ REPLAY</button>
+  </div>
+  <div class="dots" id="dots"></div>
+</div>
+
+<script>
+(() => {
+  const bg=document.getElementById('bg'), chroma=document.getElementById('chroma'), fx=document.getElementById('fx');
+  const bgx=bg.getContext('2d'), cx2=chroma.getContext('2d'), fxx=fx.getContext('2d');
+  const baseC=document.createElement('canvas'), basx=baseC.getContext('2d');
+  let W=0,H=0,dpr=1;
+  function resize(){ const r=document.getElementById('device').getBoundingClientRect(); W=r.width;H=r.height;dpr=Math.min(devicePixelRatio||1,2);
+    for(const c of [bg,chroma,fx,baseC]){c.width=W*dpr;c.height=H*dpr;} for(const c of [bgx,cx2,fxx,basx]){c.setTransform(dpr,0,0,dpr,0,0);} }
+  new ResizeObserver(resize).observe(document.getElementById('device')); resize();
+  const TAU=Math.PI*2, clamp=(v,a=-1,b=1)=>Math.max(a,Math.min(b,v)), dist=(x1,y1,x2,y2)=>Math.hypot(x1-x2,y1-y2);
+
+  const beats=[
+    {img:'assets/worlds/6.webp', no:'01 / 03', ttl:'IDENTITY AURA', acc:'#bf8cff'},
+    {img:'assets/worlds/7.webp', no:'02 / 03', ttl:'INTO THE VAULT', acc:'#67daf5'},
+    {img:'assets/worlds/8.webp', no:'03 / 03', ttl:'PREDICATE ORACLE', acc:'#84f5ad'},
+  ];
+  const imgs=[]; let loaded=0;
+  beats.forEach((b,i)=>{const im=new Image();im.onload=()=>{loaded++;if(loaded===1)document.getElementById('load').style.display='none';};im.src=b.img;imgs[i]=im;});
+
+  // input
+  let tx=0,ty=0,sx=0,sy=0,down=null,isDrag=false;
+  const DOE=window.DeviceOrientationEvent, tiltBtn=document.getElementById('tiltBtn');
+  function orient(e){if(e.gamma==null)return;tx=clamp(e.gamma/32);ty=clamp((e.beta-32)/40);}
+  if(DOE&&typeof DOE.requestPermission==='function'){tiltBtn.hidden=false;tiltBtn.onclick=async()=>{try{if(await DOE.requestPermission()==='granted'){addEventListener('deviceorientation',orient);tiltBtn.hidden=true;}}catch{}};}
+  else if(DOE){addEventListener('deviceorientation',orient);}
+  const dev=document.getElementById('device');
+  const rel=e=>{const r=dev.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};};
+  dev.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;down=rel(e);isDrag=false;});
+  dev.addEventListener('pointermove',e=>{ if(!down){ if(e.pointerType==='mouse'){const p=rel(e);tx=clamp(p.x/W*2-1);ty=clamp(p.y/H*2-1);} return;}
+    const p=rel(e); if(dist(p.x,p.y,down.x,down.y)>14)isDrag=true; tx=clamp(p.x/W*2-1);ty=clamp(p.y/H*2-1); });
+  addEventListener('pointerup',e=>{ if(!down)return; const p=rel(e); if(!isDrag) tap(p.x,p.y); down=null; });
+
+  // state
+  let beat=0, t=0, last=0, bgDepth=0, flash=0, flashCol='#fff';
+  const dotsBox=document.getElementById('dots'); beats.forEach(()=>dotsBox.appendChild(document.createElement('i'))); const dotsEls=[...dotsBox.children];
+  const capEl=document.getElementById('cap'), progEl=document.getElementById('prog'), hintEl=document.getElementById('hint');
+  const beatNoEl=document.getElementById('beatNo'), beatTtlEl=document.getElementById('beatTtl'), teleEl=document.getElementById('tele');
+  function say(txt){capEl.style.opacity=0;setTimeout(()=>{capEl.textContent=txt;capEl.style.opacity=1;},120);}
+  function boom(col){flash=1;flashCol=col;}
+
+  // ---- Beat 1: sigils ----
+  const sigils=[
+    {name:'UserId', c:'#67daf5', mean:'UserId — who you are.'},
+    {name:'CompanyId', c:'#84f5ad', mean:'CompanyId — your tenant. You never see another company.'},
+    {name:'Role', c:'#f3cc70', mean:'Role — what actions you may take.'},
+    {name:'PermissionType', c:'#f58caf', mean:'PermissionType — the scope of your reach.'},
+    {name:'CacheKey', c:'#bf8cff', mean:'CacheKey — your permission snapshot, revoked on change.'},
+  ].map((s,i)=>({...s, locked:false, slot:i}));
+  let stamped=0;
+
+  // ---- Beat 2: cache gates ----
+  const gates=[
+    {name:'MEMORY', c:'#67daf5', mean:'Memory — per-request cache. Instant.', open:false},
+    {name:'REDIS', c:'#84f5ad', mean:'Redis — shared session cache across the app.', open:false},
+    {name:'ORACLE', c:'#bf8cff', mean:'sp_GetUserPermissionData — the source of truth.', open:false},
+  ];
+  let gateStep=0;
+
+  // ---- Beat 3: rows ----
+  const rows=Array.from({length:8},(_,i)=>({i, read:false}));
+  let readCount=0, denyFlash=0;
+
+  function enterBeat(b){ beat=b; const d=beats[b]; beatNoEl.textContent=d.no; beatTtlEl.textContent=d.ttl;
+    document.documentElement.style.setProperty('--acc',d.acc); dotsEls.forEach((el,i)=>el.classList.toggle('on',i===b));
+    if(b===0){progEl.textContent='identity 0 / 5';hintEl.textContent='TAP THE SHARDS · TILT TO LOOK AROUND';say('Tap each shard to stamp it into your SESSION_CONTEXT.');}
+    if(b===1){progEl.textContent='gates 0 / 3';hintEl.textContent='TAP EACH GATE TO RESOLVE PERMISSION';say('Your stamped identity unlocks each cache layer. Tap the glowing gate.');}
+    if(b===2){progEl.textContent='rows 0 / 4';hintEl.textContent='TILT TO SHIFT IDENTITY · TAP ROWS THAT ARE YOURS';say('RLS filters every row by who you are. Tilt to reshape — tap the rows that glow.');}
+  }
+
+  // layout helpers (positions computed each frame; hit-test uses same)
+  function sigilPos(s){ const cx=W/2, cy=H*0.43, R=Math.min(W,H)*0.31;
+    if(s.locked){ const a=t*0.5 + s.slot*TAU/5; return {x:cx+Math.cos(a)*70+sx*10, y:cy+Math.sin(a)*60+sy*8, r:16}; }
+    const a=-Math.PI/2 + s.slot*TAU/5; return {x:cx+Math.cos(a)*R+sx*16, y:cy+Math.sin(a)*R*0.92+sy*12, r:34}; }
+  function gatePos(i){ return {x:W*0.5, y:H*0.30+i*H*0.155, w:Math.min(W*0.72,300), h:52}; }
+  function rowPos(i){ const cols=2, cw=Math.min(W*0.4,180), gap=16; const c=i%cols, r=Math.floor(i/cols);
+    const totalW=cols*cw+(cols-1)*gap; const x0=(W-totalW)/2; return {x:x0+c*(cw+gap)+cw/2, y:H*0.24+r*H*0.13, w:cw, h:H*0.10}; }
+  function rowYours(i){ const phase=Math.floor((sx+1)*2.5); return ((i*3 + phase) % 4)!==0 ? false : true; }
+
+  function tap(x,y){
+    if(beat===0){ for(const s of sigils){ if(s.locked)continue; const p=sigilPos(s); if(dist(x,y,p.x,p.y)<p.r+14){ s.locked=true;stamped++;boom(s.c);say(s.mean);progEl.textContent='identity '+stamped+' / 5';
+      if(stamped===5){hintEl.textContent='IDENTITY STAMPED · TAP THE CORE TO DESCEND';say('SESSION_CONTEXT complete. Tap the core to descend into the vault.');} return; } }
+      if(stamped===5 && dist(x,y,W/2,H*0.43)<50){ boom('#bf8cff'); enterBeat(1); } return; }
+    if(beat===1){ const g=gates[gateStep]; if(!g)return; const p=gatePos(gateStep); if(Math.abs(x-p.x)<p.w/2 && Math.abs(y-p.y)<p.h/2+10){ g.open=true;boom(g.c);say(g.mean);gateStep++;progEl.textContent='gates '+gateStep+' / 3';
+      if(gateStep===3){hintEl.textContent='PERMISSION RESOLVED · TAP TO ENTER THE ORACLE';say('Permission resolved. Tap anywhere to enter the predicate oracle.');} }
+      else if(gateStep===3){ enterBeat(2); } return; }
+    if(beat===2){ for(const rw of rows){ const p=rowPos(rw.i); if(Math.abs(x-p.x)<p.w/2 && Math.abs(y-p.y)<p.h/2){
+        if(rowYours(rw.i)){ if(!rw.read){rw.read=true;readCount++;boom('#84f5ad');say('Row '+(1000+rw.i)+' — visible: your tenant, your role. RLS allowed it.');progEl.textContent='rows '+readCount+' / 4';
+          if(readCount>=4){hintEl.textContent='THE ARCHIVE OBEYED YOUR IDENTITY';say('Every row bent to who you are. That is row-level security.');}} }
+        else { denyFlash=1;boom('#f58caf');say('ACCESS DENIED — this row belongs to another identity. RLS redacted it.'); }
+        return; } } }
+  }
+
+  // ---- rendering ----
+  function warpBg(im,alpha){ if(!im.complete||!im.naturalWidth)return;
+    const zoom=1.10+Math.sin(t*0.12)*0.035, cover=Math.max(W/im.naturalWidth,H/im.naturalHeight)*zoom;
+    const iw=im.naturalWidth*cover, ih=im.naturalHeight*cover, ox=(W-iw)/2-sx*24, oy=(H-ih)/2-sy*18-Math.sin(t*0.1)*8;
+    const strips=44, sStep=im.naturalHeight/strips, amp=4.6; basx.save(); basx.globalAlpha=alpha;
+    for(let i=0;i<strips;i++){ const s0=i*sStep, warp=Math.sin(s0*0.02+t*0.75)*amp+Math.sin(s0*0.007-t*0.4)*amp*0.7+sx*6;
+      basx.drawImage(im,0,s0,im.naturalWidth,sStep+1, ox+warp, oy+s0*cover, iw, sStep*cover+1.2);} basx.restore(); }
+
+  function drawBg(){ basx.clearRect(0,0,W,H); const i0=Math.min(2,Math.floor(bgDepth)), frac=bgDepth-i0; warpBg(imgs[i0],1); if(frac>0.02&&imgs[i0+1])warpBg(imgs[i0+1],frac);
+    bgx.clearRect(0,0,W,H); bgx.drawImage(baseC,0,0,W*dpr,H*dpr,0,0,W,H);
+    bgx.save();bgx.globalCompositeOperation='screen';bgx.globalAlpha=0.26;bgx.filter='blur(14px)';bgx.drawImage(baseC,0,0,W*dpr,H*dpr,0,0,W,H);bgx.restore();
+    // DIM OVERLAY (tames brightness, seats the foreground)
+    bgx.fillStyle='rgba(6,9,20,0.46)'; bgx.fillRect(0,0,W,H);
+    const g=bgx.createRadialGradient(W/2,H*0.44,40,W/2,H*0.5,Math.max(W,H)*0.75); g.addColorStop(0,'rgba(6,9,20,0)');g.addColorStop(1,'rgba(4,6,14,0.85)'); bgx.fillStyle=g;bgx.fillRect(0,0,W,H);
+    cx2.clearRect(0,0,W,H); cx2.drawImage(bg,0,0,W*dpr,H*dpr, sx*7+3, sy*5+1, W,H); cx2.save();cx2.globalCompositeOperation='multiply';cx2.fillStyle='#7bffe9';cx2.fillRect(0,0,W,H);cx2.restore(); }
+
+  function ring(c,x,y,r,col,w,blur){c.save();c.shadowColor=col;c.shadowBlur=blur;c.strokeStyle=col;c.lineWidth=w;c.beginPath();c.arc(x,y,r,0,TAU);c.stroke();c.restore();}
+  function fill(c,x,y,r,col,blur){c.save();c.shadowColor=col;c.shadowBlur=blur;c.fillStyle=col;c.beginPath();c.arc(x,y,r,0,TAU);c.fill();c.restore();}
+  function label(c,txt,x,y,col,size=9){c.save();c.font=size+'px '+'"SFMono-Regular",Consolas,monospace';c.textAlign='center';c.fillStyle=col;c.shadowColor='#000';c.shadowBlur=4;c.fillText(txt,x,y);c.restore();}
+  function roundr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+
+  function drawFore(){ const c=fxx; c.clearRect(0,0,W,H); const acc=beats[beat].acc; const cx=W/2, cy=H*0.43;
+    if(beat===0){
+      // core (YOU)
+      const pull=stamped/5; ring(c,cx,cy,26+Math.sin(t*3)*2,'#bf8cff',2,18); fill(c,cx,cy,9+pull*4,'#ffffff',26); fill(c,cx,cy,4,'#bf8cff',14);
+      if(stamped===5) ring(c,cx,cy,40+Math.sin(t*4)*4,'#bf8cff',1.5,20);
+      for(const s of sigils){ const p=sigilPos(s);
+        if(s.locked){ c.save();c.globalAlpha=.8;c.strokeStyle=s.c+'88';c.lineWidth=1.2;c.shadowColor=s.c;c.shadowBlur=8;c.beginPath();c.moveTo(cx,cy);c.lineTo(p.x,p.y);c.stroke();c.restore();
+          ring(c,p.x,p.y,p.r,s.c,2,14); fill(c,p.x,p.y,3,s.c,8); }
+        else { const pu=1+Math.sin(t*2+s.slot)*0.12; ring(c,p.x,p.y,p.r*pu,s.c,2.5,16); ring(c,p.x,p.y,p.r*0.55,s.c,1.5,8);
+          c.save();c.globalAlpha=.5+.3*Math.sin(t*3+s.slot);fill(c,p.x,p.y,4,s.c,10);c.restore(); label(c,s.name.toUpperCase(),p.x,p.y+p.r+14,s.c); } }
+    }
+    else if(beat===1){
+      for(let i=0;i<3;i++){ const p=gatePos(i), g=gates[i]; const active=i===gateStep&&!g.open; const col=g.open?g.c:(active?g.c:'#3a5563');
+        c.save(); c.globalAlpha=g.open?0.45:1; c.strokeStyle=col; c.lineWidth=active?2.5:1.5; c.shadowColor=col; c.shadowBlur=active?18:8;
+        roundr(c,p.x-p.w/2,p.y-p.h/2,p.w,p.h,10); c.stroke();
+        if(active){ c.globalAlpha=0.10+0.06*Math.sin(t*4); c.fillStyle=col; c.fill(); }
+        c.restore(); label(c,g.name+(g.open?'  ✓  OPEN':(active?'  ‹ tap ›':'  locked')),p.x,p.y+4,g.open?g.c:(active?'#eaffff':'#7f98a4'),12);
+        // descending key line
+        if(g.open&&i<2){c.save();c.strokeStyle=g.c+'55';c.lineWidth=2;c.setLineDash([3,5]);c.beginPath();c.moveTo(p.x,p.y+p.h/2);c.lineTo(p.x,gatePos(i+1).y-p.h/2);c.stroke();c.restore();}
+      }
+      if(gateStep===3){ label(c,'▼ TAP TO ENTER THE ORACLE ▼',W/2,H*0.82,'#84f5ad',12); }
+    }
+    else if(beat===2){
+      const phase=Math.floor((sx+1)*2.5);
+      for(const rw of rows){ const p=rowPos(rw.i), yours=rowYours(rw.i);
+        c.save();
+        if(yours){ c.strokeStyle='#84f5ad';c.shadowColor='#84f5ad';c.shadowBlur=16;c.lineWidth=2;c.globalAlpha=rw.read?0.5:1;
+          roundr(c,p.x-p.w/2,p.y-p.h/2,p.w,p.h,8);c.stroke(); c.globalAlpha=0.08;c.fillStyle='#84f5ad';c.fill();
+          label(c,rw.read?'row '+(1000+rw.i)+'  ✓':'row '+(1000+rw.i),p.x,p.y+4,'#c7ffe4',11); }
+        else { c.strokeStyle='#f58caf55';c.lineWidth=1;c.globalAlpha=.6; roundr(c,p.x-p.w/2,p.y-p.h/2,p.w,p.h,8);c.stroke();
+          c.globalAlpha=.5; for(let k=0;k<6;k++){const a=rw.i*1.3+k+t*2;c.fillStyle='#f58caf';c.fillRect(p.x-8+Math.cos(a)*10,p.y-4+Math.sin(a)*8,3,3);} label(c,'▓ redacted',p.x,p.y+4,'#f58caf',10); }
+        c.restore(); }
+      // identity scan line
+      c.save();c.strokeStyle='#84f5ad';c.lineWidth=1.5;c.shadowColor='#84f5ad';c.shadowBlur=10;c.globalAlpha=.5; const yy=H*0.18+ (H*0.6)*((t*0.15)%1); c.beginPath();c.moveTo(0,yy);c.lineTo(W,yy);c.stroke();c.restore();
+    }
+    // sparkles (subtle)
+    c.save();c.globalCompositeOperation='lighter';const cols=['#8ff6ff','#f7a9d0','#c9a6ff','#9dffcf'];
+    for(let i=0;i<28;i++){const px=((i*83.3+sx*16)%W+W)%W,py=((i*61.7-t*10*(1+i%3*0.3))%H+H)%H;c.globalAlpha=.18+.3*((i%5)/5);c.fillStyle=cols[i%4];c.shadowColor=cols[i%4];c.shadowBlur=7;c.beginPath();c.arc(px,py,i%6?1:1.6,0,TAU);c.fill();}
+    c.restore();
+    // hit flash
+    if(flash>0){ c.save();c.globalAlpha=flash*0.35;c.fillStyle=flashCol;c.fillRect(0,0,W,H);c.restore(); flash=Math.max(0,flash-0.06); }
+  }
+
+  function loop(now){ if(W<2||H<2){resize();requestAnimationFrame(loop);return;}
+    const dt=Math.min(.05,last?(now-last)/1000:0); last=now; t+=dt;
+    sx+=(tx-sx)*0.07; sy+=(ty-sy)*0.07; bgDepth+=(beat-bgDepth)*Math.min(1,dt*2.2);
+    drawBg(); drawFore();
+    const pct=[0,50,100][beat]; const lat=beat===2?Math.round(6+Math.abs(sx)*44):Math.round(3+((t*11)%6));
+    teleEl.innerHTML=`RLS <b>ON</b> · layer ${pct}%<br>latency <span class="k">${lat}ms</span> · tenant <b>#${1+Math.floor((sx+1)*3)}</b>`;
+    requestAnimationFrame(loop); }
+  requestAnimationFrame(loop);
+
+  document.getElementById('replayBtn').onclick=()=>{ sigils.forEach(s=>s.locked=false); stamped=0; gates.forEach(g=>g.open=false); gateStep=0; rows.forEach(r=>r.read=false); readCount=0; enterBeat(0); };
+  document.getElementById('backBtn').onclick=()=>location.href='./boot-hub-proto.html';
+  enterBeat(0);
+})();
+</script>
+</body>
+</html>

@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>World | Madhur Budhwani</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <script src="./experience-mode.js?v=portrait-routing-2"></script>
   <script>
     /* 5-minute cache-bust: browser refetches JS/CSS at most once per 5 min. */
     (function(){
       var v = Math.floor(Date.now()/300000);
       window.__v = v;
-      ['./styles.css','./world.css','./lunar-lab.css','./hobby-gallery.css','./paged-reader.css','./about-world.css'].forEach(function(f){
+      ['./styles.css','./world.css','./lunar-lab.css','./hobby-gallery.css','./paged-reader.css','./about-world.css'].concat(window.portraitExperience ? ['./portrait.css'] : []).forEach(function(f){
         var l = document.createElement('link');
         l.rel = 'stylesheet'; l.href = f + '?v=' + v;
         document.head.appendChild(l);
@@ -72,7 +73,7 @@
   <script>
     (function(){
       var v = window.__v || Math.floor(Date.now()/300000);
-      ['./orientation.js','./scene-viewport.js','./avatar.js','./companion.js','./paged-reader.js','./lunar-deck.js','./lunar-lab-data.js','./lunar-lab-scene.js','./lunar-lab.js','./about-data.js','./about-scene.js','./about-world.js','./about-blaster.js','./contents/index.js','./hobby-gallery.js','./world-content.js','./world-physics.js','./world-web.js','./world.js'].forEach(function(f){
+      (window.portraitExperience ? ['./avatar.js','./companion.js','./paged-reader.js','./lunar-deck.js','./lunar-lab-data.js','./lunar-lab-scene.js','./lunar-lab.js','./about-data.js','./about-scene.js','./about-world.js','./about-blaster.js','./contents/index.js','./hobby-gallery.js','./world-content.js','./portrait-scene.js','./portrait-app.js'] : ['./orientation.js','./scene-viewport.js','./avatar.js','./companion.js','./paged-reader.js','./lunar-deck.js','./lunar-lab-data.js','./lunar-lab-scene.js','./lunar-lab.js','./about-data.js','./about-scene.js','./about-world.js','./about-blaster.js','./contents/index.js','./hobby-gallery.js','./world-content.js','./world-physics.js','./world-web.js','./world.js']).forEach(function(f){
         var s = document.createElement('script');
         s.src = f + '?v=' + v; s.async = false;
         document.body.appendChild(s);
