@@ -1,12 +1,24 @@
-/* Enter portrait when the viewport becomes mobile; an active tower stays put. */
+/* Mobile enters the world hub; an open portrait world stays put on rotation. */
 (() => {
-  const requested = new URLSearchParams(location.search).get('experience');
+  const params = new URLSearchParams(location.search);
+  const requested = params.get('experience');
+  const isWorld = /(?:^|\/)world\.html$/i.test(location.pathname);
   const portraitViewport = matchMedia('(max-width: 900px) and (orientation: portrait)');
   const touchPointer = matchMedia('(pointer: coarse)');
-  const prefersTower = () => portraitViewport.matches ||
+  const prefersPortrait = () => portraitViewport.matches ||
     (touchPointer.matches && Math.min(screen.width, screen.height) <= 700);
-  window.portraitExperience = requested === 'portrait' || (requested !== 'desktop' && prefersTower());
+  function enterHub(chapter = location.hash.slice(1)) {
+    const url = new URL('./boot-hub-proto.html', location.href);
+    const highlights = { backend:'boot', azure:'boot', delivery:'boot', security:'gyro', search:'gyro', genai:'trace', writing:'hobby', hobbies:'hobby', about:'about' };
+    if (highlights[chapter]) url.searchParams.set('focus', highlights[chapter]);
+    if (chapter === 'hub') url.searchParams.set('return', '1');
+    window.mobileRedirect = true;
+    document.documentElement.classList.add('mobile-redirect');
+    location.replace(url.href);
+  }
+  window.portraitExperience = requested === 'portrait' || (requested !== 'desktop' && prefersPortrait());
   if (window.portraitExperience) {
+    if (!isWorld) { enterHub(); return; }
     document.documentElement.classList.add('portrait-experience');
     window.landscapePrompt = { blocked: false };
     return;
@@ -17,17 +29,14 @@
   // the desktop script bundle has started. Replace it with a fresh document
   // rather than leaving two animation controllers running on the same page.
   let timer;
-  const enterTower = () => {
-    if (!prefersTower()) return;
+  const enterPortrait = () => {
+    if (!prefersPortrait()) return;
+    if (!isWorld) { enterHub(document.querySelector('#stage')?.dataset.scene || location.hash.slice(1)); return; }
     const url = new URL(location.href);
     url.searchParams.set('experience', 'portrait');
-    if (!url.searchParams.has('world')) {
-      const chapter = document.querySelector('#stage')?.dataset.scene;
-      if (chapter) url.hash = chapter;
-    }
     location.replace(url.href);
   };
-  const schedule = () => { clearTimeout(timer); timer = setTimeout(enterTower, 180); };
+  const schedule = () => { clearTimeout(timer); timer = setTimeout(enterPortrait, 180); };
   addEventListener('resize', schedule, { passive: true });
   portraitViewport.addEventListener('change', schedule);
   touchPointer.addEventListener('change', schedule);

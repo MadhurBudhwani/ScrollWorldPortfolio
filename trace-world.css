@@ -1,12 +1,260 @@
-:root{color-scheme:dark;--accent:#83e5fa;--muted:#acc3d2;--mono:Consolas,"SFMono-Regular",monospace;font-family:"Segoe UI",system-ui,sans-serif;color:#ecf6ff;background:#040612}*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none}body{display:grid;place-items:center}button,select,input{font:inherit;color:inherit}button,a,select{-webkit-tap-highlight-color:transparent;touch-action:manipulation}button{cursor:pointer}button:disabled{cursor:default;opacity:.5}button,a,select{outline-offset:4px}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid #b9edff}[hidden]{display:none!important}
-#trace{position:relative;isolation:isolate;width:min(100%,620px);height:100dvh;overflow:hidden;background:#070917}#scenery{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.scanlines{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.12;background:repeating-linear-gradient(0deg,transparent 0 3px,#000 3px 4px)}header{position:absolute;inset:0 0 auto;z-index:8;display:flex;align-items:center;gap:12px;padding:calc(9px + env(safe-area-inset-top)) 20px 8px;background:linear-gradient(#050918e8,#05091877,transparent)}header>a,header>button{display:grid;place-items:center;flex:none;width:44px;height:44px;border:1px solid #a9cfe22e;border-radius:50%;background:#08182a99;text-decoration:none;color:#d9f4ff;font-size:20px}.wordmark{flex:1;font:15px var(--mono);letter-spacing:5px}.wordmark span{display:block;font-size:8px;letter-spacing:1.4px;color:var(--muted);margin-top:5px}
-#brief{position:absolute;z-index:3;left:24px;right:24px;top:calc(81px + env(safe-area-inset-top));pointer-events:none;text-shadow:0 2px 14px #000}.eyebrow{font:10px/1.5 var(--mono);letter-spacing:1.7px;color:var(--accent);margin:0 0 8px}h1{font-size:clamp(28px,8vw,40px);line-height:1.06;letter-spacing:-1.1px;font-weight:500;margin:0 0 10px;text-wrap:balance}#intro{font-size:15px;line-height:1.45;color:#ccdae4;margin:0;max-width:43ch}#request{margin-top:12px;padding:8px 11px;border-left:2px solid var(--accent);background:linear-gradient(90deg,#112537de,#09112040)}#request span{font:8px var(--mono);letter-spacing:1.4px;color:var(--accent)}#request p{font-size:13px;line-height:1.35;margin:3px 0 0;color:#e1eff7}
-#arena{position:absolute;z-index:3;left:24px;right:24px;pointer-events:none}#stationLabel{position:absolute;left:0;right:0;text-align:center;font:10px var(--mono);letter-spacing:1.3px;color:#c5ecff;text-shadow:0 2px 7px #000;pointer-events:none}#artifact{position:absolute;left:0;right:0;bottom:0;pointer-events:auto}#artifact:empty{display:none}.artifact-in{animation:materialise .5s cubic-bezier(.2,.8,.2,1) both}.glass{border:1px solid #86c8e63b;border-radius:12px;padding:14px;background:linear-gradient(125deg,#102338ec,#080f23ee);box-shadow:0 15px 38px #0004,inset 0 1px #b9dfff0a}.glass>p{font-size:14px;line-height:1.45;color:#c5d8e4;margin:7px 0 0}.glass>strong{font-size:17px;font-weight:500}.mini-label{display:block;color:var(--accent);font:9px/1.5 var(--mono);letter-spacing:1.2px;margin-bottom:7px}.selection{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}.selection+.selection{margin-top:10px}select{width:100%;min-height:44px;min-width:0;border:1px solid #6ea0b85e;border-radius:7px;background:#14263b;padding:9px;color:#e6f3ff;font-size:14px}.choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.portal{position:relative;min-height:150px;padding:58px 12px 15px;border:1px solid #7be4d866;border-radius:12px;background:linear-gradient(140deg,#12393dda,#081721ed);text-align:left;overflow:hidden;box-shadow:inset 0 0 25px #73e5d511,0 10px 30px #0003}.portal.galaxy{border-color:#c797f580;background:linear-gradient(140deg,#3b2253d9,#13142beb)}.portal img{position:absolute;width:72px;height:72px;object-fit:contain;right:-3px;top:-8px;opacity:.85;image-rendering:pixelated}.portal strong{display:block;font-size:19px;font-weight:500;line-height:1.2}.portal span{display:block;font-size:12px;line-height:1.4;margin-top:7px;color:#c6dbe6}.portal small{display:block;font:8px var(--mono);letter-spacing:1px;margin-bottom:8px;color:#a3edda}.galaxy small{color:#dab6ff}
-.schema-grid,.tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}.schema-grid button,.tool{min-height:65px;padding:11px;border:1px solid #6c90aa77;border-radius:8px;background:#0c1d30ed;text-align:left;font-size:14px}.schema-grid button span,.tool span{display:block;margin-top:4px;color:#a8c6d7;font-size:11px;line-height:1.4}.schema-grid button[aria-pressed=true],.tool[aria-pressed=true]{border-color:#82e4cb;background:#103c39e8}.schema-grid button:last-child{grid-column:1/-1}.tool{display:flex;align-items:center;gap:7px;min-height:68px}.tool img{width:38px;height:42px;object-fit:contain;image-rendering:pixelated}.tool b{font-size:13px;font-weight:500}.tool span{font-size:10px}.evidence{min-height:44px;font-size:12px;line-height:1.5;color:#d5e4ee;margin:9px 2px 0}.code{font:12px/1.55 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;color:#b0e7f3;margin:8px 0 0}.fault{color:#ffb0bb;background:#492236;padding:2px 4px;border-radius:3px}.fixed{color:#94edc4}.fact{display:flex;justify-content:space-between;gap:12px;font-size:13px;line-height:1.45;padding:7px 0;border-bottom:1px solid #86b5d422}.fact:last-child{border:0}.fact span{color:#a7c2d4}.fact b{font-weight:500;text-align:right}.bar-row{display:grid;grid-template-columns:56px 1fr 22px;align-items:center;gap:10px;font-size:13px;margin-top:11px}.bar-track{height:10px;background:#70ddcf19;border-radius:3px;overflow:hidden}.bar-fill{height:100%;width:var(--bar);background:linear-gradient(90deg,#399cbe,#a6f3d7);border-radius:3px;animation:bar-grow .7s ease both}.bar-row b{font:13px var(--mono)}.receipt-title{font-size:22px!important;color:#c8f5df}.receipt-note{font-size:11px!important;color:#9bb6c8!important}.status-tag{display:inline-block;font:9px var(--mono);letter-spacing:1px;color:#a0edc9;margin-bottom:8px}.quote{padding-left:11px;border-left:2px solid #b69bfb;font-size:14px!important}.denied{color:#ffb8c8!important}.draft{display:grid;gap:8px}.draft .selection{gap:4px}.draft input{width:100%;min-height:44px;background:#13263b;border:1px solid #7299b655;border-radius:6px;padding:8px;font-size:14px}.draft-summary{font-size:12px!important;margin:7px 0 0!important}
-#dock{position:absolute;z-index:6;bottom:0;left:0;right:0;padding:21px 24px calc(8px + env(safe-area-inset-bottom));background:linear-gradient(transparent,#050a1bf2 15%,#050916 80%)}#feedback{font-size:14px;line-height:1.45;margin:0 0 11px;color:#c5dbe6;min-height:20px}#actions{display:flex;gap:8px}#actions button{flex:1;min-height:47px;border-radius:8px;padding:11px;border:1px solid #95dae188;background:linear-gradient(115deg,#205367,#173647);color:#e6fcff;font-size:14px;font-weight:500;box-shadow:0 0 24px #5acddd0b}#actions button.secondary{background:#112036;border-color:#5d749555;font-size:12px;color:#baccdf}.utility{display:flex;justify-content:space-between;gap:12px}.utility button{min-height:42px;background:none;border:0;padding:8px 0;color:#acc3d8;font-size:11px}.utility span{display:inline-grid;place-items:center;min-width:18px;height:18px;border:1px solid #5a7a98;border-radius:5px;font:9px var(--mono);margin-left:4px}.sample{font:8px/1.4 var(--mono);color:#7c96b0;text-align:center;letter-spacing:.2px;margin:0}
-#travel{position:absolute;inset:0;z-index:7;pointer-events:none;opacity:0;background:radial-gradient(ellipse at 50% 44%,#9cddff26,transparent 58%);display:grid;place-items:center}#travel.flying{animation:fly-flash 1.1s ease both}#travel span{margin-top:80px;font:10px var(--mono);letter-spacing:2px;color:#daefff;text-shadow:0 2px 7px #000}#loading{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;justify-content:center;padding:38px;background:#070917}#loading h2{max-width:14ch;font-size:32px;font-weight:500;letter-spacing:-.7px}#loading>p:last-child{font-size:14px;color:#a9c8da}#loading button{min-height:44px;color:#e6f4ff;background:#16384b;border:1px solid #5e9bb4;border-radius:6px}
-dialog{width:calc(100% - 28px);max-width:480px;max-height:calc(100dvh - 28px);margin:auto;border:1px solid #567c9b;border-radius:16px;background:linear-gradient(140deg,#172c44,#090f21);color:#ecf6ff;padding:24px;overflow:auto;box-shadow:0 20px 100px #000a}dialog::backdrop{background:#02050ee8;backdrop-filter:blur(9px)}dialog .close{float:right;width:44px;height:44px;margin:-12px -12px 0 8px;background:none;border:0;font-size:28px}dialog h2{font-size:28px;font-weight:500;line-height:1.15;letter-spacing:-.5px;margin:12px 0 22px}dialog h3{font-size:20px;font-weight:500;line-height:1.2;margin:22px 0 10px}dialog p{font-size:16px;line-height:1.6;color:#bed4e4}dialog label{display:flex;flex-direction:column;gap:7px;font-size:12px;color:#a8c5da}.technical{font:12px/1.55 var(--mono)!important;color:#94b0c9!important;border-top:1px solid #637f9d44;padding-top:13px}#detailBenefit{color:#ade5ce}#options>button:not(.close),#options>a{display:block;width:100%;text-align:left;min-height:48px;padding:12px;margin:9px 0;background:#18314b;border:1px solid #6687a277;border-radius:8px;text-decoration:none;color:#dceefd}
-@keyframes materialise{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:none}}@keyframes fly-flash{0%,100%{opacity:0}40%{opacity:1}}@keyframes bar-grow{from{transform:scaleX(0);transform-origin:left}to{transform:scaleX(1);transform-origin:left}}
-@media(max-height:740px){#brief{top:calc(69px + env(safe-area-inset-top))}h1{font-size:29px;margin-bottom:7px}.eyebrow{margin-bottom:5px}#request{margin-top:8px;padding:6px 9px}#dock{padding-top:14px}#feedback{margin-bottom:8px}.glass{padding:11px}.portal{min-height:129px;padding-top:39px}.portal img{width:55px;height:55px}.portal strong{font-size:17px}}
-@media(orientation:landscape) and (max-height:650px){#trace{width:min(100%,1100px)}header,#brief{width:43%}#brief{right:auto}#arena{left:48%;right:24px}#dock{right:55%;padding-top:12px}h1{font-size:28px}#request{display:none}#intro{font-size:14px}.sample{font-size:8px}}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}.gentle *{animation:none!important;transition:none!important}
+/* Shared page chrome for the portrait worlds (Trace and Backend & Cloud both load this),
+   plus the Trace scene system. The old #arena / #artifact / .glass layout belonged to
+   trace-world.js, which no page loads any more; it was removed rather than left to rot
+   next to selectors that look current. */
+
+/* ---------------- base (scoped to world pages) ---------------- */
+:root{color-scheme:dark;--accent:#83e5fa;--muted:#acc3d2;--mono:Consolas,"SFMono-Regular",monospace}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none}
+body{display:grid;place-items:center;font-family:"Segoe UI",system-ui,sans-serif;color:#ecf6ff;background:#040612}
+[hidden]{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+/* Scoped resets — only apply inside world containers */
+#trace,#boot{position:relative;isolation:isolate;width:min(100%,620px);height:100dvh;overflow:hidden;background:#070917}
+#trace button,#trace select,#trace input,#boot button,#boot select,#boot input{font:inherit;color:inherit}
+#trace button,#trace a,#trace select,#boot button,#boot a,#boot select{-webkit-tap-highlight-color:transparent;touch-action:manipulation;outline-offset:4px}
+#trace button,#boot button{cursor:pointer}
+#trace button:disabled,#boot button:disabled{cursor:default;opacity:.5}
+#trace button:focus-visible,#trace a:focus-visible,#trace select:focus-visible,#boot button:focus-visible,#boot a:focus-visible,#boot select:focus-visible{outline:2px solid #b9edff}
+#scenery{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.scanlines{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.12;background:repeating-linear-gradient(0deg,transparent 0 3px,#000 3px 4px)}
+#trace>header,#boot>header{position:absolute;inset:0 0 auto;z-index:8;display:flex;align-items:center;gap:12px;padding:calc(9px + env(safe-area-inset-top)) 20px 8px;background:linear-gradient(#050918e8,#05091877,transparent)}
+#trace>header>a,#trace>header>button,#boot>header>a,#boot>header>button{display:grid;place-items:center;flex:none;width:44px;height:44px;border:1px solid #a9cfe22e;border-radius:50%;background:#08182a99;text-decoration:none;color:#d9f4ff;font-size:20px}
+.wordmark{flex:1;font:15px var(--mono);letter-spacing:5px}
+.wordmark span{display:block;font-size:8px;letter-spacing:1.4px;color:var(--muted);margin-top:5px}
+
+#brief{position:absolute;z-index:3;left:24px;right:24px;top:calc(81px + env(safe-area-inset-top));pointer-events:none;text-shadow:0 2px 14px #000}
+.eyebrow{font:10px/1.5 var(--mono);letter-spacing:1.7px;color:var(--accent);margin:0 0 8px}
+#trace h1,#boot h1{font-size:clamp(28px,8vw,40px);line-height:1.06;letter-spacing:-1.1px;font-weight:500;margin:0 0 10px;text-wrap:balance}
+#intro{font-size:15px;line-height:1.45;color:#ccdae4;margin:0;max-width:43ch}
+
+/* ---------------- dock ---------------- */
+#dock{position:absolute;z-index:6;bottom:0;left:0;right:0;padding:16px 24px calc(8px + env(safe-area-inset-bottom));background:linear-gradient(transparent,#050a1bf2 15%,#050916 80%)}
+#feedback{font-size:13px;line-height:1.45;margin:0 0 10px;color:#c5dbe6;min-height:19px}
+.utility{display:flex;justify-content:space-between;gap:12px}
+.utility button{min-height:42px;background:none;border:0;padding:8px 0;color:#acc3d8;font-size:11px}
+.utility span{display:inline-grid;place-items:center;min-width:18px;height:18px;border:1px solid #5a7a98;border-radius:5px;font:9px var(--mono);margin-left:4px}
+.sample{font:8px/1.4 var(--mono);color:#7c96b0;text-align:center;letter-spacing:.2px;margin:0}
+
+#loading{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;justify-content:center;padding:38px;background:#070917}
+#loading h2{max-width:14ch;font-size:32px;font-weight:500;letter-spacing:-.7px}
+#loading>p:last-child{font-size:14px;color:#a9c8da}
+#loading button{min-height:44px;color:#e6f4ff;background:#16384b;border:1px solid #5e9bb4;border-radius:6px}
+
+/* ---------------- dialogs ---------------- */
+#trace select,#boot select{width:100%;min-height:44px;min-width:0;border:1px solid #6ea0b85e;border-radius:7px;background:#14263b;padding:9px;color:#e6f3ff;font-size:14px}
+#trace dialog,#boot dialog{width:calc(100% - 28px);max-width:480px;max-height:calc(100dvh - 28px);margin:auto;border:1px solid #567c9b;border-radius:16px;background:linear-gradient(140deg,#172c44,#090f21);color:#ecf6ff;padding:24px;overflow:auto;box-shadow:0 20px 100px #000a}
+#trace dialog::backdrop,#boot dialog::backdrop{background:#02050ee8;backdrop-filter:blur(9px)}
+#trace dialog .close,#boot dialog .close{float:right;width:44px;height:44px;margin:-12px -12px 0 8px;background:none;border:0;font-size:28px}
+#trace dialog h2,#boot dialog h2{font-size:28px;font-weight:500;line-height:1.15;letter-spacing:-.5px;margin:12px 0 22px}
+#trace dialog h3,#boot dialog h3{font-size:20px;font-weight:500;line-height:1.2;margin:22px 0 10px}
+#trace dialog p,#boot dialog p{font-size:16px;line-height:1.6;color:#bed4e4}
+#trace dialog label,#boot dialog label{display:flex;flex-direction:column;gap:7px;font-size:12px;color:#a8c5da}
+.technical{font:12px/1.55 var(--mono)!important;color:#94b0c9!important;border-top:1px solid #637f9d44;padding-top:13px}
+#detailBenefit{color:#ade5ce}
+#options>button:not(.close),#options>a{display:block;width:100%;text-align:left;min-height:48px;padding:12px;margin:9px 0;background:#18314b;border:1px solid #6687a277;border-radius:8px;text-decoration:none;color:#dceefd}
+
+/* ================= Trace scene =================
+   Three stacked layers share one ground line, which trace-game.js measures and
+   writes as inline top/height on the board:
+     #traceBoard — the working surface the request is dragged across
+     #traceCast  — the narrator, standing on the floor below the board
+     #traceSpeech— his bubble, above everything, only while the board is inert
+   The board never overlaps the actor: layout() subtracts his height from the room. */
+#traceCast{position:absolute;inset:0;z-index:3;pointer-events:none}
+#traceSpeech{position:absolute;inset:0;z-index:12;pointer-events:none}
+#traceSpeech>*{pointer-events:auto}
+
+.trace-scene{position:absolute;z-index:4;left:20px;right:20px;
+  display:flex;flex-direction:column;gap:10px;
+  overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;
+  transition:opacity .28s ease,filter .28s ease}
+.trace-scene::-webkit-scrollbar{display:none}
+/* Cards keep their authored height; only a plaque gives ground (see below). */
+.trace-scene>*{flex:none}
+/* While he is talking the board is inert. Say so visually instead of leaving two
+   competing focal points lit at the same brightness. */
+.trace-scene[inert]{opacity:.42;filter:saturate(.55)}
+/* No fill-mode: a filled animation keeps `to{opacity:1}` applied forever and would
+   outrank the inert dim below, which is a declaration rather than an animation. */
+.scene-enter{animation:trace-in .42s cubic-bezier(.2,.8,.2,1)}
+@keyframes trace-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* ---- destinations: every named place the request can go ---- */
+.trace-destination{display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:11px;
+  min-height:62px;padding:11px 13px;text-align:left;
+  border:1px solid #6c90aa77;border-radius:10px;
+  background:linear-gradient(140deg,#0e2135ee,#080f20f2);
+  box-shadow:0 8px 22px #0003;transition:border-color .2s,box-shadow .2s,background .2s,transform .12s}
+.trace-destination img{grid-area:1/1/3/2;width:40px;height:40px;object-fit:contain;image-rendering:pixelated}
+.trace-destination strong{grid-column:2;font-size:14.5px;font-weight:500;line-height:1.25}
+.trace-destination span{grid-column:2;margin-top:4px;font-size:11.5px;line-height:1.4;color:#a8c6d7}
+.trace-destination:active{transform:scale(.99)}
+
+/* the one state that matters mid-drag: this is where it will land */
+.trace-destination.drag-over{border-color:var(--accent);background:linear-gradient(140deg,#14394fef,#0a1b2df5);
+  box-shadow:0 0 0 1px var(--accent),0 0 26px #83e5fa3d}
+.trace-destination[aria-pressed=true]{border-color:#82e4cb;background:linear-gradient(140deg,#103c39e8,#0a1f26ef)}
+.trace-destination[aria-pressed=true] strong:after{content:"  \2713";color:#84f5ad}
+
+.trace-intake{border-color:#83e5fa66}
+.trace-destination.galaxy{border-color:#c797f580;background:linear-gradient(140deg,#2d1d45e8,#12132aef)}
+.trace-destination.galaxy span{color:#d3bdf0}
+.trace-forge,.trace-filter{border-style:dashed;border-color:#7be4d877;background:linear-gradient(140deg,#0f2f33e0,#08161fee)}
+.trace-bin{border-style:dashed;border-color:#f58caf80;background:linear-gradient(140deg,#32172bdd,#0d0f1fee)}
+.trace-bin strong{color:#ffc8d5}
+.trace-destination.needs-context{animation:trace-refuse .42s ease;border-color:#f58caf;box-shadow:0 0 0 1px #f58caf}
+@keyframes trace-refuse{0%,100%{transform:none}20%{transform:translateX(-6px)}45%{transform:translateX(5px)}70%{transform:translateX(-3px)}}
+
+.trace-gates{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.trace-gates .trace-destination{min-height:112px;align-content:start;grid-template-columns:1fr}
+.trace-gates img{grid-area:auto;width:44px;height:44px;margin-bottom:6px}
+.trace-gates strong,.trace-gates span{grid-column:1}
+
+/* Four clues in two rows. The fourth is the unhelpful one, but it is a real choice, so
+   it gets the same footprint as the others — the meter is what tells you it cost you. */
+.trace-shards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.trace-shards .trace-destination{min-height:66px}
+.trace-tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* ---- context budget: an illustration, labelled as one ---- */
+.trace-meter{position:relative;overflow:hidden;padding:9px 12px;border:1px solid #6c90aa55;border-radius:9px;background:#0a1828ee}
+.trace-meter:before{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--load,0%);
+  background:linear-gradient(90deg,#17414d,#2a7f6d);transition:width .4s cubic-bezier(.2,.8,.2,1)}
+.trace-meter.heavy:before{background:linear-gradient(90deg,#4d2434,#8a4a52)}
+.trace-meter strong,.trace-meter span{position:relative;display:block}
+.trace-meter strong{font-size:13px;font-weight:500}
+.trace-meter span{margin-top:3px;font:9px/1.4 var(--mono);letter-spacing:.8px;color:#a8c6d7}
+
+/* ---- the packet the player actually moves ---- */
+.trace-packet{position:relative;z-index:14;margin-top:auto;
+  display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:10px;
+  padding:11px 13px;text-align:left;border:1px solid var(--accent);border-radius:10px;
+  background:linear-gradient(140deg,#14394fef,#0b1c2ff5);
+  box-shadow:0 10px 26px #0005,inset 0 1px #b9dfff14;
+  cursor:grab;touch-action:none;transition:transform .3s cubic-bezier(.2,.9,.3,1),box-shadow .2s}
+.trace-packet img{grid-area:1/1/3/2;width:34px;height:34px;object-fit:contain;image-rendering:pixelated}
+.trace-packet strong{grid-column:2;font-size:14.5px;font-weight:500}
+.trace-packet span{grid-column:2;margin-top:3px;font:9px/1.4 var(--mono);letter-spacing:1px;color:#9fd6ea}
+.trace-packet.is-dragging{cursor:grabbing;z-index:40;transition:none;
+  box-shadow:0 18px 34px #0007,0 0 30px #83e5fa4d}
+
+/* the same token, but wrong — it sits inline in the query it breaks */
+.trace-packet.trace-fault{margin:6px 0 0;grid-template-columns:1fr;border-color:#f58caf;
+  background:linear-gradient(140deg,#43203ae8,#170e20f0)}
+.trace-packet.trace-fault strong,.trace-packet.trace-fault span{grid-column:1}
+.trace-packet.trace-fault strong{color:#ffc8d5;font-family:var(--mono)}
+.trace-packet.trace-fault span{color:#e5a8bd}
+
+/* ---- panels ---- */
+.trace-plaque{padding:14px;border:1px solid #86c8e63b;border-radius:12px;
+  background:linear-gradient(125deg,#102338ec,#080f23ee);box-shadow:0 15px 38px #0004,inset 0 1px #b9dfff0a;
+  transition:border-color .3s,box-shadow .3s}
+.trace-plaque>small{display:block;color:var(--accent);font:9px/1.5 var(--mono);letter-spacing:1.2px;margin-bottom:7px}
+.trace-plaque>strong{display:block;font-size:17px;font-weight:500;line-height:1.25}
+.trace-plaque p{font-size:13.5px;line-height:1.5;color:#c5d8e4;margin:9px 0 0}
+.trace-plaque.validated{border-color:#84f5ad77;box-shadow:0 15px 38px #0004,0 0 24px #84f5ad1f}
+/* A plaque is the reading matter; the controls beside it are the decision. When the
+   scene is taller than the stage, the reading shrinks and scrolls (shrink only, never
+   grow) so the hold, the bin and the packet stay where the hand expects them. */
+.trace-scene>.trace-plaque{flex:0 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;
+  box-shadow:0 15px 38px #0004,inset 0 1px #b9dfff0a,inset 0 -22px 17px -18px #060c1aee}
+.trace-scene>.trace-plaque::-webkit-scrollbar{display:none}
+.trace-query{display:block;margin:10px 0 0;padding:9px 10px;border-left:2px solid var(--accent);
+  font:12px/1.6 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;color:#b0e7f3;background:#0a1a2a99}
+.trace-plaque.validated .trace-query{border-left-color:#84f5ad;color:#c8f5df}
+
+/* ---- deliberate actions: hold, with a tap route that is not a lesser citizen ---- */
+.trace-repair,.trace-approval{display:grid;gap:8px;flex:none}
+/* Approve is the deliberate act and spans the row; the two ways out sit beside each
+   other, so a review screen never costs three stacked full-width buttons. */
+.trace-approval{grid-template-columns:1fr 1fr}
+.trace-approval>.trace-hold{grid-column:1/-1}
+.trace-hold{position:relative;overflow:hidden;min-height:58px;padding:11px 13px;text-align:left;
+  border:1px solid #7be4d877;border-radius:10px;background:#0d2b2fe8}
+.trace-hold:before{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--held,0%);
+  background:linear-gradient(90deg,#1d5a52,#2f8f79)}
+.trace-hold strong,.trace-hold span{position:relative;display:block}
+.trace-hold strong{font-size:14.5px;font-weight:500}
+.trace-hold span{margin-top:3px;font:9px/1.4 var(--mono);letter-spacing:1px;color:#a6d8cd}
+.trace-hold:disabled{opacity:1;border-color:#84f5ad}
+.trace-tap-alternative,.trace-discard,.trace-inline-action{min-height:46px;width:100%;padding:11px;
+  border:1px solid #5d7495aa;border-radius:9px;background:#0f1d33e8;color:#baccdf;font-size:13px;text-align:left}
+.trace-inline-action{margin-top:9px}
+.trace-inline-action:before{content:"\25B8  ";color:var(--accent)}
+.trace-discard{border-color:#8a5d6e88;color:#e2bcc8}
+
+/* ---- results ---- */
+.trace-rows{display:grid;border:1px solid #86b5d42e;border-radius:10px;background:#0a172699;padding:2px 12px}
+.trace-row{display:flex;justify-content:space-between;align-items:center;gap:12px;
+  font-size:12.5px;line-height:1.35;padding:6px 0;border-bottom:1px solid #86b5d422;
+  transition:color .3s,opacity .3s}
+.trace-row:last-child{border-bottom:0}
+.trace-row span{color:#a7c2d4}
+.trace-row b{font-weight:500;text-align:right;font-family:var(--mono)}
+.trace-row.returned span{color:#e1eff7}
+.trace-row.returned b{color:#84f5ad}
+.trace-row.redacted{opacity:.62}
+.trace-row.redacted span{color:#9aa8bd;font-style:italic}
+.trace-row.redacted b{color:#ffb8c8}
+
+.trace-chart-row{display:grid;grid-template-columns:minmax(0,1fr) 38% 24px;align-items:center;gap:10px;
+  font-size:13px;margin-top:11px}
+.trace-chart-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#c5d8e4}
+.trace-chart-row i{display:block;height:10px;border-radius:3px;background:#70ddcf19;position:relative;overflow:hidden}
+.trace-chart-row i:after{content:"";position:absolute;inset:0;width:var(--bar);
+  background:linear-gradient(90deg,#399cbe,#a6f3d7);border-radius:3px;
+  transform-origin:left;animation:bar-grow .7s ease both}
+.trace-chart-row b{font:13px var(--mono);font-weight:500;text-align:right}
+@keyframes bar-grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* ---- the draft you approve ---- */
+.trace-subject{display:flex;flex-direction:column;gap:6px;margin-top:11px}
+.trace-subject>span{font:9px/1.4 var(--mono);letter-spacing:1.2px;color:var(--accent)}
+.trace-subject input{width:100%;min-height:44px;padding:9px;border:1px solid #7299b655;border-radius:7px;
+  background:#13263b;font-size:14px}
+.trace-source-preview{margin-top:11px;padding:11px;border:1px solid #86b5d42e;border-radius:9px;background:#0a172699}
+.trace-source-preview .trace-subject{margin-top:0}
+.trace-source-text{font-size:13.5px!important;line-height:1.55!important;color:#dceefd!important;margin:10px 0 0!important}
+.trace-preview-note{font:10px/1.5 var(--mono)!important;color:#9bb6c8!important;margin-top:9px!important}
+
+/* ---- short screens: tighten the scene, never hide what it explains ---- */
+.compact-trace .trace-scene{gap:8px}
+.compact-trace .trace-destination{min-height:54px;padding:9px 11px}
+.compact-trace .trace-destination img{width:32px;height:32px}
+.compact-trace .trace-destination strong{font-size:13.5px}
+.compact-trace .trace-destination span{font-size:11px}
+.compact-trace .trace-gates .trace-destination{min-height:94px}
+.compact-trace .trace-shards .trace-destination{min-height:62px}
+.compact-trace .trace-plaque{padding:11px}
+.compact-trace .trace-plaque>strong{font-size:15.5px}
+.compact-trace .trace-hold{min-height:50px}
+.compact-trace .trace-packet{padding:9px 11px}
+.compact-trace .trace-row{padding:5px 0;font-size:12px}
+.compact-trace .trace-chart-row{margin-top:9px}
+.compact-trace .trace-meter{padding:7px 11px}
+
+@media(max-height:740px){
+  #brief{top:calc(69px + env(safe-area-inset-top))}
+  #trace h1,#boot h1{font-size:29px;margin-bottom:7px}
+  .eyebrow{margin-bottom:5px}
+  #intro{font-size:14px}
+  #dock{padding-top:12px}
+  #feedback{margin-bottom:8px}
+}
+
+@media(orientation:landscape) and (max-height:650px){
+  #trace,#boot{width:min(100%,1100px)}
+  header,#brief{width:43%}
+  #brief{right:auto}
+  #trace h1,#boot h1{font-size:28px}
+  #intro{font-size:14px}
+  #dock{right:55%;padding-top:12px}
+  .sample{font-size:8px}
+  .trace-scene{left:48%;right:24px}
+}
+
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+.gentle *{animation:none!important;transition:none!important}

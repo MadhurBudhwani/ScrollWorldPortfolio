@@ -1,6 +1,6 @@
 // One mechanical companion, with shared chassis plates across every transformation.
 const companionForms={
-  'BACKEND':['server','BACKEND'],'.NET CORE':['reactor','.NET'], 'EF CORE':['graph','ORM'],
+  'BACKEND':['server','BACKEND'],'.NET 10':['reactor','.NET'], 'EF CORE':['graph','ORM'],
   'SQL SERVER':['database','SQL'],'RLS':['shield','RLS'],'DATABASE ENCRYPTION':['lock','DB AES'],
   'EF INTERCEPTORS':['gateway','EF HOOK'],'SESSION INTERCEPTORS':['identity','SESSION'],
   'REDIS':['cache','REDIS'],'BACKGROUND JOBS':['gears','JOBS'],'CI/CD':['pipeline','CI/CD'],'DESKTOP APPS':['desktop','DESKTOP'],
@@ -81,11 +81,30 @@ function drawMechSymbol(c,type,label,time){
 // Source rectangles retain the generated transparent artwork without resampling it.
 const companionAtlas=new Image();
 companionAtlas.src='./assets/mechanical-companion-pixel-v2.png';
+const companionWalkAtlas=new Image();
+companionWalkAtlas.src='./assets/mechanical-companion-walk-v2.png';
 const companionSprites=[
   [12,116,268,320],[294,122,339,315],[598,165,322,271],[911,160,331,276],
   [26,592,271,211],[347,493,261,310],[677,487,207,326],[968,486,248,323],
   [24,844,294,344],[347,852,275,337],[641,862,272,327],[948,867,288,320]
 ];
+// Six generated gait phases, alpha-trimmed from the 3x2 source sheet. The two
+// original walking poses bookend these in mascot.js for an eight-frame loop.
+const companionWalkSprites=[
+  [28,122,471,345],[516,120,493,347],[1040,122,461,345],
+  [22,596,485,345],[528,592,495,351],[1024,592,495,351]
+];
 // Long tails and muzzles overlap adjacent bounding rectangles in the atlas.
 // Exclude only those neighbouring fragments while drawing each intact sprite.
 const companionGutters={1:[[598,319,35,39]],2:[[598,165,35,62],[911,335,9,19]],3:[[911,236,10,19]]};
+/* `const` at the top of a classic script lives in the global lexical scope, never on
+   `window`. Every canvas scene here reads the bare identifier, but world-engine.js Pet
+   reads `window.companionAtlas`, so the dog silently never drew. Publish the contract
+   explicitly rather than making each reader guess which half of the global it lives in. */
+window.companionAtlas = companionAtlas;
+window.companionSprites = companionSprites;
+window.companionGutters = companionGutters;
+window.companionWalkAtlas = companionWalkAtlas;
+window.companionWalkSprites = companionWalkSprites;
+window.companionForms = companionForms;
+window.drawMechSymbol = drawMechSymbol;

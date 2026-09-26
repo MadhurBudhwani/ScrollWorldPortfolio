@@ -3,20 +3,19 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#070917"><title>Trace · Inside Madhur’s AI systems</title>
-  <link rel="icon" href="./favicon.svg"><link rel="stylesheet" href="./trace-world.css?v=1">
-  <script src="./trace-renderer.js?v=1" defer></script><script src="./trace-world.js?v=1" defer></script>
+  <link rel="icon" href="./favicon.svg"><link rel="stylesheet" href="./speech-bubble.css?v=trace-scene-1"><link rel="stylesheet" href="./world-game.css?v=trace-scene-1"><link rel="stylesheet" href="./trace-world.css?v=trace-scene-1">
+  <script src="./trace-renderer.js?v=trace-scene-1" defer></script><script src="./world-engine.js?v=trace-scene-1" defer></script><script src="./pose-actor.js?v=trace-scene-1" defer></script><script src="./trace-game.js?v=trace-scene-1" defer></script>
 </head>
-<body>
+<body class="trace-page">
 <main id="trace" aria-label="Trace: follow a request through two AI projects">
   <canvas id="scenery" aria-hidden="true"></canvas><div class="scanlines" aria-hidden="true"></div>
-  <header><a href="./boot-hub-proto.html" aria-label="Return to worlds">←</a><div class="wordmark">TRACE<span>GENAI / MADHUR BUDHWANI</span></div><button id="menuButton" aria-label="Journey options">•••</button></header>
-  <section id="brief"><p id="chapter" class="eyebrow"></p><h1 id="title"></h1><p id="intro"></p><div id="request" hidden><span>YOUR REQUEST</span><p></p></div></section>
-  <section id="arena" aria-label="Your request at this station"><div id="stationLabel"></div><div id="artifact"></div></section>
-  <footer id="dock"><p id="feedback" role="status" aria-live="polite"></p><div id="actions"></div><div class="utility"><button id="explain">How I built this ↗</button><button id="journal">Your trace <span id="traceCount">0</span></button></div><p class="sample">Interactive sample · fictional data · no live accounts</p></footer>
-  <div id="travel" aria-hidden="true"><span></span></div>
-  <div id="loading" role="status"><p class="eyebrow">TRACE</p><h2>A question is entering the system.</h2><p>Preparing the gates…</p></div>
+  <header><a href="./boot-hub-proto.html" aria-label="Return to worlds">←</a><div class="wordmark">GenAI<span>TRACE / MADHUR BUDHWANI</span></div><button id="menuButton" aria-label="Journey options">•••</button></header>
+  <section id="brief"><p id="chapter" class="eyebrow"></p><h1 id="title"></h1><p id="intro"></p></section>
+  <section id="traceBoard" aria-label="Guide the request"></section>
+  <div id="traceCast" aria-hidden="true"></div><div id="traceSpeech"></div>
+  <footer id="dock" class="game-dock"><p id="feedback" role="status" aria-live="polite"></p><div class="utility"><button id="explain">How I built this ↗</button><button id="journal">Your trace <span id="traceCount">0</span></button></div><p class="sample">Fictional local demo · no AI, database or accounts connected</p></footer>
 </main>
 <dialog id="details" aria-labelledby="detailTitle"><button class="close" aria-label="Close explanation">×</button><p class="eyebrow">MADHUR / BEHIND THE BUILD</p><h2 id="detailTitle">AI that does useful work.</h2><label>Explore a decision<select id="topic"></select></label><h3 id="detailHeading"></h3><p id="detailText"></p><p id="detailBenefit"></p><p id="detailTech" class="technical"></p></dialog>
 <dialog id="traceLog" aria-labelledby="logTitle"><button class="close" aria-label="Close trace">×</button><p class="eyebrow">THIS REQUEST / LOCAL JOURNEY</p><h2 id="logTitle">Nothing hidden behind “thinking”.</h2><label>Inspect a step<select id="logSelect"></select></label><h3 id="logHeading"></h3><p id="logText"></p><p class="technical">These are your actions in this sample, not production telemetry or model timings.</p></dialog>
-<dialog id="options" aria-labelledby="optionsTitle"><button class="close" aria-label="Close options">×</button><p class="eyebrow">TRACE / YOUR JOURNEY</p><h2 id="optionsTitle">Take another path.</h2><button id="restart">Return to the two projects</button><button id="motion" aria-pressed="false">Gentle motion</button><a href="./boot-hub-proto.html">Back to all worlds ↗</a><p>Follow one request at a time. Tap the named gates and controls to move it forward.</p></dialog>
+<dialog id="options" aria-labelledby="optionsTitle"><button class="close" aria-label="Close options">×</button><p class="eyebrow">TRACE / YOUR JOURNEY</p><h2 id="optionsTitle">Take another path.</h2><button id="restart">Return to the two projects</button><button id="motion" aria-pressed="false">Gentle motion</button><a href="./boot-hub-proto.html">Back to all worlds ↗</a><p>Drag the question to a named destination. You can also tap each destination or use Tab and Enter. Hold actions have a separate tap alternative.</p></dialog>
 </body></html>

@@ -10,7 +10,7 @@ All forms use existing generated artwork. No new generation is needed.
 | AZURE CLOUD | mascot-forms-1.png | 4, 1 | azure blue cloud on articulated server legs |
 | GEN AI | mascot-forms-1.png | 4, 2 | bright neural crystal with conversational terminals |
 | ARCHITECT | mascot-forms-1.png | 4, 3 | blueprint drafting compass and interconnected building blocks |
-| .NET CORE | mascot-forms-1.png | 1, 2 | purple hexagonal .NET runtime core, clearly readable .NET mark |
+| .NET 10 | mascot-forms-1.png | 1, 2 | purple hexagonal .NET runtime core, clearly readable .NET mark |
 | EF CORE | mascot-forms-1.png | 1, 3 | object classes mechanically connected to relational table grid |
 | SQL SERVER | mascot-forms-1.png | 1, 4 | red SQL database tower with relational grid |
 | RLS | mascot-forms-1.png | 2, 1 | database with row-specific shield gates |

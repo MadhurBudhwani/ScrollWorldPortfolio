@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#070917"><title>Backend &amp; Cloud · Madhur Budhwani</title>
+  <link rel="icon" href="./favicon.svg">
+  <link rel="stylesheet" href="./trace-world.css?v=20260919"><link rel="stylesheet" href="./speech-bubble.css?v=20260919"><link rel="stylesheet" href="./world-game.css?v=20260920">
+  <script src="./avatar.js?v=mu8jemv7" defer></script>
+  <script src="./companion.js?v=mu8jemv7" defer></script>
+  <script src="./trace-renderer.js?v=20260919" defer></script>
+  <script src="./world-engine.js?v=20260920" defer></script>
+  <script src="./pose-actor.js?v=20260920" defer></script>
+  <script src="./boot-game.js?v=20260920b" defer></script>
+</head>
+<body>
+<main id="boot" aria-label="Backend and Cloud: power up the stack, keeping the bugs off">
+  <canvas id="scenery" aria-hidden="true"></canvas><div class="scanlines" aria-hidden="true"></div>
+
+  <header>
+    <a href="./boot-hub-proto.html" aria-label="Back to all worlds">←</a>
+    <div class="wordmark">BACKEND &amp; CLOUD<span>MADHUR BUDHWANI</span></div>
+    <button id="menuButton" aria-label="Options">•••</button>
+  </header>
+
+  <section id="brief"><p id="chapter" class="eyebrow"></p><h1 id="title"></h1><p id="intro"></p></section>
+
+  <div id="play" aria-label="Playfield">
+    <div class="world-progress" id="pips" aria-hidden="true"></div>
+  </div>
+
+  <p id="live" class="sr" role="status" aria-live="polite"></p>
+
+  <footer id="dock" class="game-dock">
+    <div class="utility">
+      <button id="explain">How I built this ↗</button>
+      <button id="journal">Boot log <span id="traceCount">0</span></button>
+    </div>
+    <p class="sample">Interactive sample · fictional threats · no live systems</p>
+  </footer>
+
+  <div id="loading" role="status"><p class="eyebrow">BACKEND &amp; CLOUD</p><h2>The machine is cold.</h2><p>Warming up…</p></div>
+</main>
+
+<dialog id="details" aria-labelledby="detailTitle"><button class="close" aria-label="Close">×</button><p class="eyebrow">MADHUR / BEHIND THE BUILD</p><h2 id="detailTitle">Backend that stays up.</h2><label>Explore a decision<select id="topic"></select></label><h3 id="detailHeading"></h3><p id="detailText"></p><p id="detailBenefit"></p><p id="detailTech" class="technical"></p></dialog>
+
+<dialog id="traceLog" aria-labelledby="logTitle"><button class="close" aria-label="Close">×</button><p class="eyebrow">THIS RUN / BOOT LOG</p><h2 id="logTitle">Everything you brought online.</h2><label>Inspect a step<select id="logSelect"></select></label><h3 id="logHeading"></h3><p id="logText"></p><p class="technical">Your actions in this sample, not production telemetry.</p></dialog>
+
+<dialog id="options" aria-labelledby="optionsTitle"><button class="close" aria-label="Close">×</button><p class="eyebrow">YOUR RUN</p><h2 id="optionsTitle">Start the machine again.</h2><button id="restart">Power everything down</button><button id="motion" aria-pressed="false">Gentle motion</button><a href="./boot-hub-proto.html">Back to all worlds ↗</a><p>Keep the bugs off me and I keep building. Tap one to squash it.</p></dialog>
+</body></html>

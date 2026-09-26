@@ -1,0 +1,104 @@
+/* One speech bubble for the whole portfolio — desktop scrollworld and the mobile worlds.
+   Built as an 8-bit dialogue frame, not a rounded div: chamfered corners cut with clip-path,
+   a real two-tone frame, corner rivets, a stepped pixel tail, and a faint scanline wash so it
+   belongs to the same CRT world as everything else. */
+
+/* The tail used to be an ::after hanging 15px below the box — which the parent's own
+   clip-path cut off, so no bubble in the portfolio ever showed one. A clipped element
+   cannot have anything outside its clip, so the tail is part of the SAME polygon now:
+   the frame's bottom edge sits --tailH above the box, and the tail steps down from it. */
+.speech-bubble,
+.world-bubble{
+  --accent:#84f5ad;
+  --ink:#eaf6ff;
+  --skin:#0c1a22;
+  --notch:11px;
+  --tailH:16px;
+  position:absolute;z-index:65;
+  width:320px;max-width:calc(100% - 28px);
+  padding:0 0 var(--tailH);border:0;background:var(--accent);
+  font:13px/1.55 Consolas,"SFMono-Regular",monospace;
+  color:var(--ink);
+  clip-path:polygon(
+    var(--notch) 0, calc(100% - var(--notch)) 0,
+    100% var(--notch), 100% calc(100% - var(--notch) - var(--tailH)),
+    calc(100% - var(--notch)) calc(100% - var(--tailH)),
+    /* stepped pixel tail — three descending blocks, never a rotated square */
+    calc(var(--tail,34px) + 27px) calc(100% - var(--tailH)),
+    calc(var(--tail,34px) + 27px) calc(100% - var(--tailH) + 5px),
+    calc(var(--tail,34px) + 18px) calc(100% - var(--tailH) + 5px),
+    calc(var(--tail,34px) + 18px) calc(100% - var(--tailH) + 11px),
+    calc(var(--tail,34px) + 9px)  calc(100% - var(--tailH) + 11px),
+    calc(var(--tail,34px) + 9px)  100%,
+    var(--tail,34px) 100%,
+    var(--tail,34px) calc(100% - var(--tailH)),
+    var(--notch) calc(100% - var(--tailH)),
+    0 calc(100% - var(--notch) - var(--tailH)), 0 var(--notch));
+  filter:drop-shadow(5px 6px 0 #04090ecc) drop-shadow(0 0 18px color-mix(in srgb,var(--accent) 35%,transparent));
+}
+
+/* the dark face, inset so the parent reads as a frame that follows the chamfer.
+   It stops at the frame's bottom edge, leaving the tail solid accent. */
+.speech-bubble::before,
+.world-bubble::before{
+  content:"";position:absolute;inset:2px 2px calc(var(--tailH) + 2px);z-index:0;
+  background:
+    repeating-linear-gradient(0deg,#ffffff07 0 1px,transparent 1px 3px),
+    linear-gradient(155deg,#16323df2,var(--skin));
+  clip-path:polygon(
+    calc(var(--notch) - 2px) 0, calc(100% - var(--notch) + 2px) 0,
+    100% calc(var(--notch) - 2px), 100% calc(100% - var(--notch) + 2px),
+    calc(100% - var(--notch) + 2px) 100%, calc(var(--notch) - 2px) 100%,
+    0 calc(100% - var(--notch) + 2px), 0 calc(var(--notch) - 2px));
+}
+
+/* everything real sits above the face */
+.speech-bubble>*,
+.world-bubble>*{position:relative;z-index:1}
+
+/* ---- header: portrait chip + name ---- */
+.bubble-head{display:flex;align-items:center;gap:9px;padding:10px 13px 8px;
+  border-bottom:1px solid color-mix(in srgb,var(--accent) 30%,transparent);
+  background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.bubble-logo{flex:none;width:26px;height:26px;display:grid;place-items:center;
+  background:#07121a;border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);
+  image-rendering:pixelated;overflow:hidden}
+.bubble-logo img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+.speech-bubble strong,
+.bubble-name{font-size:12px;letter-spacing:.9px;color:var(--accent);text-transform:none}
+
+/* ---- body ---- */
+.speech-bubble p,
+.bubble-line{margin:0;padding:11px 13px 12px;font-size:13.5px;line-height:1.62;color:var(--ink)}
+.bubble-line.typing:after{content:"\258C";margin-left:2px;color:var(--accent);animation:bubble-caret .8s steps(1) infinite}
+@keyframes bubble-caret{50%{opacity:0}}
+
+/* ---- technical tag: the keyword engineers scan for ---- */
+.bubble-tag{display:inline-block;margin:0 13px 12px;padding:5px 8px;
+  font:9px/1 Consolas,monospace;letter-spacing:1.6px;
+  color:#04140d;background:var(--accent);
+  clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px)}
+
+/* ---- continue hint ---- */
+.bubble-cta{display:block;padding:0 13px 11px;font:10px/1 Consolas,monospace;letter-spacing:1.5px;
+  color:color-mix(in srgb,var(--accent) 70%,#93aebd)}
+.bubble-cta:before{content:"\25B8  "}
+
+/* the desktop bubble is plain <strong> + <p>, so give strong the header treatment directly */
+.speech-bubble>strong{display:block;padding:10px 13px 8px;
+  border-bottom:1px solid color-mix(in srgb,var(--accent) 30%,transparent);
+  background:color-mix(in srgb,var(--accent) 9%,transparent)}
+
+/* ---- reveal ---- */
+.world-bubble{opacity:0;transform:translate(-50%,10px) scale(.97);
+  transition:opacity .26s ease,transform .3s cubic-bezier(.2,.9,.3,1)}
+.world-bubble.in{opacity:1;transform:translate(-50%,0) scale(1)}
+
+/* urgency / celebration variants — same frame, different charge */
+.world-bubble.alert{--accent:#f58caf}
+.world-bubble.win{--accent:#f3cc70}
+
+@media(prefers-reduced-motion:reduce){
+  .world-bubble{transition:none}
+  .bubble-line.typing:after{animation:none}
+}

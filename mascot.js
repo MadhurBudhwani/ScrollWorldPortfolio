@@ -76,23 +76,24 @@ function updateMascotMorph(desired,dt){
   mascot.phase=clamp(mascot.phase+Math.sign(target-mascot.phase)*Math.min(step,Math.abs(target-mascot.phase)));
   if(mascot.phase===0&&mascot.form!==desired)mascot.form=desired;
 }
-function dogSource(index){return {image:companionAtlas,rect:companionSprites[index],index};}
+function dogSource(index){return {image:companionAtlas,rect:companionSprites[index],index,directional:true,gutters:companionGutters[index]||null};}
+function walkSource(index){return {image:companionWalkAtlas,rect:companionWalkSprites[index],index:-1,directional:true,gutters:null};}
 function formSource(label){
   const form=mascotFormCatalog[label];if(!form)return null;
   const image=mascotFormSheets[form.sheet];
   if(!image.complete||!image.naturalWidth)return null;
   const cw=image.naturalWidth/4,ch=image.naturalHeight/4;
   const crop=typeof mascotFormCrops!=='undefined'?mascotFormCrops[form.sheet]?.[form.cell]:null;
-  return {image,rect:crop||[(form.cell%4)*cw,Math.floor(form.cell/4)*ch,cw,ch],index:-1};
+  return {image,rect:crop||[(form.cell%4)*cw,Math.floor(form.cell/4)*ch,cw,ch],index:-1,directional:false,gutters:null};
 }
 function drawMascotSprite(c,source,height,direction,fold=0){
   const [sx,sy,sw,sh]=source.rect,w=height*sw/sh,h=height;
-  c.save();if(source.index>=0)c.scale(direction,1);
+  c.save();if(source.directional)c.scale(direction,1);
   const paint=()=>{
     c.save();
-    if(source.index>=0&&companionGutters[source.index]){
+    if(source.gutters){
       c.beginPath();c.rect(-w/2,-h,w,h);
-      companionGutters[source.index].forEach(([x,y,ww,hh])=>c.rect(-w/2+(x-sx)*w/sw,-h+(y-sy)*h/sh,ww*w/sw,hh*h/sh));c.clip('evenodd');
+      source.gutters.forEach(([x,y,ww,hh])=>c.rect(-w/2+(x-sx)*w/sw,-h+(y-sy)*h/sh,ww*w/sw,hh*h/sh));c.clip('evenodd');
     }
     c.drawImage(source.image,sx,sy,sw,sh,-w/2,-h,w,h);c.restore();
   };
@@ -129,19 +130,25 @@ function drawCompanion(c,pose,transition,dt){
   if(moving||Math.abs(state.progress-state.previousProgress)>.000001||pose.mode==='jump'||exiting)mascot.lastMotion=state.time;
   const sitting=!moving&&!exiting&&state.time-mascot.lastMotion>=5000;
   mascot.sit=mix(mascot.sit,sitting?1:0,Math.min(1,dt*9));
-  const frame=exiting?2:moving?2+Math.floor(mascot.gait)%2:mascot.sit>.5?0:1;
+  const walkFrame=Math.floor(mascot.gait)%8;
+  const frame=exiting?2:moving?2+walkFrame%2:mascot.sit>.5?0:1;
+  const generatedWalkReady=companionWalkAtlas.complete&&companionWalkAtlas.naturalWidth;
+  const baseSource=moving&&generatedWalkReady
+    ?(walkFrame===0?dogSource(2):walkFrame===7?dogSource(3):walkSource(walkFrame-1))
+    :dogSource(frame);
   updateMascotMorph(exiting?null:mascot.desired,dt);
   const form=formSource(mascot.form),phase=form?mascot.phase:0;
   let feet=pose.feet,alpha=1;
-  if(transition.mode==='drop'){feet=state.h-82+Math.max(0,(transition.progress-.25)/.75)*height*1.5;alpha=1-ease((transition.progress-.75)/.25);}
-  if(transition.mode==='emerge'){feet=state.h-82+(1-transition.progress)*height*1.5;alpha=ease(transition.progress/.3);}
+  const portalY=transition.portalY??state.h-82;
+  if(transition.mode==='drop'){feet=portalY+Math.max(0,(transition.progress-.25)/.75)*height*1.5;alpha=1-ease((transition.progress-.75)/.25);}
+  if(transition.mode==='emerge'){feet=portalY+(1-transition.progress)*height*1.5;alpha=ease(transition.progress/.3);}
   if(state.exit?.phase==='descend')alpha=1-clamp(state.exit.elapsed/.45);
   c.save();c.imageSmoothingEnabled=false;c.globalAlpha=alpha;
-  if(transition.mode){c.beginPath();c.rect(0,0,state.w,state.h-78);c.clip();}
+  if(transition.mode){c.beginPath();c.rect(0,0,state.w,portalY);c.clip();}
   c.translate(Math.round(x*state.dpr)/state.dpr,feet);
   const breath=reducedMotion.matches||moving||exiting?1:1+Math.sin(state.time/550)*.008;
   c.scale(1,breath);
-  if(phase<=.5)drawMascotSprite(c,dogSource(frame),height,mascot.facing,phase*2);
+  if(phase<=.5)drawMascotSprite(c,baseSource,height,mascot.facing,phase*2);
   else drawMascotSprite(c,form,height,1,(1-phase)*2);
   if(phase>0&&phase<1&&!reducedMotion.matches){
     const pulse=Math.sin(phase*Math.PI),radius=height*(.09+.17*pulse);
@@ -155,5 +162,6 @@ function drawCompanion(c,pose,transition,dt){
   if(phase>.96&&mascot.form)diagramLabel(c,mascot.form,0,-height-12,Math.max(130,height*1.7),'#d5f5ef',10);
   c.restore();
   state.companionSkill=phase>0?mascot.form:'MECHANICAL DOG';
-  state.mascotDiagnostics={x,feet,height,avatarHeight:232*pose.scale,facing:mascot.facing,moving,pose:frame===0?'sit':moving?'walk':'stand',phase,form:mascot.form,desired:mascot.desired};
+  const rect=(phase>.5&&form?form:baseSource).rect,width=height*rect[2]/rect[3];
+  state.mascotDiagnostics={x,feet,height,width,alpha,avatarHeight:232*pose.scale,facing:mascot.facing,moving,pose:frame===0?'sit':moving?'walk':'stand',phase,form:mascot.form,desired:mascot.desired};
 }

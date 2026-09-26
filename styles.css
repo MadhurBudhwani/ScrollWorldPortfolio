@@ -49,10 +49,12 @@ a:focus-visible, button:focus-visible { outline: 2px solid #f3cc70; outline-offs
 .story-copy h1 { margin: 0 0 22px; font-size: 64px; line-height: 1.04; font-weight: 750; white-space: pre-line; }
 .story-copy div { max-width: 560px; color: var(--soft); font-size: 17px; line-height: 1.6; text-wrap: pretty; }
 .stage:not([data-scene="boot"]) .story-copy { top: 10%; }
+.stage[data-scene="boot"] .story-copy { top: 14.5%; }
 .stage[data-mode="reel"] .story-copy { width: 42%; }
 .stage[data-mode="reel"] .story-copy h1 { font-size: 54px; }
 .stage[data-mode="reel"] .story-copy div { max-width: 430px; }
-.stage[data-scene="boot"] .story-copy h1 { font-size: 72px; }
+.stage[data-scene="boot"] .story-copy > p { margin-bottom: 12px; }
+.stage[data-scene="boot"] .story-copy h1 { font-size: 72px; line-height: .96; }
 .player { position: absolute; z-index: 38; width: 146px; height: 232px; translate: -50% 0; transform: scale(var(--player-s, .7)); transform-origin: 50% 100%; pointer-events: none; }
 .stage[data-scene="boot"] .player { pointer-events: auto; cursor: pointer; }
 #foreground { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 39; pointer-events: none; }
@@ -64,10 +66,23 @@ a:focus-visible, button:focus-visible { outline: 2px solid #f3cc70; outline-offs
 #orbitTargets { position: absolute; inset: 0; z-index: 36; pointer-events: none; }
 .orbit-target { position: absolute; background: transparent; border: 0; pointer-events: auto; padding: 0; }
 .orbit-target:focus-visible { outline: 1px solid #84f5ad; outline-offset: 3px; }
-.speech-bubble { position: absolute; z-index: 65; width: 310px; max-width: calc(100% - 32px); background: #142826f5; border: 2px solid #84f5ad; box-shadow: 5px 5px #040c10; padding: 16px; pointer-events: none; font: 13px/1.5 monospace; }
+.speech-bubble { --bubble-accent:#67daf5; --dialogue-opacity:1; --dialogue-shift:0px; --dialogue-cut:0%; --dialogue-scan:0; position:absolute; z-index:65; width:330px; max-width:calc(100% - 32px); padding:17px 18px 18px; color:#e8f5f2; background:transparent; filter:drop-shadow(6px 6px 0 #02070a); pointer-events:none; font:13px/1.5 monospace; isolation:isolate; }
+.speech-bubble::before { content:''; position:absolute; z-index:-1; inset:0; background:linear-gradient(180deg,#173234fa,#0a191dfb); clip-path:polygon(9px 0,calc(100% - 9px) 0,calc(100% - 9px) 3px,100% 3px,100% calc(100% - 9px),calc(100% - 3px) calc(100% - 9px),calc(100% - 3px) 100%,9px 100%,9px calc(100% - 3px),0 calc(100% - 3px),0 9px,3px 9px,3px 3px,9px 3px); box-shadow:inset 0 0 0 3px #28575a,inset 0 4px 0 #70a9a5,inset 0 -4px 0 #061014; }
 .speech-bubble[hidden] { display: none; }
-.speech-bubble::after { content: ''; position: absolute; left: var(--tail,32px); bottom: -10px; width: 16px; height: 16px; rotate: 45deg; background: #142826; border-right: 2px solid #84f5ad; border-bottom: 2px solid #84f5ad; }
-.speech-bubble strong { color: #84f5ad; }.speech-bubble p { margin: 8px 0 0; color: #e0ece8; }
+.speech-bubble::after { content:''; position:absolute; left:var(--tail,32px); bottom:-9px; width:15px; height:15px; rotate:45deg; background:#0b1b1f; border-right:3px solid var(--bubble-accent); border-bottom:3px solid var(--bubble-accent); }
+.speech-bubble strong,.speech-bubble p { position:relative; z-index:2; opacity:var(--dialogue-opacity); translate:var(--dialogue-shift) 0; clip-path:inset(0 var(--dialogue-cut) 0 0); }
+.speech-bubble strong { display:block; color:#9fffe0; font-size:12px; letter-spacing:.04em; }.speech-bubble p { margin:8px 0 0; color:#e0ece8; }
+.speech-scan { position:absolute; z-index:1; inset:7px; opacity:var(--dialogue-scan); background:repeating-linear-gradient(0deg,transparent 0 5px,#67daf52b 5px 7px); pointer-events:none; }
+.speech-bubble--avatar { width:390px; line-height:1.42; }
+.speech-bubble--avatar::before { clip-path:polygon(12px 0,calc(100% - 28px) 0,100% 28px,100% calc(100% - 12px),calc(100% - 12px) 100%,28px 100%,0 calc(100% - 28px),0 12px); box-shadow:inset 0 0 0 3px #28575a,inset 0 4px 0 #70a9a5,inset 6px 0 0 #0e2528,inset 0 -4px 0 #061014; }
+.speech-bubble--avatar.tail-side::after { left:-8px; top:var(--tail-y,44px); bottom:auto; border:0; border-left:3px solid var(--bubble-accent); border-bottom:3px solid var(--bubble-accent); }
+.speech-bubble--pet { --bubble-accent:#f3cc70; z-index:67; width:112px; padding:11px 13px 12px; filter:drop-shadow(4px 4px 0 #02070a); font-size:12px; line-height:1.25; }
+.speech-bubble--pet::before { clip-path:polygon(7px 0,calc(100% - 7px) 0,calc(100% - 7px) 2px,100% 2px,100% calc(100% - 7px),calc(100% - 2px) calc(100% - 7px),calc(100% - 2px) 100%,7px 100%,7px calc(100% - 2px),0 calc(100% - 2px),0 7px,2px 7px,2px 2px,7px 2px); box-shadow:inset 0 0 0 2px #766338,inset 0 3px 0 #d8bd78,inset 0 -3px 0 #0a100d; }
+.speech-bubble--pet::after { left:-6px; top:var(--tail-y,28px); bottom:auto; width:11px; height:11px; border:0; border-left:2px solid var(--bubble-accent); border-bottom:2px solid var(--bubble-accent); }
+.speech-bubble--pet strong { color:#ffe5a6; font-size:12px; }.speech-bubble--pet p { margin:2px 0 0; color:#effff8; }
+.pet-hover-target { position:absolute; z-index:66; margin:0; padding:0; border:0; background:transparent; cursor:help; }
+.pet-hover-target[hidden] { display:none; }
+.stage[data-scene="boot"] .player:hover { filter:brightness(1.05); }
 .stage[data-mode="circuit"] .story-copy h1 { font-size: 42px; }
 .stage[data-mode="circuit"] .story-copy div { max-width: 750px; }
 .stage[data-mode="fusion"] .story-copy h1 { font-size: 48px; }
@@ -87,10 +102,9 @@ a:focus-visible, button:focus-visible { outline: 2px solid #f3cc70; outline-offs
 .portal-hub.is-live { pointer-events: auto; }
 .ground-portal { position: absolute; bottom: 12px; width: 190px; height: 90px; transform: translateX(-50%); border: none; background: transparent; padding: 0; --portal-color: #84f5ad; }
 .portal-work { left: 34%; }.portal-ai { left: 59%; --portal-color: #67daf5; }.portal-hobbies { left: 84%; --portal-color: #f58caf; }
-.portal-mouth { display: block; position: absolute; top: 0; left: 5%; width: 90%; height: 40px; border: 5px solid var(--portal-color); background: #02050a; clip-path: polygon(15% 0,85% 0,85% 10%,95% 10%,95% 25%,100% 25%,100% 75%,95% 75%,95% 90%,85% 90%,85% 100%,15% 100%,15% 90%,5% 90%,5% 75%,0 75%,0 25%,5% 25%,5% 10%,15% 10%); box-shadow: inset 0 7px 0 #233d42, inset 0 -7px 0 #0d1c24; }
-.portal-mouth::after { content: ''; position: absolute; inset: 8px 24px; border: 1px solid var(--portal-color); opacity: .4; }
+.portal-mouth { display: block; position: absolute; top: 0; left: 5%; width: 90%; height: 40px; opacity: 0; }
+.portal-mouth::after { display: none; }
 .ground-portal strong { display: block; padding-top: 51px; font: 600 13px/1.35 monospace; color: #e5eeeb; }
-.ground-portal:hover .portal-mouth, .ground-portal.is-near .portal-mouth { filter: brightness(1.4); }
 .ground-portal:focus-visible { outline-offset: 6px; }
 .dimension-transition { position: absolute; z-index: 100; inset: 0; pointer-events: none; background: #030b12; clip-path: circle(var(--iris,0%) at var(--portal-x,50%) calc(100% - 82px)); }
 .game-controls { position: absolute; z-index: 55; right: 20px; bottom: 140px; display: none; gap: 8px; }
@@ -174,9 +188,7 @@ html.orientation-paused { overflow: hidden; overscroll-behavior: none; }
 /* Four destinations share the ground, with the arrival lane kept clear. */
 .portal-work{left:26%}.portal-ai{left:46%}.portal-hobbies{left:66%}.portal-about{left:86%;--portal-color:#b7a0ff}
 .ground-portal{width:min(190px,18%)}
-.portal-about .portal-mouth::after{border-color:#e0d1ff;box-shadow:0 0 18px #b7a0ff55}
 @container scene (max-width:699px){.portal-work{left:14%}.portal-ai{left:38%}.portal-hobbies{left:62%}.portal-about{left:86%}.ground-portal{width:22%}.ground-portal strong{padding-inline:3px}}
-@media(prefers-reduced-motion:no-preference){.portal-about .portal-mouth::after{animation:about-portal-glow 3s ease-in-out infinite}@keyframes about-portal-glow{50%{opacity:.9;box-shadow:0 0 24px #b7a0ffaa}}}
 .autoplay-start{margin-left:auto;min-height:44px;padding:10px 18px;border:1px solid #84f5ad;border-radius:5px;background:#142d29;color:#c1ffdc;font:600 13px monospace;white-space:nowrap}
 .autoplay-start:hover{background:#244c3b;box-shadow:0 0 24px #84f5ad20}
 .autoplay-start[hidden],.autoplay-controls[hidden]{display:none!important}

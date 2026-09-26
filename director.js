@@ -102,7 +102,7 @@ function sprite(label, tone, kind, index) {
 }
 scenes.forEach(s => { s.textures = s.skills.map((label,i) => {const tex=sprite(label,(s.color+i%2)%4,s.mode,i);tex.mascotLabel=label;return tex;}); });
 
-const state = { w:0, h:0, dpr:1, travel:1, top:0, progress:0, scene:-1, time:0, frameMs:16.7, hubLive:false, x:0, y:0, vy:0, keys:new Set() };
+const state = { w:0, h:0, dpr:1, travel:1, top:0, progress:0, scene:-1, time:0, frameMs:16.7, hubLive:false, x:0, y:0, vy:0, keys:new Set(), chapterPortal:null };
 // ScrollPacer owns wheel/touch/key speed. Lenis maintains the document position.
 const lenis = new Lenis({ autoRaf:false, smoothWheel:false, syncTouch:false });
 const scrollPacer=new ScrollPacer();
@@ -179,11 +179,20 @@ function procession(s,p) {
   const g=trainGeometry(state.directedLocal),{scale,gap,y}=g;
   line([[g.x-gap*2,y+138*scale],[g.x+s.skills.length*gap,y+138*scale]],colors[s.color],4);
   engine(g,p);
-  s.textures.forEach((tex,i)=>{
+  const art=window.TrainArt&&TrainArt.ready;
+  // Driven by the chapter's own skill list: adding a skill adds a wagon.
+  s.skills.forEach((label,i)=>{
     const x=g.x+i*gap;
+    if(art){
+      const kind=TrainArt.car(i);
+      const behind=i?TrainArt.width(TrainArt.car(i-1))/2:TrainArt.engineOffset()-TrainArt.width('engine')/2;
+      TrainArt.coupling(g,i?x-gap+behind*scale:g.x-behind*scale,x-TrainArt.width(kind)/2*scale);
+      TrainArt.draw(kind,x,g,label);
+      return;
+    }
     line([[x-gap+170*scale,y+65*scale],[x-170*scale,y+65*scale]],'#698b88',7);
     line([[x-100,y+115*scale],[x-100,y+138*scale],[x+100,y+138*scale],[x+100,y+115*scale]],'#344c4f',3);
-    imageObject(tex,x,y,scale);
+    imageObject(s.textures[i],x,y,scale);
   });
 }
 function reel(s,p) {
@@ -233,19 +242,78 @@ function gates(s,p) {
   }
   ctx.globalAlpha=1;
 }
+function slideOneActivation(index,progress){
+  const timing=scenes[0].timeline;
+  return ease((progress-(timing.nodeStart+index*timing.nodeStep))/timing.nodeDuration);
+}
+function drawOrbitNodeFrame(o,activation,focused){
+  const pulse=Math.sin(activation*Math.PI),rx=Math.round(88*o.scale),ry=Math.round(58*o.scale);
+  ctx.save();ctx.translate(Math.round(o.x),Math.round(o.y));
+  ctx.globalAlpha=.22+activation*.18;
+  ctx.fillStyle='#06120f';ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,TAU);ctx.fill();
+  ctx.globalAlpha=.72;ctx.strokeStyle='#102b27';ctx.lineWidth=7;
+  ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,TAU);ctx.stroke();
+  ctx.globalAlpha=.34+activation*.48;ctx.strokeStyle=focused?'#c8ffe0':'#4f8174';ctx.lineWidth=2;
+  ctx.beginPath();ctx.ellipse(0,0,rx-5,ry-5,0,0,TAU);ctx.stroke();
+  if(activation>.01){
+    ctx.globalAlpha=.30+activation*.55;ctx.strokeStyle=colors[0];ctx.lineWidth=3;
+    ctx.beginPath();ctx.ellipse(0,0,rx-2,ry-2,0,-2.62,-.52);ctx.stroke();
+    ctx.beginPath();ctx.ellipse(0,0,rx-2,ry-2,0,.52,2.62);ctx.stroke();
+    ctx.fillStyle=focused?'#effff5':'#9affbd';
+    for(const [x,y,w,h]of[[-rx-4,-3,8,6],[rx-4,-3,8,6],[-3,-ry-4,6,8],[-3,ry-4,6,8]])ctx.fillRect(x,y,w,h);
+  }
+  if(pulse>.02&&!reducedMotion.matches){
+    ctx.globalAlpha=pulse*.75;ctx.fillStyle='#d9ffe7';
+    for(const [x,y]of[[-rx*.72,-ry*.78],[rx*.76,-ry*.66],[-rx*.82,ry*.58],[rx*.70,ry*.74]])ctx.fillRect(Math.round(x)-2,Math.round(y)-2,4,4);
+  }
+  ctx.restore();
+  return pulse;
+}
 function orbit(s,p) {
   const mobile=state.w<1000, cx=state.w*(mobile?.5:.70), cy=state.h*(mobile?.73:.66), r=mobile?125:245;
-  const points=[];
+  const raw=state.local,points=[];
   for(let i=0;i<=64;i++){const a=i/64*TAU;points.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r*.48]);}
-  line(points,'#3c5b54',3);
+  ctx.save();ctx.globalAlpha=.75;line(points,'#102824',8);
+  ctx.globalAlpha=.55;line(points,'#416c62',2);ctx.restore();
   const objects=s.textures.map((tex,i)=>{
     const a=i/s.skills.length*TAU+p*TAU*.55;
-    return {tex,i,x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r*.48,depth:Math.sin(a),scale:(mobile?.45:.66)+Math.sin(a)*.1};
+    return {tex,i,a,x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r*.48,depth:Math.sin(a),scale:(mobile?.45:.66)+Math.sin(a)*.1,activation:slideOneActivation(i,raw)};
+  });
+  objects.forEach(o=>{
+    if(o.activation<=.01)return;
+    ctx.save();ctx.globalAlpha=.18+o.activation*.42;ctx.strokeStyle=colors[0];ctx.lineWidth=3;
+    ctx.beginPath();ctx.ellipse(cx,cy,r,r*.48,0,o.a-.25,o.a+.25);ctx.stroke();ctx.restore();
+  });
+  // A single hard-edged packet hands activation from each node to the next.
+  objects.forEach((o,i)=>{
+    if(i===0)return;const pulse=Math.sin(o.activation*Math.PI);
+    if(pulse<=.02||reducedMotion.matches)return;
+    const from=objects[i-1],t=ease(o.activation),x=mix(from.x,o.x,t),y=mix(from.y,o.y,t);
+    ctx.save();ctx.globalAlpha=pulse*.72;ctx.fillStyle='#baffcf';ctx.fillRect(Math.round(x)-3,Math.round(y)-3,6,6);ctx.restore();
   });
   updateOrbitTargets(objects,s);
   objects.sort((a,b)=>a.depth-b.depth).forEach(o=>{
-    ctx.save();if(revisionUI.active===o.i){ctx.shadowColor=colors[0];ctx.shadowBlur=18;}
-    imageObject(o.tex,o.x,o.y,o.scale*(revisionUI.active===o.i?1.12:1));ctx.restore();
+    const focused=revisionUI.active===o.i,pulse=drawOrbitNodeFrame(o,o.activation,focused);
+    imageObject(o.tex,o.x,o.y,o.scale*(1+pulse*.045)*(focused?1.08:1));
+  });
+}
+const hubPortalThemes={work:'green',genai:'cyan',hobbies:'pink',about:'violet'};
+function drawPortals(){
+  if(!window.PortalArt)return;
+  const chapter=state.chapterPortal;
+  if(chapter?.opacity>.001)PortalArt.draw(ctx,chapter.x,chapter.y,chapter.width,chapter.height,chapter.theme,chapter);
+  if(!state.hubLive)return;
+  const opacity=ease(state.local/.16),phase=reducedMotion.matches?0:(state.time/2600)%1;
+  portals.forEach(portal=>{
+    const mouth=portal.querySelector('.portal-mouth'),box=sceneViewport.bounds(mouth);
+    const selected=state.exit?.portal===portal;
+    const entering=selected&&state.exit.phase==='descend'?clamp(state.exit.elapsed/.92):0;
+    PortalArt.draw(ctx,box.left+box.width/2,box.top+box.height/2,box.width,box.height,
+      hubPortalThemes[portal.dataset.world]||'green',{
+        opacity,phase:phase+portals.indexOf(portal)*.17,
+        approach:portal.classList.contains('is-near')?1:0,
+        entering,reducedMotion:reducedMotion.matches,
+      });
   });
 }
 function draw(position,index,p) {
@@ -261,6 +329,7 @@ function draw(position,index,p) {
     ctx.fillStyle='#12372d';ctx.fillRect(0,state.h-76,state.w,76);
     for(let x=0;x<state.w;x+=64){ctx.fillStyle='#245243';ctx.fillRect(x+4,state.h-58,46,6);}
   }
+  drawPortals();
 }
 function updateCopy(index,p) {
   const scene=scenes[index];
@@ -399,11 +468,12 @@ function updatePlayer(dt,paintForeground=true) {
     direction:pose.direction,
     airborne:state.hubLive?state.y>0:pose.mode==='jump',
     verticalSpeed:state.hubLive?state.vy:pose.verticalSpeed,
-    anticipating:state.jumpDelay>0,
+    anticipating:state.jumpDelay>0||pose.mode==='anticipate',
     crouching:state.hubLive&&(state.keys.has('s')||state.keys.has('arrowdown')),
     entering:player.classList.contains('entering'),
     interaction:transitionAction || (state.hubLive?null:['pull','read','sing','game','sketch','design','edit','tap','present'].includes(pose.mode)?pose.mode:null),
     transitionProgress,
+    trainActionSet:state.scene===1,
     choreographyTime:pose.moving?pose.walkPhase:state.hubLive?null:pose.phase,
     scrollMoving:scrollMotion
   });

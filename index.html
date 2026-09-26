@@ -9,13 +9,15 @@
       content="A cinematic 8-bit scrollworld portfolio for Madhur Budhwani: backend engineering, GenAI systems, security, search, delivery, and Placeholder Teddy writing."
     />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <script src="./experience-mode.js?v=portrait-routing-2"></script>
+    <style>html.mobile-redirect body{visibility:hidden}</style>
+    <script src="./experience-mode.js?v=mobile-worlds-3"></script>
     <script>
       /* 5-minute cache-bust: browser refetches JS/CSS at most once per 5 min. */
       (function(){
+        if (window.mobileRedirect) return;
         var v = Math.floor(Date.now()/300000);
         window.__v = v;
-        (window.portraitExperience ? ['./styles.css','./paged-reader.css','./portrait.css'] : ['./styles.css']).forEach(function(f){
+        ['./styles.css'].forEach(function(f){
           var l = document.createElement('link');
           l.rel = 'stylesheet'; l.href = f + '?v=' + v;
           document.head.appendChild(l);
@@ -49,7 +51,9 @@
           <canvas id="foreground" aria-hidden="true"></canvas>
           <div id="chapterPortal" class="chapter-portal" aria-hidden="true"><span class="portal-mouth"></span></div>
           <div id="orbitTargets" aria-label="Explore expertise"></div>
-          <aside id="speechBubble" class="speech-bubble" role="status" hidden><strong></strong><p></p></aside>
+          <aside id="speechBubble" class="speech-bubble speech-bubble--avatar" role="status" aria-live="polite" hidden><i class="speech-scan" aria-hidden="true"></i><strong></strong><p></p></aside>
+          <aside id="petSpeechBubble" class="speech-bubble speech-bubble--pet" role="status" hidden><strong>Uh..</strong><p>Woof?</p></aside>
+          <button id="petHoverTarget" class="pet-hover-target" type="button" aria-label="Mechanical dog" hidden></button>
 
 
           <aside class="chapter-meter" aria-hidden="true">
@@ -114,8 +118,9 @@
     </div>
     <script>
       (function(){
+        if (window.mobileRedirect) return;
         var v = window.__v || Math.floor(Date.now()/300000);
-        (window.portraitExperience ? ['./story-data.js','./avatar.js','./companion.js','./paged-reader.js','./portrait-scene.js','./portrait-app.js'] : ['./story-data.js','./orientation.js','./scene-viewport.js','./assets/lenis.min.js','./assets/lucide.min.js','./avatar.js','./choreography.js','./revision.js','./companion.js','./mascot-catalog.js','./mascot-crops.js','./mascot.js','./pacing.js','./autoplay.js','./director.js']).forEach(function(f){
+        ['./story-data.js','./orientation.js','./scene-viewport.js','./assets/lenis.min.js','./assets/lucide.min.js','./avatar.js','./train-art.js','./portal-art.js','./choreography.js','./revision.js','./companion.js','./mascot-catalog.js','./mascot-crops.js','./mascot.js','./pacing.js','./autoplay.js','./director.js'].forEach(function(f){
           var s = document.createElement('script');
           s.src = f + '?v=' + v; s.async = false;
           document.body.appendChild(s);

@@ -5,7 +5,7 @@ const mascotFormCatalog={
     "cell": 0,
     "meaning": "server engine with three API ports"
   },
-  ".NET CORE": {
+  ".NET 10": {
     "sheet": 0,
     "cell": 1,
     "meaning": "purple hexagonal .NET runtime core, clearly readable .NET mark"

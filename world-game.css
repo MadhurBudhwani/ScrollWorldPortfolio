@@ -1,0 +1,118 @@
+/* Playfield layer for the three worlds: avatar, pet, threats, speech, transitions.
+   Sits above the scenery canvas and below the HUD. */
+
+#play{position:absolute;inset:0;z-index:4;overflow:hidden;pointer-events:none}
+#play>*{pointer-events:auto}
+
+/* ---- avatar ---- */
+.world-actor{position:absolute;z-index:8;width:146px;height:232px;translate:-50% 0;
+  transform:scale(var(--player-s,.5));transform-origin:50% 100%;pointer-events:none;
+  rotate:0deg;will-change:transform,left,top,rotate}
+.world-actor img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;transform:scaleX(var(--facing,1))}
+.world-actor .avatar-frames{position:absolute;left:50%;top:-25%;width:auto;height:125%;max-width:none;
+  aspect-ratio:1;transform:translateX(-50%);image-rendering:pixelated}
+.world-actor.is-animated img{visibility:hidden}
+
+/* ---- pet ---- */
+.world-pet{position:absolute;inset:0;z-index:10;pointer-events:none!important;image-rendering:pixelated}
+
+/* ---- threats ---- */
+.world-bug{position:absolute;z-index:9;padding:0;border:0;background:none;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;will-change:left,top;
+  filter:drop-shadow(0 4px 10px #0009)}
+.world-bug canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
+.world-bug:active{transform:scale(.92)}
+.world-bug.squashed{pointer-events:none;animation:bug-squash .9s cubic-bezier(.2,.9,.3,1) forwards}
+@keyframes bug-squash{
+  0%{transform:scale(1)}
+  18%{transform:scale(1.35,.55) rotate(6deg);filter:brightness(2.4) drop-shadow(0 0 16px #f58caf)}
+  45%{transform:scale(.9,.42) rotate(-4deg);opacity:.85}
+  100%{transform:scale(.55,.2) translateY(10px) rotate(12deg);opacity:0}
+}
+
+/* passing chatter — never blocks play */
+.world-hint{position:absolute;left:50%;top:14%;transform:translate(-50%,-8px);z-index:12;
+  max-width:78%;padding:8px 13px;border-radius:20px;background:#081524d9;border:1px solid #8fd6ff2e;
+  font-size:13px;line-height:1.35;color:#d7ecfb;text-align:center;
+  opacity:0;transition:opacity .35s,transform .35s;pointer-events:none}
+.world-hint.in{opacity:1;transform:translate(-50%,0)}
+
+/* ---- stage transition: the screen breaks into bricks ---- */
+.world-shatter{position:absolute;inset:0;z-index:30;pointer-events:none}
+.world-shatter i{position:absolute;display:block;background:#0a1626;
+  box-shadow:inset 0 0 0 1px #1d3348, inset 2px 2px 0 #14273c;
+  animation:brick-fall .62s cubic-bezier(.4,0,.75,0) forwards}
+@keyframes brick-fall{
+  0%{transform:translate(0,0) rotate(0);opacity:1}
+  22%{transform:translate(0,-8px) rotate(-2deg);opacity:1}
+  100%{transform:translate(var(--dx),115vh) rotate(var(--rot));opacity:.15}
+}
+
+/* ---- progress pips ---- */
+.world-progress{position:absolute;left:50%;top:9%;transform:translateX(-50%);z-index:11;
+  display:flex;gap:6px;pointer-events:none}
+.world-progress i{width:18px;height:4px;border-radius:2px;background:#ffffff26;transition:background .3s,box-shadow .3s}
+.world-progress i.on{background:var(--ac,#84f5ad);box-shadow:0 0 9px var(--ac,#84f5ad)}
+
+@media(prefers-reduced-motion:reduce){
+  .world-shatter i{animation-duration:.01s}
+  .world-bug.squashed{animation-duration:.2s}
+  .world-bubble{transition:none}
+}
+
+/* ---- in-world choice ---- */
+.world-bubble.choice{cursor:default}
+.choice-btn{display:block;width:100%;margin-top:9px;min-height:46px;padding:11px 13px;text-align:left;
+  font:inherit;font-size:14px;color:#e6f6ff;background:#15304a;border:1px solid #6fa7c6;border-radius:9px;cursor:pointer}
+.choice-btn:active{background:#1d4260}
+.choice-btn:before{content:"\25B8  ";color:var(--ac,#84f5ad)}
+
+/* ---- game dock: no next buttons, just the two utilities ---- */
+.game-dock{padding-top:14px}
+.game-dock .utility{margin-bottom:6px}
+
+/* ---- threat debris: it was a machine, so it comes apart like one ---- */
+.debris{position:absolute;z-index:7;width:5px;height:5px;pointer-events:none;
+  animation:debris-fly .9s cubic-bezier(.25,.6,.4,1) forwards}
+@keyframes debris-fly{
+  0%{transform:translate(0,0) rotate(0);opacity:1}
+  100%{transform:translate(var(--dx),calc(var(--dy) + 90px)) rotate(var(--rot));opacity:0}
+}
+.world-bug.arriving{animation:bug-arrive .45s ease-out both}
+@keyframes bug-arrive{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+.world-bug.clanged{animation:bug-clang .22s ease-out}
+@keyframes bug-clang{0%{filter:brightness(3)}60%{transform:translateX(3px)}100%{filter:none}}
+
+/* ---- drawn pose actor: cross-fades instead of snapping ---- */
+.pose-actor{position:absolute;inset:0;z-index:8;pointer-events:none!important}
+.pose-layer{position:absolute;object-fit:contain;image-rendering:pixelated;opacity:0;pointer-events:none;will-change:opacity,transform;filter:drop-shadow(0 5px 8px #0005)}
+.pose-walker{opacity:0;pointer-events:none}
+.actor-contact{position:absolute;height:9px;transform:translateX(-50%);border-radius:50%;background:#02071166;filter:blur(3px);pointer-events:none}
+
+/* Stage geometry is shared with the actor, threats and target labels. */
+#boot #brief{z-index:5;pointer-events:none}
+#boot #intro{max-width:35ch}
+#boot .world-progress{top:calc(68px + env(safe-area-inset-top));left:auto;right:24px;transform:none}
+#boot .world-progress i{width:11px;height:3px}
+#boot .world-hint{top:calc(171px + env(safe-area-inset-top));max-width:82%;font-size:13px}
+#boot .world-bubble{width:352px;font-family:"Segoe UI",system-ui,sans-serif}
+#boot .bubble-line{font-size:15px;line-height:1.5;padding:12px 16px}
+#boot .bubble-head{padding:9px 16px}
+#boot .bubble-tag{font-size:10px;line-height:1.3;letter-spacing:.9px;margin-left:16px;max-width:calc(100% - 32px)}
+#boot .bubble-cta{margin-left:3px;min-height:27px}
+#boot .bubble-name{font-size:12px}
+#boot .bubble-logo{width:31px;height:31px}
+.stage-prop{position:absolute;z-index:6;pointer-events:none!important;transform:translate(-50%,-100%);transition:opacity .45s;filter:drop-shadow(0 9px 16px #0005)}
+.stage-prop img{display:block;width:100%;height:auto;image-rendering:pixelated}
+.stage-target{position:absolute;z-index:11;transform:translateX(-50%);pointer-events:none!important;font:10px/1.4 Consolas,monospace;letter-spacing:1px;text-align:center;color:#d1ecf6;padding:5px 8px;background:#081421da;border:1px solid #8bcae54d;border-radius:5px;white-space:nowrap}
+.stage-target.under-attack{color:#ffc8d5;border-color:#f58caf}
+.stage-prop.charged{filter:drop-shadow(0 0 18px #83e8e45c)}
+.stage-prop.launching{animation:capsule-launch 1.3s cubic-bezier(.42,0,.65,1) forwards}
+@keyframes capsule-launch{0%{transform:translate(-50%,-100%)}18%{transform:translate(-50%,-96%)}100%{transform:translate(-50%,-430%);opacity:0}}
+#boot .game-dock{background:linear-gradient(transparent,#050a16dd);padding-top:14px}
+@media(max-height:690px){#boot h1{font-size:27px}#boot #brief{top:75px}#boot .world-hint{top:142px}#boot .bubble-line{padding:9px 13px}#boot .bubble-head{padding:7px 13px}#boot .bubble-tag{margin-bottom:8px}}
+@media(orientation:landscape) and (max-height:650px){#boot{width:min(100%,1100px)}#boot #brief{width:36%;right:auto}#boot header{width:48%}#boot .world-bubble{max-width:41%;width:350px}#boot #dock{right:55%}#boot .world-hint{top:14%;left:76%;max-width:38%}}
+
+/* a threat that got through stops and bites */
+.world-bug.biting{animation:bug-bite .34s ease-in-out infinite alternate}
+@keyframes bug-bite{from{transform:translateY(0)}to{transform:translateY(-4px) rotate(-5deg)}}

@@ -40,7 +40,7 @@ Plus **"the person"** section in the hub: **Beyond Code** (Hobbies) and **About 
 
 **GenAI world:**
 - SafetyChatAgent (`C:\AIResearch\SafetyChatbot-5`): NL-to-SQL analytics — pipeline = intent detection → schema RAG → business rules → SQL generation → validation → correction loop → RLS-aware controlled execution → visualization; plus semantic caching, failed-query logging, telemetry, pipeline tracing.
-- Galaxy Assistant (`C:\AIResearch\GalaxyAssets\GalaxyAssistant`): .NET 8 + Angular 19 + Azure OpenAI + Microsoft Graph; integrates Teams/Outlook/Calendar/Azure DevOps for summarization, retrieval, DevOps query generation, task automation; Entra ID auth; won 3rd/9 in an internal competition.
+- Galaxy Assistant (`C:\AIResearch\GalaxyAssets\GalaxyAssistant`): .NET 10 + Angular 19 + Azure OpenAI + Microsoft Graph; integrates Teams/Outlook/Calendar/Azure DevOps for summarization, retrieval, DevOps query generation, task automation; Entra ID auth; won 3rd/9 in an internal competition.
 
 **Resume highlights:** 5+ yrs .NET/SQL/Azure; 1,200+ commits, 400+ PRs; RLS/RBAC/multi-tenant; Azure AI Search (exact/fuzzy/semantic/vector); banking APIs (Manipal), govt (C-DAC), Infomatrix (Safety + Macro search).
 
@@ -71,7 +71,7 @@ All 8 sheets I generated are copied into **`<workingdir>/assets/worlds/`** (path
 - **Resume:** `C:\Users\Madhur\Downloads\Madhur_Budhwani_Resume.pdf`
 
 ## 7. WHAT IS ALREADY BUILT (standalone prototypes at repo root — NOT yet wired into the real app)
-- **`boot-hub-proto.html`** — APPROVED. Cold boot: a "MADHUR_OS" terminal boot-log types my real stack (POST → .NET 8 → SQL Server·EF Core → Redis → Azure → RLS·SESSION_CONTEXT ARMED → 5+ yrs·1,200+ commits·400+ PRs → SYSTEM READY), then resolves into the **HUB**: 3 big signature tiles (Boot Sequence / Trace / Gyroscope) + a "the person" divider + Beyond Code + About Madhur. Tapping a tile shows an "ENTERING…" transition. This is the entry frame + the mobile home for the old landscape hub.
+- **`boot-hub-proto.html`** — APPROVED. Cold boot: a "MADHUR_OS" terminal boot-log types my real stack (POST → .NET 10 → SQL Server·EF Core → Redis → Azure → RLS·SESSION_CONTEXT ARMED → 5+ yrs·1,200+ commits·400+ PRs → SYSTEM READY), then resolves into the **HUB**: 3 big signature tiles (Boot Sequence / Trace / Gyroscope) + a "the person" divider + Beyond Code + About Madhur. Tapping a tile shows an "ENTERING…" transition. This is the entry frame + the mobile home for the old landscape hub.
 - **`gyroscope-proto.html`** (v3) — WORKING, built first at my request. The 3-layer model that we finally got right:
   - **Layer 1 (background):** my scene art (6/7/8.webp) full-bleed, with liquid warp + slow zoom + tilt-parallax + bloom + chromatic aberration + hue-breathing, THEN a **dark scrim + radial vignette** to tame brightness.
   - **Layer 2 (interactive foreground, currently procedural):** the gameplay.

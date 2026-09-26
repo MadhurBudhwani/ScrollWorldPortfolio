@@ -55,16 +55,16 @@ async function run(){
     check('foreground above avatar',Number(w.getComputedStyle(d.querySelector('#foreground')).zIndex)>Number(w.getComputedStyle(d.querySelector('#player')).zIndex));
     w.navigate('boot',true,.42);await nextFrames(4);
     check('boot companion remains dog',w.scrollworld.diagnostics.companion==='MECHANICAL DOG');
-    d.querySelector('.orbit-target').click();check('skill bubble opens',!d.querySelector('#speechBubble').hidden&&d.querySelector('#speechBubble p').textContent.includes('SQL Server'));
-    d.body.click();check('outside tap dismisses',d.querySelector('#speechBubble').hidden);
-    d.querySelector('#player').click();check('intro bubble opens',d.querySelector('#speechBubble p').textContent.includes("I'm Madhur"));
-    d.body.click();
+    check('narrative bubble stays visible',!d.querySelector('#speechBubble').hidden);
+    check('active skill has portfolio context',d.querySelector('#speechBubble p').textContent.includes('models into useful products'));
+    d.body.click();check('outside tap keeps narrative',!d.querySelector('#speechBubble').hidden);
+    check('pet has independent bubble',d.querySelector('#petSpeechBubble strong').textContent==='Uh..'&&d.querySelector('#petSpeechBubble p').textContent==='Woof?');
     const hobbies=['read','sing','game','sketch','design','edit'];
     for(let i=0;i<6;i++){
       const local=.15+.7*(.1+.8*((i+.4)/6));w.navigate('writing',true,local);await nextFrames(4);
       check('hobby pose '+hobbies[i],w.scrollworld.diagnostics.actor===hobbies[i]);
     }
-    const expected={backend:['.NET CORE','EF CORE','SQL SERVER','RLS','DATABASE ENCRYPTION','EF INTERCEPTORS','SESSION INTERCEPTORS','REDIS','BACKGROUND JOBS','CI/CD','DESKTOP APPS'],azure:['APP SERVICE','FUNCTIONS','AZURE SQL','BLOB STORAGE','SIGNALR','API MANAGEMENT','ENTRA ID','MICROSOFT GRAPH','COGNITIVE SERVICES'],security:['DATA ACCESS CONTROL','ROLE PERMISSIONS','MULTI-TENANT','AUDIT TRAIL','AES ENCRYPTION']};
+    const expected={backend:['.NET 10','EF CORE','SQL SERVER','RLS','DATABASE ENCRYPTION','EF INTERCEPTORS','SESSION INTERCEPTORS','REDIS','BACKGROUND JOBS','CI/CD','DESKTOP APPS'],azure:['APP SERVICE','FUNCTIONS','AZURE SQL','BLOB STORAGE','SIGNALR','API MANAGEMENT','ENTRA ID','MICROSOFT GRAPH','COGNITIVE SERVICES'],security:['DATA ACCESS CONTROL','ROLE PERMISSIONS','MULTI-TENANT','AUDIT TRAIL','AES ENCRYPTION']};
     for(const [key,labels]of Object.entries(expected)){
       const seen=new Set();for(let n=0;n<=60;n++){w.navigate(key,true,.15+.7*n/60);await nextFrames(2);seen.add(w.scrollworld.diagnostics.companion);}
       check('all '+key+' companion forms reachable',labels.every(label=>seen.has(label)),[...seen]);

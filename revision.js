@@ -1,12 +1,17 @@
 // Shared interaction geometry: no independent animation clocks for scroll-linked actions.
-const revisionUI={active:null,locked:false,buttons:[],bubble:null};
-const bootDetails=[
-  'C#, .NET 8, ASP.NET Core, EF Core, REST APIs, SQL Server',
-  'App Service, Functions, Azure SQL, Blob Storage, Redis, Application Insights',
-  'Azure OpenAI, AI Foundry, RAG, embeddings, semantic search, NL-to-SQL, AI agents',
-  'Solution design, enterprise architecture, distributed services, RLS, RBAC, multi-tenant access control'
-];
+const revisionUI={active:null,buttons:[],bubble:null,petBubble:null,petTarget:null,
+  narrativeKey:0,hoverKey:null,displayKey:null,manualTransition:null,petActive:false};
+const SLIDE_ONE_TIMELINE=window.PortfolioChapters[0].timeline;
 let foreground,frontCtx;
+// Locked actor-to-hole ratio for every chapter transition. The final hub keeps
+// its independently tuned ground portals and arrival treatment.
+const CHAPTER_PORTAL_WIDTH_PER_ACTOR_SCALE=250;
+const CHAPTER_PORTAL_ASPECT=240/52;
+// Slide 1 begins suggesting the exit before the existing drop sequence. The
+// completed portal and actor transition still begin at the original .85 mark.
+const SLIDE_ONE_PORTAL_HINT_START=SLIDE_ONE_TIMELINE.portalHintStart;
+const SLIDE_ONE_PORTAL_COMPLETE=SLIDE_ONE_TIMELINE.portalComplete;
+const SLIDE_ONE_DIALOGUE_HIDE_START=SLIDE_ONE_TIMELINE.bubbleHideStart;
 function resizeRevision(){
   foreground=document.querySelector('#foreground');if(!foreground)return;
   foreground.width=Math.round(state.w*state.dpr);foreground.height=Math.round(state.h*state.dpr);
@@ -14,34 +19,125 @@ function resizeRevision(){
 }
 function initRevision(){
   revisionUI.bubble=document.querySelector('#speechBubble');
+  revisionUI.petBubble=document.querySelector('#petSpeechBubble');
+  revisionUI.petTarget=document.querySelector('#petHoverTarget');
   const root=document.querySelector('#orbitTargets');
   scenes[0].skills.forEach((label,i)=>{
     const b=document.createElement('button');b.className='orbit-target';b.setAttribute('aria-label',label+' expertise');b.setAttribute('aria-expanded','false');
-    b.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse'&&!revisionUI.locked)showSpeech(i);});
-    b.addEventListener('pointerleave',()=>{if(!revisionUI.locked)showSpeech(null);});
-    b.addEventListener('focus',()=>showSpeech(i));b.addEventListener('blur',()=>{if(!revisionUI.locked)showSpeech(null);});
-    b.addEventListener('click',e=>{e.stopPropagation();const close=revisionUI.locked&&revisionUI.active===i;revisionUI.locked=!close;showSpeech(close?null:i);});
+    b.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')setSkillHover(i);});
+    b.addEventListener('pointerleave',()=>setSkillHover(null));
+    b.addEventListener('focus',()=>setSkillHover(i));b.addEventListener('blur',()=>setSkillHover(null));
     root.append(b);revisionUI.buttons.push(b);
   });
-  player.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse'&&state.scene===0&&!revisionUI.locked)showSpeech('intro');});
-  player.addEventListener('pointerleave',()=>{if(!revisionUI.locked)showSpeech(null);});
-  player.addEventListener('focus',()=>{if(state.scene===0)showSpeech('intro');});
-  player.addEventListener('blur',()=>{if(!revisionUI.locked)showSpeech(null);});
-  const toggle=()=>{if(state.scene!==0)return;const close=revisionUI.locked&&revisionUI.active==='intro';revisionUI.locked=!close;showSpeech(close?null:'intro');};
-  player.addEventListener('click',e=>{e.stopPropagation();toggle();});
-  player.addEventListener('keydown',e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();toggle();}});
-  document.addEventListener('click',e=>{if(!e.target.closest('.orbit-target,#player')){revisionUI.locked=false;showSpeech(null);}});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){revisionUI.locked=false;showSpeech(null);}});
+  const petVisible=visible=>{
+    revisionUI.petActive=visible;
+    if(revisionUI.petBubble)revisionUI.petBubble.hidden=!visible;
+    if(revisionUI.bubble&&state.scene===0)revisionUI.bubble.hidden=visible;
+  };
+  revisionUI.petTarget.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')petVisible(true);});
+  revisionUI.petTarget.addEventListener('pointerleave',()=>petVisible(false));
+  revisionUI.petTarget.addEventListener('focus',()=>petVisible(true));
+  revisionUI.petTarget.addEventListener('blur',()=>petVisible(false));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){setSkillHover(null);petVisible(false);}});
+  setDialogueContent('intro');
 }
-function showSpeech(key){
-  revisionUI.active=key;
-  if(!revisionUI.bubble)return;
-  revisionUI.bubble.hidden=key===null;
-  revisionUI.buttons.forEach((b,i)=>b.setAttribute('aria-expanded',String(key===i)));
-  player.setAttribute('aria-expanded',String(key==='intro'));
-  if(key===null)return;
-  revisionUI.bubble.querySelector('strong').textContent=key==='intro'?'Madhur Budhwani':scenes[0].skills[key];
-  revisionUI.bubble.querySelector('p').textContent=key==='intro'?"I'm Madhur, a backend and GenAI engineer. I build systems and write worlds.":bootDetails[key];
+function dialogueMessage(key){return key==='intro'?scenes[0].introMessage:key==='exit'?scenes[0].finalMessage:scenes[0].messages[key];}
+function dialogueHighlight(key){return key==='exit'?scenes[0].messages.length-1:typeof key==='number'?key:null;}
+function setDialogueContent(key){
+  if(!revisionUI.bubble||revisionUI.displayKey===key)return;
+  const message=dialogueMessage(key);if(!message)return;
+  revisionUI.bubble.querySelector('strong').textContent=message.title;
+  revisionUI.bubble.querySelector('p').textContent=message.description;
+  revisionUI.displayKey=key;
+}
+function narrativeKeyAt(progress){
+  const t=SLIDE_ONE_TIMELINE;
+  if(progress>=t.finalMessageStart)return'exit';
+  if(progress<t.nodeStart+t.dialogueHalf)return'intro';
+  let key=0;
+  for(let i=1;i<scenes[0].messages.length;i++)if(progress>=t.nodeStart+i*t.nodeStep+t.dialogueHalf)key=i;
+  return key;
+}
+function dialogueBoundaryFrame(progress){
+  const t=SLIDE_ONE_TIMELINE,half=t.dialogueHalf;
+  const boundaries=[{at:t.nodeStart+half,from:'intro',to:0},
+    ...scenes[0].messages.slice(1).map((_,i)=>({at:t.nodeStart+(i+1)*t.nodeStep+half,from:i,to:i+1}))];
+  boundaries.push({at:t.finalMessageStart,from:scenes[0].messages.length-1,to:'exit'});
+  for(const boundary of boundaries){
+    if(progress<boundary.at-half||progress>boundary.at+half)continue;
+    if(progress<boundary.at){
+      const amount=clamp((progress-(boundary.at-half))/half);
+      return{key:boundary.from,highlight:boundary.to==='exit'?dialogueHighlight(boundary.from):dialogueHighlight(boundary.to),phase:'out',visibility:1-amount};
+    }
+    const amount=clamp((progress-boundary.at)/half);
+    return{key:boundary.to,highlight:dialogueHighlight(boundary.to),phase:'in',visibility:amount};
+  }
+  const key=narrativeKeyAt(progress);
+  return{key,highlight:dialogueHighlight(key),phase:'stable',visibility:1};
+}
+function manualDialogueFrame(){
+  const change=revisionUI.manualTransition;if(!change)return null;
+  const amount=clamp((state.time-change.start)/change.duration);
+  if(amount>=1){revisionUI.manualTransition=null;return{key:change.to,highlight:dialogueHighlight(change.to),phase:'stable',visibility:1};}
+  if(amount<.48)return{key:change.from,highlight:dialogueHighlight(change.to),phase:'out',visibility:1-amount/.48};
+  const reveal=(amount-.48)/.52;
+  return{key:change.to,highlight:dialogueHighlight(change.to),phase:'in',visibility:reveal};
+}
+function setSkillHover(key){
+  if(state.scene!==0)return;
+  revisionUI.hoverKey=key;
+  const target=key===null?narrativeKeyAt(state.local):key;
+  const from=revisionUI.displayKey??narrativeKeyAt(state.local);
+  if(from!==target)revisionUI.manualTransition={from,to:target,start:state.time,duration:230};
+}
+// Kept as a compatibility entry point for existing QA and integrations.
+function showSpeech(key){setSkillHover(typeof key==='number'?key:null);}
+function applyDialogueFrame(frame){
+  const bubble=revisionUI.bubble,steps=4;
+  setDialogueContent(frame.key);
+  const visibility=Math.round(clamp(frame.visibility)*steps)/steps;
+  const direction=frame.phase==='out'?-1:1;
+  bubble.style.setProperty('--dialogue-opacity',visibility);
+  bubble.style.setProperty('--dialogue-cut',(1-visibility)*100+'%');
+  bubble.style.setProperty('--dialogue-shift',direction*(1-visibility)*6+'px');
+  bubble.style.setProperty('--dialogue-scan',frame.phase==='stable'?0:(1-visibility)*.65);
+  bubble.classList.toggle('is-switching',frame.phase!=='stable');
+  revisionUI.active=frame.highlight;
+  revisionUI.buttons.forEach((b,i)=>b.setAttribute('aria-expanded',String(frame.highlight===i)));
+}
+function currentDialogueFrame(){
+  const manual=manualDialogueFrame();if(manual)return manual;
+  if(revisionUI.hoverKey!==null)return{key:revisionUI.hoverKey,highlight:dialogueHighlight(revisionUI.hoverKey),phase:'stable',visibility:1};
+  return dialogueBoundaryFrame(state.local);
+}
+function positionAvatarDialogue(pose){
+  const b=revisionUI.bubble,w=b.offsetWidth,h=b.offsetHeight,avatarH=232*pose.scale;
+  const left=clamp(pose.x-w*.35,16,state.w-w-16);
+  const avatarTop=pose.feet-avatarH,safeBottom=avatarTop-34;
+  const top=clamp(safeBottom-h,85,state.h-h-96);
+  b.style.left=left+'px';b.style.top=top+'px';
+  b.classList.remove('tail-side');
+  b.style.setProperty('--tail',clamp(pose.x-left,16,w-32)+'px');
+}
+function layoutPetInteraction(){
+  const target=revisionUI.petTarget,bubble=revisionUI.petBubble,d=state.mascotDiagnostics;
+  const slideOneExit=state.scene===0&&state.local>=SLIDE_ONE_DIALOGUE_HIDE_START;
+  const visible=!!d&&d.alpha>.08&&state.companionSkill==='MECHANICAL DOG'&&!state.exit&&!slideOneExit;
+  target.hidden=!visible;
+  if(!visible){revisionUI.petActive=false;bubble.hidden=true;return;}
+  const pad=Math.max(5,d.height*.08),left=clamp(d.x-d.width/2-pad,0,state.w-(d.width+pad*2));
+  Object.assign(target.style,{left:left+'px',top:Math.max(0,d.feet-d.height-pad)+'px',width:(d.width+pad*2)+'px',height:(d.height+pad*2)+'px'});
+  if(bubble.hidden)return;
+  const w=bubble.offsetWidth,h=bubble.offsetHeight;
+  let bubbleLeft=clamp(d.x+d.width*.55+14,12,state.w-w-12),bubbleTop=clamp(d.feet-d.height*.74,12,state.h-h-86);
+  const avatar=revisionUI.bubble?.getBoundingClientRect(),stageRect=stage.getBoundingClientRect();
+  if(state.scene===0&&avatar&&!revisionUI.bubble.hidden){
+    const localAvatar={left:avatar.left-stageRect.left,top:avatar.top-stageRect.top,right:avatar.right-stageRect.left,bottom:avatar.bottom-stageRect.top};
+    const overlaps=bubbleLeft<localAvatar.right+8&&bubbleLeft+w>localAvatar.left-8&&bubbleTop<localAvatar.bottom+8&&bubbleTop+h>localAvatar.top-8;
+    if(overlaps)bubbleLeft=clamp(d.x+d.width*.72+18,12,state.w-w-12);
+  }
+  bubble.style.left=bubbleLeft+'px';bubble.style.top=bubbleTop+'px';
+  bubble.style.setProperty('--tail-y',clamp(d.feet-d.height*.45-bubbleTop,16,h-22)+'px');
 }
 function updateOrbitTargets(objects,s){
   objects.forEach(o=>{
@@ -53,16 +149,20 @@ function updateOrbitTargets(objects,s){
 }
 function chapterTransition(index,p,pose){
   const hole=document.querySelector('#chapterPortal');
+  state.chapterPortal=null;
   // Launch at the instant the final carriage reaches its stop. Both actors
   // follow this same arc; descent starts only after reaching the opening.
   if(index===1&&p>=.745&&!reducedMotion.matches){
     const start=scenePose(1,.85),t=clamp((p-.745)/.155);
-    const portalWidth=Math.min(state.w*.8,Math.max(240,start.scale*300));
+    const portalWidth=Math.min(state.w*.8,Math.round(start.scale*CHAPTER_PORTAL_WIDTH_PER_ACTOR_SCALE));
+    const portalHeight=Math.round(portalWidth/CHAPTER_PORTAL_ASPECT);
     const destination=Math.min(state.w-portalWidth/2-8,start.x+(state.w<700?72:155));
     const sink=clamp((p-.90)/.10);
     pose={...start,x:mix(start.x,destination,ease(t)),feet:mix(start.feet,state.h-82,t*t)-Math.sin(t*Math.PI)*85,mode:t<1?'jump':'drop',phase:t*4};
-    Object.assign(hole.style,{left:destination+'px',top:(state.h-82)+'px',opacity:String(ease((p-.745)/.03)),width:portalWidth+'px'});
+    const opacity=ease((p-.745)/.03),approach=ease((p-.745)/.155);
+    Object.assign(hole.style,{left:destination+'px',top:(state.h-82)+'px',opacity:String(opacity),width:portalWidth+'px'});
     hole.style.setProperty('--portal-color',colors[1]);
+    state.chapterPortal={x:destination,y:state.h-82,width:portalWidth,height:portalHeight,theme:'cyan',opacity,approach,entering:sink,phase:p*4,reducedMotion:reducedMotion.matches};
     return {pose,mode:t<1?null:'drop',progress:sink,trainExit:true};
   }
   let mode=null,progress=0,opacity=0;
@@ -73,10 +173,28 @@ function chapterTransition(index,p,pose){
     mode='drop';progress=ease((p-.85)/.15);opacity=ease((p-.85)/.03);
     pose=revisionPose(index,1);
   }
-  if(mode){pose={...pose,feet:mode==='drop'?mix(pose.feet,state.h-82,ease(progress/.25)):mix(state.h-82,pose.feet,ease((progress-.65)/.35)),mode};}
-  Object.assign(hole.style,{left:pose.x+'px',top:(state.h-82)+'px',opacity:String(opacity),width:Math.min(state.w*.8,Math.max(240,pose.scale*300))+'px'});
+  const portalY=index===0||(index===1&&p<.15)?backendPortalY():state.h-82;
+  if(mode){pose={...pose,feet:mode==='drop'?mix(pose.feet,portalY,ease(progress/.25)):mix(portalY,pose.feet,ease((progress-.65)/.35)),mode};}
+  const slideOneBuildup=index===0&&p>=SLIDE_ONE_PORTAL_HINT_START;
+  const build=slideOneBuildup
+    ?clamp((p-SLIDE_ONE_PORTAL_HINT_START)/(SLIDE_ONE_PORTAL_COMPLETE-SLIDE_ONE_PORTAL_HINT_START))
+    :1;
+  const portalOpacity=slideOneBuildup
+    ?ease((p-SLIDE_ONE_PORTAL_HINT_START)/.055)
+    :opacity;
+  const actorRelative=index<8&&(!!mode||slideOneBuildup);
+  const width=actorRelative
+    ?Math.min(state.w*.8,Math.round(pose.scale*CHAPTER_PORTAL_WIDTH_PER_ACTOR_SCALE))
+    :Math.min(state.w*.8,Math.max(240,pose.scale*300));
+  const height=actorRelative?Math.round(width/CHAPTER_PORTAL_ASPECT):52;
+  Object.assign(hole.style,{left:pose.x+'px',top:portalY+'px',opacity:String(portalOpacity),width:width+'px'});
   hole.style.setProperty('--portal-color',colors[index%4]);
-  return {pose,mode,progress};
+  if(portalOpacity>.001){
+    const themes=['green','cyan','gold','pink'];
+    state.chapterPortal={x:pose.x,y:portalY,width,height,theme:themes[index%4],opacity:portalOpacity,
+      approach:mode?1:build*.65,entering:progress,build,phase:p*4,reducedMotion:reducedMotion.matches};
+  }
+  return {pose,mode,progress,portalY};
 }
 function revisionPose(index,p){
   if(index===5){
@@ -95,14 +213,17 @@ function renderForeground(pose,transition,dt){
   if(!frontCtx)return;
   frontCtx.clearRect(0,0,state.w,state.h);
   const root=document.querySelector('#orbitTargets');root.hidden=state.scene!==0;root.inert=state.scene!==0;
-  player.tabIndex=state.scene===0?0:-1;
-  if(state.scene!==0&&revisionUI.active!==null){revisionUI.locked=false;showSpeech(null);}
-  if(revisionUI.bubble&&!revisionUI.bubble.hidden){
-    const b=revisionUI.bubble,w=b.offsetWidth,left=clamp(pose.x-w*.4,16,state.w-w-16);
-    b.style.left=left+'px';b.style.top=Math.max(85,pose.feet-232*pose.scale-b.offsetHeight-20)+'px';b.style.setProperty('--tail',clamp(pose.x-left,16,w-32)+'px');
+  player.tabIndex=-1;
+  if(state.scene===0){
+    revisionUI.bubble.hidden=revisionUI.petActive||state.local>=SLIDE_ONE_DIALOGUE_HIDE_START;
+    applyDialogueFrame(currentDialogueFrame());
+    positionAvatarDialogue(pose);
+  }else{
+    revisionUI.bubble.hidden=true;revisionUI.hoverKey=null;revisionUI.manualTransition=null;
   }
   drawPullRope(frontCtx,state.reelRope);
   drawCompanion(frontCtx,pose,transition,dt);
+  layoutPetInteraction();
 }
 // Capture the current hand once, after the avatar frame is updated. Both rope
 // layers share this geometry, including when the pull cycle runs in reverse.

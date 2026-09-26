@@ -42,13 +42,13 @@ const scenes = [
     number: "01",
     kicker: "Backend engine",
     title: "Production APIs at enterprise scale",
-    body: ".NET 8, ASP.NET Core, EF Core, SQL Server, service boundaries, release ownership, and backend systems built for real users.",
+    body: ".NET 10, ASP.NET Core, EF Core, SQL Server, service boundaries, release ownership, and backend systems built for real users.",
     copy: [34, 48],
     wash: [70, 30],
     player: [26, 0.55],
     palette: ["#56d9ff", "#7dff93", "#06192b"],
     tokens: [
-      [".NET 8", "acid", -20, -24, -260, "left"],
+      [".NET 10", "acid", -20, -24, -260, "left"],
       ["ASP.NET Core", "cyan", 44, -12, -360, "right"],
       ["EF Core", "gold", -30, 22, -300, "left"],
       ["SQL Server", "cyan", 24, 28, -420, "bottom"],
@@ -176,7 +176,7 @@ const scenes = [
 ];
 
 const pipeData = {
-  Development: "Deep dive into .NET 8, ASP.NET Core, EF Core, SQL Server, REST APIs, Azure delivery, and enterprise backend systems.",
+  Development: "Deep dive into .NET 10, ASP.NET Core, EF Core, SQL Server, REST APIs, Azure delivery, and enterprise backend systems.",
   GenAI: "Explore Azure OpenAI, AI Foundry, RAG, embeddings, Azure AI Search, NL-to-SQL, agent loops, telemetry, and validation.",
   Writing: "Enter Placeholder Teddy: writing samples, world notes, story fragments, and the personal voice behind the technical work.",
 };

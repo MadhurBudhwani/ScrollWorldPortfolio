@@ -10,6 +10,10 @@
   actions.src = './assets/madhur-avatar-actions-v1.png';
   let actionsReady = false;
   actions.decode().then(() => { actionsReady = true; }).catch(() => {});
+  const trainActions = new Image();
+  trainActions.src = './assets/madhur-train-jump-v1.png';
+  let trainActionsReady = false;
+  trainActions.decode().then(() => { trainActionsReady = true; }).catch(() => {});
   const interactions = new Image();
   interactions.src = './assets/madhur-interactions-v1.png';
   let interactionsReady = false;
@@ -42,6 +46,15 @@
     [25,606,359,381,200,982], [465,630,235,355,580,981],
     [853,536,217,449,961,982], [1239,666,223,318,1350,979],
   ];
+  // Dedicated backend-train jump cycle. The atlas was generated against the
+  // approved walk-sheet proportions, so it preserves the same head/body ratio
+  // without resizing the generic action renderer used by every other scene.
+  const trainActionFrames = [
+    [38,180,387,487,272,667],
+    [561,62,421,601,815,663],
+    [1110,46,473,491,1358,537],
+    [1709,96,433,567,1901,663],
+  ];
   const interactionFrames = [
     [96,0,356,872,267,867], [525,108,348,764,692,868],
     [927,108,340,764,1100,867], [1381,108,316,764,1535,867],
@@ -72,7 +85,7 @@
       });
     }
 
-    update(dt, { moving = false, direction = this.facing, airborne = false, verticalSpeed = 0, anticipating = false, crouching = false, entering = false, interaction = null, choreographyTime = null, transitionProgress=0 } = {}) {
+    update(dt, { moving = false, direction = this.facing, airborne = false, verticalSpeed = 0, anticipating = false, crouching = false, entering = false, interaction = null, choreographyTime = null, transitionProgress=0, trainActionSet=false } = {}) {
       if (!this.loaded) return;
       if (direction) this.facing = direction < 0 ? -1 : 1;
       if (this.wasAirborne && !airborne) this.landingTime = 0.13;
@@ -99,7 +112,11 @@
         frame = 3;
       }
       else if (!reduce.matches) {
-        if(revisionReady && ['sing','game','sketch','design','edit','tap','present','drop','emerge'].includes(mode)) {
+        if(trainActionSet&&trainActionsReady&&['anticipate','jump','land'].includes(mode)) {
+          action='train';
+          frame=mode==='anticipate'?0:mode==='land'?3:this.elapsed<.10||verticalSpeed>90?1:verticalSpeed< -90?3:2;
+        }
+        else if(revisionReady && ['sing','game','sketch','design','edit','tap','present','drop','emerge'].includes(mode)) {
           action='revision';
           const beat=Math.floor((choreographyTime??this.elapsed)*3)%2;
           frame=mode==='sing'?beat:mode==='game'?2+beat:mode==='sketch'?4+beat:mode==='design'?6:mode==='edit'?7:mode==='tap'?8:mode==='present'?9:mode==='drop'?(transitionProgress<.35?10:11):transitionProgress<.7?11:9;
@@ -129,8 +146,8 @@
       this.frame = frame;
       this.drawnAction = action;
       this.drawnFacing = facing;
-      const source = action==='revision'?revision:action === 'interaction' ? interactions : action ? actions : image;
-      const [sx, sy, sw, sh, anchorX, baseline] = (action==='revision'?revisionFrames:action === 'interaction' ? interactionFrames : action ? actionFrames : frames)[frame];
+      const source = action==='train'?trainActions:action==='revision'?revision:action === 'interaction' ? interactions : action ? actions : image;
+      const [sx, sy, sw, sh, anchorX, baseline] = (action==='train'?trainActionFrames:action==='revision'?revisionFrames:action === 'interaction' ? interactionFrames : action ? actionFrames : frames)[frame];
       const c = this.ctx;
       c.clearRect(0, 0, this.canvas.width, this.canvas.height);
       c.save();
@@ -142,7 +159,7 @@
         const sink=this.mode==='drop'?Math.max(0,(t-.25)/.75):1-t;
         c.translate(0,sink*720);
       }
-      const scale = 576 * 0.94 / (action==='revision'?407:action === 'interaction' ? 757 : action ? 498 : frame < 4 ? 407 : 382);
+      const scale = 576 * 0.94 / (action==='train'?588:action==='revision'?407:action === 'interaction' ? 757 : action ? 498 : frame < 4 ? 407 : 382);
       const ground = this.canvas.height - 576 * .02;
       c.drawImage(source, sx, sy, sw, sh, (sx - anchorX) * scale, ground - (baseline - sy) * scale, sw * scale, sh * scale);
       this.registration={anchorX,baseline,scale,ground,facing};
@@ -162,7 +179,7 @@
       if(!this.registration||!this.loaded)return null;
       const a=this.registration,r=this.canvas.getBoundingClientRect();
       // Registered to the atlas torso, so the equipment follows the active pose.
-      const reference=this.drawnAction==='revision'?407:this.drawnAction==='interaction'?757:this.drawnAction?498:this.frame<4?407:382;
+      const reference=this.drawnAction==='train'?588:this.drawnAction==='revision'?407:this.drawnAction==='interaction'?757:this.drawnAction?498:this.frame<4?407:382;
       const backX=a.anchorX-12,backY=a.baseline-reference*.63;
       return {x:r.left+(360+(backX-a.anchorX)*a.scale*a.facing)*r.width/720,
         y:r.top+(a.ground-(a.baseline-backY)*a.scale)*r.height/720};
