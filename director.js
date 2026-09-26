@@ -43,6 +43,65 @@ function pixelText(c, text, x, y, unit, color) {
     if (v === '1') c.fillRect(x + (n * 6 + i) * unit, y + j * unit, unit, unit);
   })));
 }
+const reelAssetSpecs={
+  'APP SERVICE':{src:'./assets/azure-reel/app-service.png',crop:[364,80,720,935]},
+  'FUNCTIONS':{src:'./assets/azure-reel/functions.png',crop:[225,113,996,909]},
+  'AZURE SQL':{src:'./assets/azure-reel/azure-sql.png',crop:[353,40,792,1030]},
+  'BLOB STORAGE':{src:'./assets/azure-reel/blob-storage.png',crop:[302,92,848,950]},
+  'SIGNALR':{src:'./assets/azure-reel/signalr.png',crop:[267,154,920,788]},
+  'API MANAGEMENT':{src:'./assets/azure-reel/api-management.png',crop:[333,130,784,845]},
+  'ENTRA ID':{src:'./assets/azure-reel/entra-id.png',crop:[389,117,722,857]},
+  'MICROSOFT GRAPH':{src:'./assets/azure-reel/microsoft-graph.png',crop:[252,133,987,815]},
+  'COGNITIVE SERVICES':{src:'./assets/azure-reel/cognitive-services.png',crop:[225,85,998,934]},
+};
+Object.values(reelAssetSpecs).forEach(spec=>{
+  spec.image=new Image();
+  spec.image.src=spec.src;
+  spec.image.decode().catch(()=>{});
+});
+const securitySheet=new Image();
+securitySheet.src='./assets/security/security-checkpoints.png';
+securitySheet.decode().catch(()=>{});
+const securityProgressionSheet=new Image();
+securityProgressionSheet.src='./assets/security/security-progression.png';
+securityProgressionSheet.decode().catch(()=>{});
+const securityAssetCrops={
+  request:[42,34,312,248],
+  roleDormant:[403,20,358,254],
+  roleApproved:[763,19,360,256],
+  approved:[1193,75,194,191],
+  tenantDormant:[18,296,371,262],
+  tenantApproved:[398,296,374,262],
+  denied:[877,304,199,251],
+  scanner:[1237,302,126,254],
+  accessDormant:[18,575,371,251],
+  accessApproved:[400,575,376,252],
+  encryption:[762,570,371,257],
+  rail:[1137,738,311,88],
+  auditDormant:[24,847,369,220],
+  auditApproved:[394,847,368,220],
+};
+const securityProgressionCrops={
+  requestRaw:[42,104,309,208],
+  requestRole:[403,102,309,210],
+  requestTenant:[766,102,309,210],
+  requestAccess:[1127,102,308,210],
+  requestEncrypted:[42,396,309,208],
+  requestSecured:[403,396,337,207],
+  requestExit:[740,421,361,177],
+  completionPulse:[1158,385,250,238],
+  securityCoreReady:[12,658,469,357],
+  securityCoreDocked:[490,658,480,357],
+  securityCoreProtected:[970,658,466,357],
+};
+const securityRequestStates=['requestRaw','requestRole','requestTenant','requestAccess','requestEncrypted','requestSecured'];
+const securityGateSpecs={
+  'ROLE PERMISSIONS':{dormant:'roleDormant',active:'roleApproved'},
+  'MULTI-TENANT':{dormant:'tenantDormant',active:'tenantApproved'},
+  'DATA ACCESS CONTROL':{dormant:'accessDormant',active:'accessApproved'},
+  'AES ENCRYPTION':{dormant:'encryption',active:'encryption',cipher:true},
+  'AUDIT TRAIL':{dormant:'auditDormant',active:'auditApproved',recorder:true},
+};
 function sprite(label, tone, kind, index) {
   const tex = document.createElement('canvas');
   tex.width = 384; tex.height = 248;
@@ -59,19 +118,14 @@ function sprite(label, tone, kind, index) {
     return tex;
   }
   if(kind==='reel') {
-    const paper=tone===3||tone===0;
-    if(paper) {
-      rect(104,30,176,130,'#e8dab3');rect(104,30,12,130,'#b96680');
-      rect(128,52,112,6,'#897d6b');rect(128,68,128,6,'#897d6b');
-      rect(128,84,112,6,'#897d6b');rect(128,100,128,6,'#897d6b');
-      rect(128,116,72,6,'#897d6b');
-    } else {
-      rect(128,40,128,28,color);rect(96,68,192,24,color);rect(72,92,240,42,color);
-      rect(128,134,8,30,color);rect(248,134,8,30,color);
-      rect(112,164,40,18,'#f3cc70');rect(232,164,40,18,'#f3cc70');
-    }
+    // The physical reel remains code-drawn; supplied artwork occupies a shared
+    // dark aperture while labels stay crisp and independent below it.
+    rect(52,22,280,166,'rgba(6,22,27,.72)');
+    rect(60,30,264,2,'rgba(103,218,245,.38)');
+    rect(60,184,264,2,'rgba(103,218,245,.20)');
     const unit=Math.min(5,320/(label.length*6-1));
     pixelText(c,label,(384-(label.length*6-1)*unit)/2,202,unit,'#f1fff6');
+    tex.reelAsset=reelAssetSpecs[label]||null;
     return tex;
   }
   // Cargo modules have a solid shell, sockets and wheels; names are printed on the shell.
@@ -139,6 +193,21 @@ function imageObject(texture,x,y,scale=1,angle=0,alpha=1) {
     registerMascotTarget(texture.mascotLabel,0,textOnly?22:0,textOnly?Math.min(336,texture.mascotLabel.length*42):352,textOnly?100:216);
   }
   ctx.drawImage(texture,-192,-124); ctx.restore();
+}
+function reelObject(texture,x,y,scale=1,angle=0,alpha=1) {
+  if(alpha<=0 || scale<=0 || x < -800*scale || x > state.w+800*scale)return;
+  ctx.save();ctx.globalAlpha*=alpha;ctx.translate(x,y);ctx.rotate(angle);ctx.scale(scale,scale);
+  registerMascotTarget(texture.mascotLabel,0,0,352,216);
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(texture,-192,-124);
+  const asset=texture.reelAsset;
+  if(asset?.image.complete&&asset.image.naturalWidth){
+    const [sx,sy,sw,sh]=asset.crop,drawHeight=150,drawWidth=drawHeight*sw/sh;
+    ctx.save();ctx.globalAlpha*=.94;
+    ctx.drawImage(asset.image,sx,sy,sw,sh,-drawWidth/2,58-drawHeight,drawWidth,drawHeight);
+    ctx.restore();
+  }
+  ctx.restore();
 }
 function line(points,color,width=2) {
   ctx.strokeStyle=color; ctx.lineWidth=width; ctx.beginPath();
@@ -211,7 +280,56 @@ function reel(s,p) {
       ctx.fillStyle='#070d11'; ctx.fillRect(side*158*scale-7,y,14*scale,16*scale);
     }
   }
-  s.textures.forEach((tex,i) => imageObject(tex,0,i*gap-offset,scale*.86));
+  s.textures.forEach((tex,i) => reelObject(tex,0,i*gap-offset,scale*.86));
+  ctx.restore();
+}
+function searchActivation(index,p){return ease((p-(.06+index*.14))/.12);}
+function searchSegment(a,b,amount,color,width){
+  if(amount<=0)return;
+  line([[a.x,a.y],[mix(a.x,b.x,amount),mix(a.y,b.y,amount)]],color,width);
+}
+function drawSearchLens(o,activation,focused,p,rush){
+  const wake=ease(activation/.38),lock=ease((activation-.42)/.45),pulse=Math.sin(activation*Math.PI);
+  const scale=o.scale*(focused?1-rush*.52:1),rx=104*scale,ry=66*scale;
+  ctx.save();ctx.translate(Math.round(o.x),Math.round(o.y));ctx.rotate(o.angle);
+  ctx.globalAlpha=o.alpha*(.60+.40*wake);
+  ctx.fillStyle='#02080b';ctx.beginPath();ctx.ellipse(4*scale,6*scale,rx+7*scale,ry+7*scale,0,0,TAU);ctx.fill();
+  ctx.fillStyle='#07161b';ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,TAU);ctx.fill();
+  ctx.strokeStyle='#1c3c42';ctx.lineWidth=Math.max(2,8*scale);ctx.beginPath();ctx.ellipse(0,0,rx-4*scale,ry-4*scale,0,0,TAU);ctx.stroke();
+
+  // Four hard-edged lens rails wake independently, keeping the treatment
+  // mechanical rather than turning the nodes into soft neon bubbles.
+  for(let q=0;q<4;q++){
+    const start=q*TAU/4+.13,end=start+.78;
+    ctx.strokeStyle=focused&&lock>.65?'#84f5ad':'#67daf5';
+    ctx.globalAlpha=o.alpha*(.14+wake*.76);ctx.lineWidth=Math.max(2,3*scale);
+    ctx.beginPath();ctx.ellipse(0,0,rx-13*scale,ry-13*scale,0,start,end);ctx.stroke();
+    const a=start+.39,x=Math.cos(a)*(rx-3*scale),y=Math.sin(a)*(ry-3*scale);
+    ctx.fillStyle=lock>.55?'#effff5':'#67daf5';ctx.fillRect(x-3*scale,y-3*scale,6*scale,6*scale);
+  }
+
+  if(wake>.02){
+    const deckW=rx*1.22,scanX=mix(-deckW/2,deckW/2,ease((activation-.12)/.66));
+    ctx.globalAlpha=o.alpha*wake*.72;ctx.fillStyle='#0d2930';ctx.fillRect(-deckW/2,-10*scale,deckW,20*scale);
+    ctx.fillStyle=focused?'#84f5ad':'#67daf5';ctx.fillRect(scanX-2*scale,-15*scale,4*scale,30*scale);
+    ctx.fillStyle='#dfffff';ctx.fillRect(scanX-1*scale,-5*scale,2*scale,10*scale);
+  }
+
+  if(focused&&lock>.02){
+    for(let ring=0;ring<2;ring++){
+      const turn=(ring?-1:1)*p*TAU*.72,radiusX=rx+(18+ring*13)*scale,radiusY=ry+(11+ring*8)*scale;
+      ctx.globalAlpha=o.alpha*lock*(ring?.42:.72);ctx.strokeStyle=ring?'#67daf5':'#84f5ad';ctx.lineWidth=Math.max(2,(3-ring)*scale);
+      for(let q=0;q<4;q++){ctx.beginPath();ctx.ellipse(0,0,radiusX,radiusY,0,turn+q*TAU/4,turn+q*TAU/4+.38);ctx.stroke();}
+    }
+  }
+
+  if(pulse>.05){
+    ctx.globalAlpha=o.alpha*pulse*.85;ctx.fillStyle=focused?'#effff5':'#67daf5';
+    for(let i=0;i<6;i++){
+      const a=i/6*TAU+.35,r=(rx+14*scale)*(1+pulse*.16);
+      ctx.fillRect(Math.cos(a)*r-2*scale,Math.sin(a)*(ry+10*scale)-2*scale,4*scale,4*scale);
+    }
+  }
   ctx.restore();
 }
 function spiral(s,p) {
@@ -224,72 +342,261 @@ function spiral(s,p) {
     const t=i/100, a=t*TAU*1.35-turn, r=radius*(.25+t*.75)*(1+ rush*4);
     path.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r*.46]);
   }
-  line(path,'#365652',3);
-  // A shared helix followed by a deliberate camera push through its front object.
-  spiralObjects(s,p).sort((a,b)=>a.depth-b.depth).forEach(o=>imageObject(o.tex,o.x,o.y,o.scale,o.angle,o.alpha));
+  line(path,'#10262c',9);line(path,'#315159',3);
+
+  const objects=spiralObjects(s,p),flow=ease((p-.05)/.58);
+  for(let i=0;i<objects.length-1;i++){
+    const a=objects[i],b=objects[i+1],powered=ease((flow*3-i)/.82);
+    line([[a.x,a.y],[b.x,b.y]],'#152d32',6);
+    searchSegment(a,b,powered,i===objects.length-2?'#84f5ad':'#67daf5',2);
+    if(powered>0&&powered<1){
+      const x=mix(a.x,b.x,powered),y=mix(a.y,b.y,powered);
+      ctx.fillStyle='#effff5';ctx.fillRect(x-5,y-5,10,10);
+      ctx.fillStyle=i===objects.length-2?'#84f5ad':'#67daf5';ctx.fillRect(x-2,y-2,4,4);
+    }
+  }
+
+  // As the individual methods finish, their evidence converges on VECTOR.
+  const converge=ease((p-.62)/.14),vector=objects.at(-1);
+  if(converge>.01)objects.slice(0,-1).forEach((o,i)=>{
+    ctx.globalAlpha=(1-rush)*converge*(.30+i*.08);
+    searchSegment(o,vector,converge,'#84f5ad',2);
+    const packet=ease((converge-i*.10)/.65),x=mix(o.x,vector.x,packet),y=mix(o.y,vector.y,packet);
+    ctx.fillStyle='#dffff0';ctx.fillRect(x-3,y-3,6,6);
+  });
+  ctx.globalAlpha=1;
+
+  // A shared helix followed by a deliberate camera push through VECTOR.
+  objects.sort((a,b)=>a.depth-b.depth).forEach(o=>{
+    const activation=searchActivation(o.i,p),focused=o.i===objects.length-1;
+    drawSearchLens(o,activation,focused,p,rush);
+    const activationPulse=Math.sin(activation*Math.PI);
+    imageObject(o.tex,o.x,o.y,o.scale*(1+activationPulse*.035),o.angle,o.alpha);
+  });
   ctx.restore();
 }
-function gates(s,p) {
-  const mobile=state.w<700, cx=state.w*.5, cy=state.h*(mobile?.74:.73);
-  for(let i=s.skills.length-1;i>=0;i--) {
-    const z=i-p*(s.skills.length-1);
-    if(z < -.72) continue;
-    const size=(mobile?.73:1.15)/(1+Math.max(-.7,z)*.62), spread=160*size;
-    const alpha=z<0?1-ease(-z/.72):1;
-    ctx.globalAlpha=alpha; ctx.strokeStyle=colors[s.color]; ctx.lineWidth=8*size;
-    ctx.strokeRect(cx-spread,cy-110*size,spread*2,225*size);
-    imageObject(s.textures[i],cx,cy,size*.9,0,alpha);
+function drawSecurityCrop(key,x,y,width,height,alpha=1){
+  const crop=securityAssetCrops[key];
+  if(!crop||alpha<=0||!securitySheet.complete||!securitySheet.naturalWidth)return;
+  ctx.save();ctx.globalAlpha*=alpha;ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(securitySheet,...crop,x-width/2,y-height/2,width,height);
+  ctx.restore();
+}
+function drawSecurityProgressionCrop(key,x,y,height,alpha=1){
+  const crop=securityProgressionCrops[key];
+  if(!crop||alpha<=0||!securityProgressionSheet.complete||!securityProgressionSheet.naturalWidth)return;
+  const width=height*crop[2]/crop[3];
+  ctx.save();ctx.globalAlpha*=alpha;ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(securityProgressionSheet,...crop,x-width/2,y-height/2,width,height);
+  ctx.restore();
+}
+function securityFit(key,maxWidth,maxHeight){
+  const [, ,sw,sh]=securityAssetCrops[key],scale=Math.min(maxWidth/sw,maxHeight/sh);
+  return {width:sw*scale,height:sh*scale};
+}
+function drawSecurityRail(y){
+  const crop=securityAssetCrops.rail,tileH=state.w<700?38:52,tileW=tileH*crop[2]/crop[3];
+  ctx.save();ctx.globalAlpha=.78;ctx.imageSmoothingEnabled=false;
+  for(let x=-tileW/2;x<state.w+tileW;x+=tileW-5)ctx.drawImage(securitySheet,...crop,x,y-tileH/2,tileW,tileH);
+  ctx.restore();
+}
+function drawSecurityLabel(label,index,total,x,y,alpha,approved){
+  if(alpha<=0)return;
+  const maxWidth=Math.min(state.w<700?270:430,state.w*.42);
+  const unit=Math.max(2,Math.min(state.w<700?3:4,Math.floor(maxWidth/(label.length*6-1))));
+  const width=(label.length*6-1)*unit;
+  ctx.save();ctx.globalAlpha*=alpha;
+  pixelText(ctx,label,Math.round(x-width/2+4),Math.round(y+4),unit,'#071411');
+  pixelText(ctx,label,Math.round(x-width/2),Math.round(y),unit,approved?'#effff5':'#b7d4d2');
+  const dotsWidth=total*14-6,dotsX=Math.round(x-dotsWidth/2),dotsY=Math.round(y+unit*9+15);
+  for(let i=0;i<total;i++){
+    ctx.fillStyle=i<index?'#456f61':i===index?(approved?'#84f5ad':'#67daf5'):'#1b3433';
+    ctx.fillRect(dotsX+i*14,dotsY,8,4);
   }
-  ctx.globalAlpha=1;
+  ctx.restore();
+}
+function drawCipherActivity(x,y,r,amount,alpha){
+  if(amount<=0||alpha<=0)return;
+  ctx.save();ctx.globalAlpha*=alpha;ctx.lineWidth=4;ctx.lineCap='butt';
+  for(let ring=0;ring<2;ring++){
+    const radius=r-ring*13,direction=ring?-1:1,turn=amount*TAU*direction;
+    for(let i=0;i<4;i++){
+      ctx.strokeStyle=ring?'#84f5ad':'#67daf5';ctx.beginPath();
+      ctx.arc(x,y,radius,turn+i*TAU/4,turn+i*TAU/4+.34);ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+function securityCapsuleTurnX(mobile){
+  const actorX=state.pose?.x??state.w*.14;
+  return clamp(Math.max(state.w*(mobile?.31:.27),actorX+(mobile?112:190)),90,state.w*.42);
+}
+function drawSecurityFinale(p,railY,mobile){
+  const focusX=state.w*(mobile?.59:.66),coreCrop=securityProgressionCrops.securityCoreReady;
+  const coreHeight=Math.min(state.h*(mobile?.31:.38),mobile?275:350),coreWidth=coreHeight*coreCrop[2]/coreCrop[3];
+  const baseline=railY+4,coreY=baseline-coreHeight/2;
+  const enter=ease(p/.16),coreX=mix(state.w+coreWidth*.55,focusX,enter);
+  const dock=ease((p-.28)/.18),seal=ease((p-.50)/.17),release=ease((p-.76)/.20);
+  const capsuleHeight=mobile?66:88,startX=securityCapsuleTurnX(mobile),startY=baseline-(mobile?100:126);
+  const dockX=coreX,exitX=mix(coreX,Math.min(state.w+200,coreX+coreWidth*.82),release);
+  const capsuleX=release>0?exitX:mix(startX,dockX,dock),capsuleY=release>0?coreY:mix(startY,coreY,dock);
+
+  if(release<=0)drawSecurityProgressionCrop('requestSecured',capsuleX,capsuleY,capsuleHeight,1);
+  drawSecurityProgressionCrop('securityCoreReady',coreX,coreY,coreHeight,(1-dock)*enter);
+  drawSecurityProgressionCrop('securityCoreDocked',coreX,coreY,coreHeight,dock*(1-seal));
+  drawSecurityProgressionCrop('securityCoreProtected',coreX,coreY,coreHeight,seal);
+
+  const pulseAmount=ease((p-.62)/.12),pulseFade=1-ease((p-.78)/.12);
+  if(pulseAmount>0&&pulseFade>0){
+    const pulseHeight=coreHeight*(.42+.56*pulseAmount);
+    drawSecurityProgressionCrop('completionPulse',coreX,coreY,pulseHeight,pulseFade*.9);
+  }
+  if(release>0)drawSecurityProgressionCrop('requestExit',capsuleX,capsuleY,capsuleHeight,release);
+  drawSecurityLabel('DATA SECURED',4,5,coreX,baseline-coreHeight-48,enter,seal>.72);
+}
+function gates(s,p) {
+  if(!securitySheet.complete||!securitySheet.naturalWidth||!securityProgressionSheet.complete||!securityProgressionSheet.naturalWidth)return;
+  const mobile=state.w<700,stages=s.skills.map(label=>({label,...securityGateSpecs[label]})).filter(stage=>stage.dormant);
+  const count=stages.length,railY=state.h-82,gateEnd=.82;
+  drawSecurityRail(railY);
+  if(p>=gateEnd){drawSecurityFinale(clamp((p-gateEnd)/(1-gateEnd)),railY,mobile);return;}
+  const travel=clamp(p/gateEnd)*count,index=Math.min(count-1,Math.floor(travel));
+  const local=travel-index,stage=stages[index],focusX=state.w*(mobile?.59:.66);
+  const maxWidth=Math.min(state.w*(mobile?.58:.34),mobile?330:445),maxHeight=Math.min(state.h*(mobile?.27:.31),292);
+  const fitted=securityFit(stage.dormant,maxWidth,maxHeight),baseline=railY+4;
+  const enter=ease(local/.18),leave=ease((local-.74)/.20);
+  const turnX=securityCapsuleTurnX(mobile),pairedGap=fitted.width*.56,gateExitX=turnX-pairedGap;
+  const machineX=mix(mix(state.w+fitted.width*.55,focusX,enter),gateExitX,leave);
+  const alpha=(.22+.78*ease(local/.12))*(1-ease((local-.96)/.04));
+  const approved=ease((local-.48)/.12),scan=ease((local-.31)/.10)*(1-ease((local-.61)/.12));
+  const requestStart=index===0?.20:.02,requestApproach=ease((local-requestStart)/.26),requestPass=ease((local-(index===0?.38:.30))/.28);
+  const approachingX=mix(turnX,focusX-fitted.width*.16,requestApproach);
+  const processedX=mix(approachingX,focusX+pairedGap,requestPass);
+  const requestX=mix(processedX,machineX+pairedGap,leave);
+  const requestY=baseline-(mobile?100:126);
+  const requestHeight=mobile?68:90;
+  const requestAlpha=index===0?ease((local-.20)/.08):1;
+
+  // The packet sits behind the checkpoint shell, so opaque machine parts mask
+  // it naturally while the transparent opening remains readable.
+  const requestUpgrade=ease((local-.52)/.14);
+  drawSecurityProgressionCrop(securityRequestStates[index],requestX,requestY,requestHeight,requestAlpha*(1-requestUpgrade));
+  drawSecurityProgressionCrop(securityRequestStates[index+1],requestX,requestY,requestHeight,requestAlpha*requestUpgrade);
+  drawSecurityCrop(stage.dormant,machineX,baseline-fitted.height/2,fitted.width,fitted.height,alpha*(1-approved));
+  drawSecurityCrop(stage.active,machineX,baseline-fitted.height/2,fitted.width,fitted.height,alpha*approved);
+
+  if(scan>.01){
+    const beamH=fitted.height*.72,beamW=beamH*securityAssetCrops.scanner[2]/securityAssetCrops.scanner[3]*.38;
+    const sweep=mix(machineX-fitted.width*.20,machineX+fitted.width*.20,ease((local-.27)/.31));
+    drawSecurityCrop('scanner',sweep,requestY,beamW,beamH,scan*.78);
+  }
+  if(stage.cipher)drawCipherActivity(machineX,baseline-fitted.height*.49,Math.min(fitted.width,fitted.height)*.25,approved,alpha*.88);
+
+  const tokenIn=ease((local-.55)/.09),tokenOut=ease((local-.78)/.10),tokenAlpha=tokenIn*(1-tokenOut);
+  if(tokenAlpha>.01){
+    const tokenH=(mobile?44:58)*(1+.08*Math.sin(tokenIn*Math.PI)),crop=securityAssetCrops.approved;
+    drawSecurityCrop('approved',machineX+fitted.width*.34,baseline-fitted.height*.78,tokenH*crop[2]/crop[3],tokenH,tokenAlpha);
+  }
+  drawSecurityLabel(stage.label,index,count,machineX,baseline-fitted.height-54,alpha,approved>.72);
+
+  ctx.save();ctx.translate(machineX,baseline);ctx.scale(fitted.width/securityAssetCrops[stage.dormant][2],fitted.height/securityAssetCrops[stage.dormant][3]);
+  registerMascotTarget(stage.label,0,-securityAssetCrops[stage.dormant][3]/2,securityAssetCrops[stage.dormant][2],securityAssetCrops[stage.dormant][3]);ctx.restore();
 }
 function slideOneActivation(index,progress){
   const timing=scenes[0].timeline;
   return ease((progress-(timing.nodeStart+index*timing.nodeStep))/timing.nodeDuration);
 }
+function orbitArc(cx,cy,r,start,end,color,width,alpha=1){
+  if(end<=start)return;
+  ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap='butt';
+  ctx.beginPath();ctx.ellipse(cx,cy,r,r*.48,0,start,end);ctx.stroke();ctx.restore();
+}
 function drawOrbitNodeFrame(o,activation,focused){
-  const pulse=Math.sin(activation*Math.PI),rx=Math.round(88*o.scale),ry=Math.round(58*o.scale);
+  const wake=ease(activation/.28),ring=ease((activation-.16)/.42),core=ease((activation-.46)/.40);
+  const power=Math.max(activation,focused?1:0),pulse=Math.sin(activation*Math.PI);
+  const rx=Math.round(91*o.scale),ry=Math.round(61*o.scale);
   ctx.save();ctx.translate(Math.round(o.x),Math.round(o.y));
-  ctx.globalAlpha=.22+activation*.18;
-  ctx.fillStyle='#06120f';ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,TAU);ctx.fill();
-  ctx.globalAlpha=.72;ctx.strokeStyle='#102b27';ctx.lineWidth=7;
-  ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,TAU);ctx.stroke();
-  ctx.globalAlpha=.34+activation*.48;ctx.strokeStyle=focused?'#c8ffe0':'#4f8174';ctx.lineWidth=2;
-  ctx.beginPath();ctx.ellipse(0,0,rx-5,ry-5,0,0,TAU);ctx.stroke();
-  if(activation>.01){
-    ctx.globalAlpha=.30+activation*.55;ctx.strokeStyle=colors[0];ctx.lineWidth=3;
-    ctx.beginPath();ctx.ellipse(0,0,rx-2,ry-2,0,-2.62,-.52);ctx.stroke();
-    ctx.beginPath();ctx.ellipse(0,0,rx-2,ry-2,0,.52,2.62);ctx.stroke();
-    ctx.fillStyle=focused?'#effff5':'#9affbd';
-    for(const [x,y,w,h]of[[-rx-4,-3,8,6],[rx-4,-3,8,6],[-3,-ry-4,6,8],[-3,ry-4,6,8]])ctx.fillRect(x,y,w,h);
+  // Recessed extrusion and solid housing establish physical depth even while
+  // dormant; activation powers distinct mechanical layers instead of adding a
+  // single soft glow over the same circle.
+  ctx.globalAlpha=.90;ctx.fillStyle='#020806';ctx.beginPath();ctx.ellipse(5,6,rx+5,ry+5,0,0,TAU);ctx.fill();
+  ctx.globalAlpha=.98;ctx.fillStyle='#071410';ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,TAU);ctx.fill();
+  ctx.strokeStyle='#17342e';ctx.lineWidth=10;ctx.beginPath();ctx.ellipse(0,0,rx-3,ry-3,0,0,TAU);ctx.stroke();
+
+  // Four separated armor rails progressively energize around the terminal.
+  for(let q=0;q<4;q++){
+    const start=q*TAU/4+.17,end=start+1.18;
+    ctx.globalAlpha=.82;ctx.strokeStyle='#294b43';ctx.lineWidth=5;
+    ctx.beginPath();ctx.ellipse(0,0,rx-3,ry-3,0,start,end);ctx.stroke();
+    if(ring>.01){
+      ctx.globalAlpha=.22+ring*.68;ctx.strokeStyle=focused?'#d9ffeb':'#75e99e';ctx.lineWidth=2;
+      ctx.beginPath();ctx.ellipse(0,0,rx-3,ry-3,0,start,end);ctx.stroke();
+    }
   }
+
+  ctx.globalAlpha=.96;ctx.fillStyle='#06100e';ctx.beginPath();ctx.ellipse(0,0,rx-13,ry-13,0,0,TAU);ctx.fill();
+  ctx.globalAlpha=.34+wake*.34;ctx.strokeStyle=focused?'#bfffd8':'#46766a';ctx.lineWidth=2;
+  ctx.beginPath();ctx.ellipse(0,0,rx-13,ry-13,0,0,TAU);ctx.stroke();
+
+  // Crisp internal scan deck; no blur, just stepped light levels.
+  ctx.save();ctx.beginPath();ctx.ellipse(0,0,rx-17,ry-17,0,0,TAU);ctx.clip();
+  for(let y=-ry+20;y<ry-18;y+=9){
+    ctx.globalAlpha=.035+core*.055;ctx.fillStyle='#84f5ad';ctx.fillRect(-rx+18,y,rx*2-36,2);
+  }
+  ctx.globalAlpha=.08+core*.18;ctx.fillStyle='#84f5ad';ctx.fillRect(-rx+18,-5,rx*2-36,10);
+  ctx.restore();
+
+  const clamps=[[-rx-7,-7,14,14],[rx-7,-7,14,14],[-7,-ry-7,14,14],[-7,ry-7,14,14]];
+  clamps.forEach(([x,y,w,h],i)=>{
+    ctx.globalAlpha=.95;ctx.fillStyle='#020806';ctx.fillRect(x+3,y+3,w,h);
+    ctx.fillStyle='#31564c';ctx.fillRect(x,y,w,h);
+    ctx.globalAlpha=.22+power*.78;ctx.fillStyle=focused?'#ecfff4':'#91f8b3';
+    ctx.fillRect(x+4,y+4,w-8,h-8);
+    if(i>1&&core>.25){ctx.globalAlpha=core;ctx.fillStyle='#d9ffe7';ctx.fillRect(x+6,y+2,2,h-4);}
+  });
+
+  ctx.globalAlpha=.28+core*.72;ctx.fillStyle='#17362f';ctx.fillRect(-26,ry-16,52,5);
+  ctx.fillStyle=focused?'#e6fff0':'#84f5ad';
+  for(let i=0;i<3;i++)ctx.fillRect(-21+i*18,ry-15,8,3);
   if(pulse>.02&&!reducedMotion.matches){
-    ctx.globalAlpha=pulse*.75;ctx.fillStyle='#d9ffe7';
-    for(const [x,y]of[[-rx*.72,-ry*.78],[rx*.76,-ry*.66],[-rx*.82,ry*.58],[rx*.70,ry*.74]])ctx.fillRect(Math.round(x)-2,Math.round(y)-2,4,4);
+    ctx.globalAlpha=pulse*.78;ctx.fillStyle='#d9ffe7';
+    for(const [x,y]of[[-rx*.72,-ry*.78],[rx*.76,-ry*.66],[-rx*.82,ry*.58],[rx*.70,ry*.74]]){
+      ctx.fillRect(Math.round(x)-3,Math.round(y)-1,6,2);ctx.fillRect(Math.round(x)-1,Math.round(y)-3,2,6);
+    }
   }
   ctx.restore();
   return pulse;
 }
 function orbit(s,p) {
   const mobile=state.w<1000, cx=state.w*(mobile?.5:.70), cy=state.h*(mobile?.73:.66), r=mobile?125:245;
-  const raw=state.local,points=[];
-  for(let i=0;i<=64;i++){const a=i/64*TAU;points.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r*.48]);}
-  ctx.save();ctx.globalAlpha=.75;line(points,'#102824',8);
-  ctx.globalAlpha=.55;line(points,'#416c62',2);ctx.restore();
+  const raw=state.local,step=TAU/s.skills.length;
   const objects=s.textures.map((tex,i)=>{
     const a=i/s.skills.length*TAU+p*TAU*.55;
     return {tex,i,a,x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r*.48,depth:Math.sin(a),scale:(mobile?.45:.66)+Math.sin(a)*.1,activation:slideOneActivation(i,raw)};
   });
+
+  // Dark mechanical rail first, then permanently power each incoming section
+  // as its node wakes. This makes completed progress remain visible.
+  orbitArc(cx,cy,r,0,TAU,'#06100e',13,.92);
+  orbitArc(cx,cy,r,0,TAU,'#1d3b34',6,.88);
+  orbitArc(cx,cy,r,0,TAU,'#416c62',2,.55);
   objects.forEach(o=>{
-    if(o.activation<=.01)return;
-    ctx.save();ctx.globalAlpha=.18+o.activation*.42;ctx.strokeStyle=colors[0];ctx.lineWidth=3;
-    ctx.beginPath();ctx.ellipse(cx,cy,r,r*.48,0,o.a-.25,o.a+.25);ctx.stroke();ctx.restore();
+    if(o.activation<=.001)return;
+    const start=o.a-step,end=start+step*o.activation;
+    orbitArc(cx,cy,r,start,end,'#173f30',7,.40+o.activation*.28);
+    orbitArc(cx,cy,r,start,end,'#84f5ad',2,.30+o.activation*.60);
   });
-  // A single hard-edged packet hands activation from each node to the next.
+
+  // A hard-edged packet now follows the actual orbital curve instead of
+  // cutting a straight chord between neighbouring terminals.
   objects.forEach((o,i)=>{
-    if(i===0)return;const pulse=Math.sin(o.activation*Math.PI);
+    const pulse=Math.sin(o.activation*Math.PI);
     if(pulse<=.02||reducedMotion.matches)return;
-    const from=objects[i-1],t=ease(o.activation),x=mix(from.x,o.x,t),y=mix(from.y,o.y,t);
-    ctx.save();ctx.globalAlpha=pulse*.72;ctx.fillStyle='#baffcf';ctx.fillRect(Math.round(x)-3,Math.round(y)-3,6,6);ctx.restore();
+    const a=o.a-step+step*ease(o.activation),x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r*.48;
+    ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.rotate(a+Math.PI/2);
+    ctx.globalAlpha=pulse*.42;ctx.fillStyle='#173f30';ctx.fillRect(-9,-6,18,12);
+    ctx.globalAlpha=pulse*.95;ctx.fillStyle='#84f5ad';ctx.fillRect(-6,-4,12,8);
+    ctx.fillStyle='#ecfff3';ctx.fillRect(-2,-2,4,4);ctx.restore();
   });
   updateOrbitTargets(objects,s);
   objects.sort((a,b)=>a.depth-b.depth).forEach(o=>{
@@ -303,7 +610,10 @@ function drawPortals(){
   const chapter=state.chapterPortal;
   if(chapter?.opacity>.001)PortalArt.draw(ctx,chapter.x,chapter.y,chapter.width,chapter.height,chapter.theme,chapter);
   if(!state.hubLive)return;
-  const opacity=ease(state.local/.16),phase=reducedMotion.matches?0:(state.time/2600)%1;
+  // Let the temporary chapter-arrival hatch finish and disappear before the
+  // four permanent hub portals power up. Their nearby rims otherwise occupy
+  // the same pixels during the first part of the hub entrance.
+  const opacity=ease((state.local-.15)/.10),phase=reducedMotion.matches?0:(state.time/2600)%1;
   portals.forEach(portal=>{
     const mouth=portal.querySelector('.portal-mouth'),box=sceneViewport.bounds(mouth);
     const selected=state.exit?.portal===portal;
@@ -321,7 +631,9 @@ function draw(position,index,p) {
   backdrop(position);
   const scene=scenes[index], alpha=(index===0?1:ease(p/.10))*(1-ease((p-.9)/.1));
   ctx.save(); ctx.globalAlpha=alpha;
-  const shotProgress=shotTime(state.directedLocal);
+  // Security starts only after the chapter-entrance emergence and a short
+  // settle, then uses the remaining slide for five checks plus the finale.
+  const shotProgress=scene.mode==='gates'?clamp((state.local-.20)/.75):shotTime(state.directedLocal);
   ({procession,reel,spiral,gates,orbit,circuit:routerCircuit,crossing,fusion:hobbyFusion}[scene.mode] || (()=>{}))(scene,shotProgress);
   ctx.restore();
   if(scene.mode==='hub') {
@@ -354,7 +666,7 @@ function updateCopy(index,p) {
   state.hubLive=scene.key==='hub';
   hub.style.opacity=state.hubLive?ease(p/.16):0;
   hub.classList.toggle('is-live',state.hubLive);hub.inert=!state.hubLive;
-  if(state.hubLive&&!wasLive) {state.x=state.w*.14;state.y=0;state.vy=0;state.keys.clear();}
+  if(state.hubLive&&!wasLive) {state.x=hubArrivalX();state.y=0;state.vy=0;state.keys.clear();}
   document.querySelector('.game-controls').inert=!state.hubLive;
   document.querySelector('.game-controls').classList.toggle('is-live',state.hubLive);
 }
@@ -473,7 +785,11 @@ function updatePlayer(dt,paintForeground=true) {
     entering:player.classList.contains('entering'),
     interaction:transitionAction || (state.hubLive?null:['pull','read','sing','game','sketch','design','edit','tap','present'].includes(pose.mode)?pose.mode:null),
     transitionProgress,
-    trainActionSet:state.scene===1,
+    // Search Intelligence reuses the registered train jump poses so the
+    // long leap keeps the same body scale and scroll-locked silhouette.
+    trainActionSet:state.scene===1||state.scene===4,
+    trainJumpProgress:pose.jumpProgress??null,
+    autoAlternate:state.scene===7,
     choreographyTime:pose.moving?pose.walkPhase:state.hubLive?null:pose.phase,
     scrollMoving:scrollMotion
   });

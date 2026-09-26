@@ -7,6 +7,7 @@ let foreground,frontCtx;
 // its independently tuned ground portals and arrival treatment.
 const CHAPTER_PORTAL_WIDTH_PER_ACTOR_SCALE=250;
 const CHAPTER_PORTAL_ASPECT=240/52;
+const hubArrivalX=()=>state.w*.14-(state.w<700?20:36);
 // Slide 1 begins suggesting the exit before the existing drop sequence. The
 // completed portal and actor transition still begin at the original .85 mark.
 const SLIDE_ONE_PORTAL_HINT_START=SLIDE_ONE_TIMELINE.portalHintStart;
@@ -157,13 +158,15 @@ function chapterTransition(index,p,pose){
     const portalWidth=Math.min(state.w*.8,Math.round(start.scale*CHAPTER_PORTAL_WIDTH_PER_ACTOR_SCALE));
     const portalHeight=Math.round(portalWidth/CHAPTER_PORTAL_ASPECT);
     const destination=Math.min(state.w-portalWidth/2-8,start.x+(state.w<700?72:155));
+    const actorDestination=destination-(state.w<700?4:8);
+    const exitPortalY=backendPortalY();
     const sink=clamp((p-.90)/.10);
-    pose={...start,x:mix(start.x,destination,ease(t)),feet:mix(start.feet,state.h-82,t*t)-Math.sin(t*Math.PI)*85,mode:t<1?'jump':'drop',phase:t*4};
+    pose={...start,x:mix(start.x,actorDestination,ease(t)),feet:mix(start.feet,exitPortalY,t*t)-Math.sin(t*Math.PI)*85,mode:t<1?'jump':'drop',jumpProgress:t<1?t:null,phase:t*4};
     const opacity=ease((p-.745)/.03),approach=ease((p-.745)/.155);
-    Object.assign(hole.style,{left:destination+'px',top:(state.h-82)+'px',opacity:String(opacity),width:portalWidth+'px'});
+    Object.assign(hole.style,{left:destination+'px',top:exitPortalY+'px',opacity:String(opacity),width:portalWidth+'px'});
     hole.style.setProperty('--portal-color',colors[1]);
-    state.chapterPortal={x:destination,y:state.h-82,width:portalWidth,height:portalHeight,theme:'cyan',opacity,approach,entering:sink,phase:p*4,reducedMotion:reducedMotion.matches};
-    return {pose,mode:t<1?null:'drop',progress:sink,trainExit:true};
+    state.chapterPortal={x:destination,y:exitPortalY,width:portalWidth,height:portalHeight,theme:'cyan',opacity,approach,entering:sink,phase:p*4,reducedMotion:reducedMotion.matches};
+    return {pose,mode:t<1?null:'drop',progress:sink,portalY:exitPortalY,trainExit:true};
   }
   let mode=null,progress=0,opacity=0;
   if(!reducedMotion.matches&&index>0&&p<.15){
@@ -173,7 +176,30 @@ function chapterTransition(index,p,pose){
     mode='drop';progress=ease((p-.85)/.15);opacity=ease((p-.85)/.03);
     pose=revisionPose(index,1);
   }
-  const portalY=index===0||(index===1&&p<.15)?backendPortalY():state.h-82;
+  // Move the complete hub-arrival group together: avatar, companion and hatch.
+  if(index===8&&mode==='emerge')pose={...pose,x:hubArrivalX()};
+  // Delivery's portal belongs to the gantry rather than the global floor. Use
+  // the live DEV/PRODUCTION platform centre so the hatch sits exactly on the
+  // generated deck even while the late perspective transformation is moving.
+  // Only the entrance hatch is mounted on DEV. The exit returns to the lower
+  // chapter baseline so the actors retain their existing leap/drop off the
+  // raised PRODUCTION platform instead of sinking in place on its surface.
+  const deliveryPortalAt=index===6&&mode==='emerge'
+    ?bridgePoint(0,shotTime(state.directedLocal))
+    :null;
+  let portalX=deliveryPortalAt?.x??pose.x;
+  const portalY=deliveryPortalAt?.y??(index===0||(index===1&&p<.15)?backendPortalY():state.h-82);
+  if(index===6&&mode==='drop'){
+    // Reproduce the entrance composition at the smaller exit scale: avatar on
+    // the left, companion on the right, hatch centred between them. Move the
+    // complete three-part arrangement right without changing that ratio.
+    const entryScale=(state.w<700?.67:.82)*actorViewportScale()*.92;
+    const entryAvatarToHole=state.w<700?20:38;
+    const scaledAvatarToHole=entryAvatarToHole*(pose.scale/entryScale);
+    const exitGroupNudge=state.w<700?11:20;
+    pose={...pose,x:pose.x+exitGroupNudge};
+    portalX=pose.x+scaledAvatarToHole;
+  }
   if(mode){pose={...pose,feet:mode==='drop'?mix(pose.feet,portalY,ease(progress/.25)):mix(portalY,pose.feet,ease((progress-.65)/.35)),mode};}
   const slideOneBuildup=index===0&&p>=SLIDE_ONE_PORTAL_HINT_START;
   const build=slideOneBuildup
@@ -187,11 +213,11 @@ function chapterTransition(index,p,pose){
     ?Math.min(state.w*.8,Math.round(pose.scale*CHAPTER_PORTAL_WIDTH_PER_ACTOR_SCALE))
     :Math.min(state.w*.8,Math.max(240,pose.scale*300));
   const height=actorRelative?Math.round(width/CHAPTER_PORTAL_ASPECT):52;
-  Object.assign(hole.style,{left:pose.x+'px',top:portalY+'px',opacity:String(portalOpacity),width:width+'px'});
-  hole.style.setProperty('--portal-color',colors[index%4]);
+  Object.assign(hole.style,{left:portalX+'px',top:portalY+'px',opacity:String(portalOpacity),width:width+'px'});
+  hole.style.setProperty('--portal-color',index===6?'#67daf5':colors[index%4]);
   if(portalOpacity>.001){
     const themes=['green','cyan','gold','pink'];
-    state.chapterPortal={x:pose.x,y:portalY,width,height,theme:themes[index%4],opacity:portalOpacity,
+    state.chapterPortal={x:portalX,y:portalY,width,height,theme:index===6?'cyan':themes[index%4],opacity:portalOpacity,
       approach:mode?1:build*.65,entering:progress,build,phase:p*4,reducedMotion:reducedMotion.matches};
   }
   return {pose,mode,progress,portalY};
@@ -199,12 +225,14 @@ function chapterTransition(index,p,pose){
 function revisionPose(index,p){
   if(index===5){
     const layout=routerLayout(),t=shotTime(p),base=(state.w<700?.60:.82)*actorViewportScale();
-    const x=t<.25?mix(layout.front[0].x,layout.front[2].x,ease(t/.25)):t<.65?layout.front[2].x:mix(layout.front[2].x,layout.respond.x,ease((t-.65)/.25));
-    return {x,feet:state.h*(state.w<700?.995:.94),scale:base,mode:t<.06?'tap':t<.15?'read':t<.25?'walk':t<.65?'read':t<.88?'walk':'present',direction:1,phase:t*10};
+    const x=t<.25?mix(layout.front[0].x,layout.front[2].x,ease(t/.25)):t<.42?layout.front[2].x:mix(layout.front[2].x,layout.respond.x,ease((t-.42)/.54));
+    return {x,feet:state.h*(state.w<700?.995:.94),scale:base,mode:t<.06?'tap':t<.15?'read':t<.25?'walk':t<.42?'read':t<.96?'walk':'present',direction:1,phase:t*10};
   }
   if(index===7){
     const t=shotTime(p),i=Math.min(5,Math.floor(t*6));
-    return {x:state.w*.5,feet:state.h*.91,scale:(state.w<700?.67:.82)*actorViewportScale(),mode:['read','sing','game','sketch','design','edit'][i],direction:1,phase:t*24};
+    // Scroll selects the hobby; a real-time clock animates its active pose.
+    // One phase step is 750ms, so pausing scroll no longer freezes mid-frame.
+    return {x:state.w*.5,feet:state.h*.91,scale:(state.w<700?.67:.82)*actorViewportScale(),mode:['read','sing','game','sketch','design','edit'][i],direction:1,phase:reducedMotion.matches?0:state.time/750};
   }
   const pose=scenePose(index,p);
   return pose;
@@ -247,7 +275,7 @@ function drawPullRope(c,rope){
   c.beginPath();c.moveTo(x,pulleyY);c.lineTo(x,y);c.stroke();
   c.strokeStyle='#67daf5';c.lineWidth=4;c.strokeRect(x-8,pulleyY-8,16,16);
   c.fillStyle='#81795f';
-  for(let dy=pulleyY+12-(phase*200)%16;dy<y-4;dy+=16)c.fillRect(x-2,dy,4,3);
+  for(let dy=pulleyY+12+(phase*200)%16;dy<y-4;dy+=16)c.fillRect(x-2,dy,4,3);
   c.restore();
 }
 function diagramLabel(c,label,x,y,maxWidth,color='#d6e8e1',size=11){
@@ -333,12 +361,13 @@ function hobbyObjects(p){
 }
 function hobbyFusion(s,p){
   const objects=hobbyObjects(p);
+  const automaticPhase=reducedMotion.matches?0:state.time/750;
   const path=[];for(let i=0;i<=64;i++){const a=i/64*TAU;path.push([state.w*.5+Math.cos(a)*Math.min(state.w*.34,390),state.h*.69+Math.sin(a)*state.h*.14]);}
   line(path,'#483541',2);
   objects.sort((a,b)=>a.depth-b.depth).forEach(o=>{
     ctx.save();ctx.translate(o.x,o.y);ctx.scale(o.scale,o.scale);ctx.globalAlpha=o.focus?1:.45;
     registerMascotTarget(o.label,0,0,94,88);
-    drawHobbyObject(ctx,o.i,p*18);
+    drawHobbyObject(ctx,o.i,automaticPhase);
     diagramLabel(ctx,o.label,0,47,120,o.focus?'#f5b1cc':'#a28c9b',state.w<700?10:12);ctx.restore();
   });
   pixelText(ctx,'HOBBIES',state.w*.5-41,state.h*.96,2,'#f58caf');

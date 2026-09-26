@@ -85,7 +85,7 @@
       });
     }
 
-    update(dt, { moving = false, direction = this.facing, airborne = false, verticalSpeed = 0, anticipating = false, crouching = false, entering = false, interaction = null, choreographyTime = null, transitionProgress=0, trainActionSet=false } = {}) {
+    update(dt, { moving = false, direction = this.facing, airborne = false, verticalSpeed = 0, anticipating = false, crouching = false, entering = false, interaction = null, choreographyTime = null, transitionProgress=0, trainActionSet=false, trainJumpProgress=null, autoAlternate=false } = {}) {
       if (!this.loaded) return;
       if (direction) this.facing = direction < 0 ? -1 : 1;
       if (this.wasAirborne && !airborne) this.landingTime = 0.13;
@@ -114,16 +114,21 @@
       else if (!reduce.matches) {
         if(trainActionSet&&trainActionsReady&&['anticipate','jump','land'].includes(mode)) {
           action='train';
-          frame=mode==='anticipate'?0:mode==='land'?3:this.elapsed<.10||verticalSpeed>90?1:verticalSpeed< -90?3:2;
+          if(mode==='anticipate')frame=0;
+          else if(mode==='land')frame=3;
+          else if(trainJumpProgress!==null){
+            const jumpT=clamp(trainJumpProgress);
+            frame=jumpT<.28?1:jumpT<.72?2:3;
+          }else frame=this.elapsed<.10||verticalSpeed>90?1:verticalSpeed< -90?3:2;
         }
         else if(revisionReady && ['sing','game','sketch','design','edit','tap','present','drop','emerge'].includes(mode)) {
           action='revision';
-          const beat=Math.floor((choreographyTime??this.elapsed)*3)%2;
+          const beat=autoAlternate?Math.floor(choreographyTime??0)%2:Math.floor((choreographyTime??this.elapsed)*3)%2;
           frame=mode==='sing'?beat:mode==='game'?2+beat:mode==='sketch'?4+beat:mode==='design'?6:mode==='edit'?7:mode==='tap'?8:mode==='present'?9:mode==='drop'?(transitionProgress<.35?10:11):transitionProgress<.7?11:9;
         }
         else if (interactionsReady && ['pull','read','swing','webcast','climb'].includes(mode)) {
           action = 'interaction';
-          frame = ['swing','webcast'].includes(mode) ? 0 : mode === 'climb' ? Math.floor((choreographyTime ?? this.elapsed)*2)%2 : mode === 'pull' ? Math.floor((choreographyTime ?? this.elapsed) * 2) % 2 : (choreographyTime ?? this.elapsed) < 1 ? 2 : 3;
+          frame = ['swing','webcast'].includes(mode) ? 0 : mode === 'climb' ? Math.floor((choreographyTime ?? this.elapsed)*2)%2 : mode === 'pull' ? Math.floor((choreographyTime ?? this.elapsed) * 2) % 2 : autoAlternate ? 2+Math.floor(choreographyTime??0)%2 : (choreographyTime ?? this.elapsed) < 1 ? 2 : 3;
         }
         else if (mode === 'walk') frame = 4 + (choreographyTime === null ? Math.floor(this.elapsed * 12) : Math.floor(choreographyTime * 8)) % 8;
         else if (actionsReady && ['anticipate', 'jump', 'land', 'crouch', 'enter'].includes(mode)) {

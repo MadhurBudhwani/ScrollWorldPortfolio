@@ -121,9 +121,18 @@ function drawCompanion(c,pose,transition,dt){
   // SS2 establishes the dog height: 60% of the avatar's registered height.
   const height=232*pose.scale*.60;
   const offset=(state.scene===1?-80:90)*pose.scale/.82;
-  const x=clamp(pose.x+offset*(transition.mode?1-transition.progress:1),height*.65,state.w-height*.65);
+  // Standard chapter portals pull the companion towards the avatar as both
+  // actors descend. The wider train-exit portal already accommodates them side
+  // by side, so keep the dog's offset instead of sliding it through the avatar.
+  const portalOffset=transition.mode&&!transition.trainExit?1-transition.progress:1;
+  const trainExitNudge=transition.trainExit?Math.min(50,height*.60):0;
+  const x=clamp(pose.x+offset*portalOffset+trainExitNudge,height*.65,state.w-height*.65);
   const dx=mascot.x===null?0:x-mascot.x;
-  const moving=Math.abs(dx)>.025&&!transition.mode;
+  // Delivery platforms reposition during their cinematic perspective turn.
+  // That camera/layout motion must not make the dog walk in place: on this
+  // chapter its gait follows the same reveal-gated walk state as the avatar.
+  const deliveryWalkReady=state.scene!==6||pose.mode==='walk';
+  const moving=Math.abs(dx)>.025&&!transition.mode&&deliveryWalkReady;
   if(moving){mascot.facing=Math.sign(dx);mascot.gait+=dt*9;}
   else if(mascot.x===null)mascot.facing=pose.direction||1;
   mascot.x=x;

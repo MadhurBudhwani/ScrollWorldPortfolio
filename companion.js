@@ -82,17 +82,18 @@ function drawMechSymbol(c,type,label,time){
 const companionAtlas=new Image();
 companionAtlas.src='./assets/mechanical-companion-pixel-v2.png';
 const companionWalkAtlas=new Image();
-companionWalkAtlas.src='./assets/mechanical-companion-walk-v2.png';
+companionWalkAtlas.src='./assets/mechanical-companion-walk-v3.png';
 const companionSprites=[
   [12,116,268,320],[294,122,339,315],[598,165,322,271],[911,160,331,276],
   [26,592,271,211],[347,493,261,310],[677,487,207,326],[968,486,248,323],
   [24,844,294,344],[347,852,275,337],[641,862,272,327],[948,867,288,320]
 ];
-// Six generated gait phases, alpha-trimmed from the 3x2 source sheet. The two
-// original walking poses bookend these in mascot.js for an eight-frame loop.
+// Six gait phases regenerated against the original companion atlas so their
+// chunky pixel treatment, armor palette and body scale remain consistent. The
+// two original walking poses bookend these in mascot.js for an eight-frame loop.
 const companionWalkSprites=[
-  [28,122,471,345],[516,120,493,347],[1040,122,461,345],
-  [22,596,485,345],[528,592,495,351],[1024,592,495,351]
+  [42,100,412,355],[549,100,425,355],[1075,100,410,354],
+  [38,581,417,353],[535,581,458,359],[1067,579,424,358]
 ];
 // Long tails and muzzles overlap adjacent bounding rectangles in the atlas.
 // Exclude only those neighbouring fragments while drawing each intact sprite.

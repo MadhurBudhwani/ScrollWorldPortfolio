@@ -3,7 +3,7 @@
 class ScrollPacer {
   constructor() {
     this.direction=0;this.touchY=null;this.keys=new Map();this.heldControl=null;
-    this.secondsPerChapter=10;this.trainSeconds=18;
+    this.secondsPerChapter=10;this.trainSeconds=18;this.securitySeconds=28;this.writingSeconds=18;
     this.gestureDirection=0;this.lastGestureAt=-Infinity;this.gestureGapMs=72;
     this.editable=e=>e.target instanceof Element&&e.target.closest('input,textarea,select,[contenteditable="true"]');
     window.addEventListener('wheel',e=>{
@@ -94,7 +94,8 @@ class ScrollPacer {
   }
   advance(direction,dt){
     const current=lenis.animatedScroll,chapter=(current-state.top)/state.travel*scenes.length;
-    const seconds=chapter>=1&&chapter<2?this.trainSeconds:this.secondsPerChapter;
+    const scene=Math.floor(chapter);
+    const seconds=scene===1?this.trainSeconds:scene===3?this.securitySeconds:scene===7?this.writingSeconds:this.secondsPerChapter;
     const step=state.travel/scenes.length/seconds*dt;
     lenis.scrollTo(clamp(current+direction*step,0,lenis.limit),{immediate:true});
   }

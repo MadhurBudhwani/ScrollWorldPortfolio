@@ -7,6 +7,7 @@ const actorViewportScale = () => Math.min(1,state.h/650);
 const BACKEND_ACTOR_SCALE = .75;
 const BACKEND_PORTAL_RAIL_LIFT = 18;
 const BACKEND_TRAIN_ENTRY_RIGHT_SHIFT = .26;
+const DELIVERY_ACTOR_DECK_SETTLE = 10;
 // Integrate a short smooth acceleration ramp at each end, keeping the same
 // travel window and a steady cruise through the middle of the train.
 function trainTravel(value) {
@@ -147,11 +148,52 @@ function circuit(s,p) {
   ctx.strokeStyle='#f3cc70';ctx.lineWidth=2;ctx.strokeRect(packet.x-14,packet.y-14,28,28);
   ctx.restore();
 }
+
+// The delivery chapter keeps its original scroll path and camera turn, but the
+// temporary block staircase is replaced by the generated release gantry.  Each
+// crop is anchored by its walkable deck, so bridgePoint remains the single
+// source of truth for both the art and the actors' feet.
+const deliveryPlatformSheet=new Image();
+deliveryPlatformSheet.src='./assets/delivery/release-platforms.png';
+deliveryPlatformSheet.decode().catch(()=>{});
+const DELIVERY_ACTIVE_ROW=295;
+const deliveryPlatforms=[
+  {label:'DEV',        crop:[18,145,272,145],deck:37},
+  {label:'REVIEW',     crop:[351,108,280,182],deck:40},
+  {label:'QA',         crop:[686,75,245,215],deck:43},
+  {label:'UAT',        crop:[1017,46,240,244],deck:43},
+  {label:'PRODUCTION', crop:[1341,10,423,280],deck:46},
+];
+// Each destination finishes building before its corresponding walk begins.
+// The gaps between walk windows are intentional holds on the current stage.
+const deliveryStageWindows=[
+  {reveal:[0,0],     walk:[0,0]},
+  {reveal:[.04,.12], walk:[.12,.24]},
+  {reveal:[.24,.32], walk:[.32,.44]},
+  {reveal:[.44,.52], walk:[.52,.64]},
+  {reveal:[.64,.72], walk:[.72,.86]},
+];
+function deliveryActorState(p){
+  for(let i=1;i<deliveryStageWindows.length;i++){
+    const [start,end]=deliveryStageWindows[i].walk,from=(i-1)/(deliveryStageWindows.length-1),to=i/(deliveryStageWindows.length-1);
+    if(p<start)return {travel:from,moving:false};
+    if(p<end)return {travel:mix(from,to,ease((p-start)/(end-start))),moving:true};
+  }
+  return {travel:1,moving:false};
+}
+
 function bridgePoint(t,p) {
   const turn=ease((p-.70)/.30);
-  return {x:mix(state.w*(.12+t*.76),state.w*(.33+t*.36),turn),y:mix(state.h*.81,state.h*(.91-t*.30),turn),scale:mix(1,1.12-t*.45,turn)};
+  // The generated PRODUCTION module is substantially deeper than the former
+  // blocks. Lift the entire shared delivery geometry so its lower frame stays
+  // inside the viewport even before the perspective turn begins.
+  const stageLift=Math.min(64,state.h*.065);
+  // Once the gantry turns into its final perspective, add a smaller second
+  // lift to keep the DEV platform's lower supports inside the viewport too.
+  const bottomLift=turn*Math.min(42,state.h*.045);
+  return {x:mix(state.w*(.12+t*.76),state.w*(.33+t*.36),turn),y:mix(state.h*.81,state.h*(.91-t*.30),turn)-stageLift-bottomLift,scale:mix(1,1.12-t*.45,turn)};
 }
-function crossing(s,p) {
+function fallbackCrossing(s,p) {
   const count=20, built=clamp(p/.70)*count;
   for(let i=0;i<count;i++){
     const at=bridgePoint(i/(count-1),p), reveal=ease(built-i);
@@ -170,6 +212,84 @@ function crossing(s,p) {
   }
   if(p>.1&&p<.8)for(let j=0;j<6;j++){
     const t=(p*4+j/6)%1,at=bridgePoint(clamp((built-1)/count),p);
+    ctx.globalAlpha=1-t;ctx.fillStyle=colors[j%3];ctx.fillRect(at.x+(j-3)*18*(1-t),at.y+110*(1-t),8,8);
+  }
+  ctx.globalAlpha=1;
+}
+function deliveryConnector(a,b,aWidth,bWidth,aScale,bScale,alpha,active){
+  const x1=a.x+aWidth/2-5*aScale,x2=b.x-bWidth/2+5*bScale;
+  if(alpha<=0||x2<=x1+3)return;
+  const y1=a.y+18*aScale,y2=b.y+18*bScale;
+  const thickness=Math.max(8,14*Math.min(aScale,bScale));
+  ctx.save();ctx.globalAlpha*=alpha;
+  // A hard-edged truss sits behind the platform bodies.  It follows the exact
+  // same moving endpoints as the old bridge, so the late perspective turn is
+  // unchanged even though the visual language is now industrial.
+  ctx.fillStyle='#071217';
+  ctx.beginPath();ctx.moveTo(x1,y1-thickness);ctx.lineTo(x2,y2-thickness);ctx.lineTo(x2,y2+thickness);ctx.lineTo(x1,y1+thickness);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#263a46';ctx.lineWidth=Math.max(3,5*Math.min(aScale,bScale));
+  ctx.beginPath();ctx.moveTo(x1,y1-thickness*.62);ctx.lineTo(x2,y2-thickness*.62);ctx.moveTo(x1,y1+thickness*.62);ctx.lineTo(x2,y2+thickness*.62);ctx.stroke();
+  ctx.strokeStyle=active?'#6fffd5':'#365563';ctx.lineWidth=Math.max(2,2.5*Math.min(aScale,bScale));
+  ctx.beginPath();ctx.moveTo(x1,y1-thickness*.18);ctx.lineTo(x2,y2-thickness*.18);ctx.stroke();
+  const distance=Math.hypot(x2-x1,y2-y1),braces=Math.max(1,Math.floor(distance/34));
+  ctx.strokeStyle=active?'#258f87':'#172b33';ctx.lineWidth=Math.max(2,3*Math.min(aScale,bScale));
+  for(let i=0;i<braces;i++){
+    const t0=i/braces,t1=(i+1)/braces;
+    ctx.beginPath();ctx.moveTo(mix(x1,x2,t0),mix(y1,y2,t0)-thickness*.55);ctx.lineTo(mix(x1,x2,t1),mix(y1,y2,t1)+thickness*.55);ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawDeliveryPlatform(spec,at,artScale,reveal,active){
+  const [sx,sy,sw,sh]=spec.crop,scale=artScale*at.scale;
+  const rise=(1-reveal)*state.h*.24;
+  const x=Math.round(at.x),deckY=Math.round(at.y+rise);
+  const dx=Math.round(x-sw*scale/2),dy=Math.round(deckY-spec.deck*scale);
+  ctx.save();ctx.imageSmoothingEnabled=false;ctx.globalAlpha*=reveal;
+  if(active<1)ctx.drawImage(deliveryPlatformSheet,sx,sy,sw,sh,dx,dy,sw*scale,sh*scale);
+  if(active>0){ctx.globalAlpha*=active;ctx.drawImage(deliveryPlatformSheet,sx,sy+DELIVERY_ACTIVE_ROW,sw,sh,dx,dy,sw*scale,sh*scale);}
+  ctx.restore();
+  return {x, y:deckY, width:sw*scale, scale};
+}
+function deliveryLabel(spec,index,platform,reveal,active){
+  if(reveal<=0)return;
+  const label=spec.label,u=state.w<700?1.25:Math.max(1.7,2.25*platform.scale);
+  const width=(label.length*6-1)*u;
+  // Labels remain code-rendered and sit on a compact dark nameplate rather
+  // than being baked into the supplied artwork.
+  const y=platform.y+Math.max(45,58*platform.scale);
+  ctx.save();ctx.globalAlpha*=reveal;
+  ctx.fillStyle='rgba(3,13,17,.84)';ctx.fillRect(platform.x-width/2-10,y-7,width+20,7*u+14);
+  ctx.fillStyle=active>.55?'#84f5ad':'#4f7881';ctx.fillRect(platform.x-width/2-10,y-7,width+20,3);
+  pixelText(ctx,label,platform.x-width/2+2,y+2,u,'#061315');
+  pixelText(ctx,label,platform.x-width/2,y,u,active>.55?'#effff5':'#c4d4d6');
+  ctx.restore();
+  registerMascotTarget(label,platform.x,platform.y+42*platform.scale,Math.max(86,platform.width*.76),Math.max(95,120*platform.scale));
+}
+function crossing(s,p) {
+  if(!deliveryPlatformSheet.complete||!deliveryPlatformSheet.naturalWidth){fallbackCrossing(s,p);return;}
+  const built=clamp(p/.70)*20;
+  const artScale=Math.min(state.w/1774,state.h/887)*1.02;
+  const entries=deliveryPlatforms.map((spec,i)=>{
+    const at=bridgePoint(i/(deliveryPlatforms.length-1),p);
+    const [revealStart,revealEnd]=deliveryStageWindows[i].reveal;
+    // DEV exists before emergence. Every other stage and its illumination are
+    // completely resolved before deliveryActorState releases the next walk.
+    const reveal=i===0?1:ease((p-revealStart)/(revealEnd-revealStart));
+    const active=i===0?1:ease((p-(revealStart+.025))/(revealEnd-revealStart-.025));
+    const scale=artScale*at.scale;
+    const rise=(1-reveal)*state.h*.24;
+    return {spec,at,reveal,active,x:at.x,y:at.y+rise,width:spec.crop[2]*scale,scale};
+  });
+  // Connectors are revealed with their destination platform and remain behind
+  // the bodies, preventing visible seams while the gantry changes perspective.
+  for(let i=0;i<entries.length-1;i++){
+    const a=entries[i],b=entries[i+1],reveal=Math.min(a.reveal,b.reveal);
+    deliveryConnector(a,b,a.width,b.width,a.scale,b.scale,reveal,Math.min(a.active,b.active)>.45);
+  }
+  const platforms=entries.map(entry=>drawDeliveryPlatform(entry.spec,entry.at,artScale,entry.reveal,entry.active));
+  platforms.forEach((platform,i)=>deliveryLabel(deliveryPlatforms[i],i,platform,entries[i].reveal,entries[i].active));
+  if(p>.1&&p<.8)for(let j=0;j<6;j++){
+    const t=(p*4+j/6)%1,at=bridgePoint(clamp((built-1)/20),p);
     ctx.globalAlpha=1-t;ctx.fillStyle=colors[j%3];ctx.fillRect(at.x+(j-3)*18*(1-t),at.y+110*(1-t),8,8);
   }
   ctx.globalAlpha=1;
@@ -213,7 +333,7 @@ function rope(s,p,pose) {
   const reelX=state.w*(state.w<1000?.52:.72);
   line([[x,handY+25],[x,top],[reelX,top],[reelX,top+35]],'#bdb49b',3);
   ctx.strokeStyle='#67daf5';ctx.lineWidth=4;ctx.strokeRect(x-10,top-10,20,20);
-  for(let y=top+14-(p*260)%18;y<handY+25;y+=18){ctx.fillStyle='#756f64';ctx.fillRect(x-3,y,6,3);}
+  for(let y=top+14+(p*260)%18;y<handY+25;y+=18){ctx.fillStyle='#756f64';ctx.fillRect(x-3,y,6,3);}
   ctx.restore();
 }
 function scenePose(index,p) {
@@ -224,13 +344,21 @@ function scenePose(index,p) {
     // The wagons are a heavier industrial object than the blocks they replaced,
     // so the rider is eased down a touch here — only on the train, so no other
     // chapter's composition moves.
-    const rider={...idle,feet:backendPortalY(),scale:baseScale*BACKEND_ACTOR_SCALE};
+    // Keep both actors fixed to the opening until the emergence has completely
+    // finished. Only then settle them onto the rail, avoiding the portal rim
+    // crossing in front of a character that is still climbing out.
+    // `p` is the directed choreography value and intentionally lags behind the
+    // raw slide progress. Use the raw value here so the rail correction begins
+    // immediately after the .15 emergence cutoff instead of much later.
+    const entrySettle=ease((state.local-.15)/.025);
+    const entryFeet=mix(backendPortalY(),backendTrackY(),entrySettle);
+    const rider={...idle,feet:entryFeet,scale:baseScale*BACKEND_ACTOR_SCALE};
     const g=trainGeometry(p),roof=g.y-100*g.scale;
     const landX=trainGeometry(0).x-g.gap+18;
     const takeoffX=landX-Math.min(210,state.w*.11);
     if(p<.135){const t=ease(p/.135);return {...rider,x:mix(rider.x,takeoffX,t),mode:'walk',phase:p*13};}
     if(p<.145)return {...rider,x:takeoffX,mode:'anticipate',phase:(p-.135)/.01};
-    if(p<.20){const t=ease((p-.145)/.055);return {...rider,x:mix(takeoffX,landX,t),feet:mix(rider.feet,roof-24*g.scale,t)-Math.sin(t*Math.PI)*42,mode:'jump'};}
+    if(p<.20){const t=ease((p-.145)/.055);return {...rider,x:mix(takeoffX,landX,t),feet:mix(rider.feet,roof-24*g.scale,t)-Math.sin(t*Math.PI)*42,mode:'jump',jumpProgress:t};}
     const lastX=trainGeometry(.85).x+(scenes[1].skills.length-1)*g.gap;
     if(p>.85)return {...rider,x:lastX,feet:roof};
     const x=mix(landX,lastX,trainTravel((p-.20)/.65));
@@ -240,16 +368,32 @@ function scenePose(index,p) {
     // the feet never snap down at the midpoint between the two vehicles.
     const engineLift=platform<-1?24*g.scale:platform===-1?24*g.scale*(1-ease(leap)):0;
     const lift=airborne?Math.sin(leap*Math.PI)*Math.max(18,30*g.scale):0;
-    return {...rider,x,feet:roof-engineLift-lift,mode:airborne?'jump':'walk',phase:p*12};
+    return {...rider,x,feet:roof-engineLift-lift,mode:airborne?'jump':'walk',jumpProgress:airborne?leap:null,phase:p*12};
   }
   if(index===2)return {...idle,mode:'pull',phase:shotTime(p)*5};
   if(index===4){
     const target=spiralObjects(scenes[4],shotTime(p)).at(-1);
     const t=ease(p/.20),feet=target.y-26*target.scale;
-    return {...idle,x:mix(idle.x,target.x,t),feet:mix(idle.feet,feet,t)-Math.sin(t*Math.PI)*80,scale:mix(baseScale,baseScale*Math.min(2.2,target.scale/.7),t),mode:p<.2?'jump':'idle'};
+    const landingShift=state.w<700?28:state.w<1000?44:58;
+    return {...idle,x:mix(idle.x,target.x-landingShift,t),feet:mix(idle.feet,feet,t)-Math.sin(t*Math.PI)*80,scale:mix(baseScale,baseScale*Math.min(2.2,target.scale/.7),t),mode:p<.2?'jump':'idle',jumpProgress:p<.2?t:null};
   }
   if(index===5){const at=circuitPoint(clamp((p-.1)/.85));return {...idle,x:mix(idle.x,at.x,ease(p/.15)),mode:p>.15&&p<.9?'walk':'read',phase:p*8};}
-  if(index===6){const at=bridgePoint(clamp((shotTime(p)-.10)/.78),shotTime(p));return {...idle,x:at.x,feet:at.y,scale:baseScale*at.scale,mode:p<.08?'idle':'walk',phase:p*10};}
+  if(index===6){
+    const deliveryTime=shotTime(p),deliveryState=deliveryActorState(deliveryTime),travel=deliveryState.travel;
+    const at=bridgePoint(travel,deliveryTime);
+    // Centre the avatar + right-offset companion as one group on every deck.
+    // Without this shared nudge the avatar sits at the platform centre while
+    // the dog hangs beyond its right edge on REVIEW, QA and UAT.
+    const stageGroupShift=state.w<700?20:38;
+    // On the initial flat gantry the generated decks read smaller than the old
+    // blocks. Apply a delivery-only correction to both actors, then restore the
+    // original perspective scale as the staircase begins to rise.
+    const flatScale=mix(.92,1,ease((deliveryTime-.64)/.12));
+    // Keep emergence registered to the portal. Once it has fully disappeared,
+    // settle both actors a few pixels onto the visible deck surface.
+    const deckSettle=ease((state.local-.15)/.04)*DELIVERY_ACTOR_DECK_SETTLE;
+    return {...idle,x:at.x-stageGroupShift,feet:at.y+deckSettle,scale:baseScale*at.scale*flatScale,mode:deliveryState.moving?'walk':'idle',phase:deliveryTime*10};
+  }
   if(index===7){const b=bookGeometry(shotTime(p)),t=ease((p-.36)/.36);return {...idle,x:mix(idle.x,b.x+b.w*.22,t),feet:mix(idle.feet,b.y+b.w*.01,t)-Math.sin(t*Math.PI)*55,mode:p<.34?'read':p<.7?'walk':'idle',phase:p*8};}
   return idle;
 }
