@@ -40,8 +40,13 @@ window.TraceRenderer = class {
   /* Icons arrive on a white card. Remove only the white CONNECTED TO THE EDGE, so the
      white armour plates inside each icon survive. Downscaled first — they render small. */
   static assets = new Map();
-  static asset(src, size = 256) {
+  static asset(src, size = 256, prefer = null) {
     const key = src + ':' + size;
+    // prefer:'webp' is for art that has already been cut out and shipped as a
+    // transparent WebP with no PNG twin. Without it every one of those frames
+    // spends a 404 round-trip on a .png that was never there.
+    if (prefer === 'webp' && !this.assets.has(key))
+      this.assets.set(key, this.fromWebp(src.replace(/\.png$/i, '.webp'), size));
     if (!this.assets.has(key)) this.assets.set(key, new Promise(resolve => {
       const png = src.replace(/\.(webp|png)$/i, '.png');
       const img = new Image();
@@ -49,10 +54,32 @@ window.TraceRenderer = class {
         try { await img.decode(); } catch { /* onload already confirmed a usable image */ }
         resolve(png);
       };
-      img.onerror = () => this.removeLegacyWhite(src.replace(/\.png$/i, '.webp'), size).then(resolve);
+      img.onerror = () => this.fromWebp(src.replace(/\.png$/i, '.webp'), size).then(resolve);
       img.src = png;
     }));
     return this.assets.get(key);
+  }
+  /* No PNG twin. A WebP that already carries alpha is a finished cutout and can
+     be used straight from disk; only the older white-card art needs the flood
+     fill, which re-encodes to a PNG data URL and would throw away everything the
+     WebP saved. Probe a tiny downscale rather than the full frame. */
+  static fromWebp(src, size = 256) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onerror = () => resolve(null);
+      img.onload = () => {
+        const cv = document.createElement('canvas');
+        cv.width = cv.height = 8;
+        const c = cv.getContext('2d', { willReadFrequently: true });
+        c.drawImage(img, 0, 0, 8, 8);
+        try {
+          const d = c.getImageData(0, 0, 8, 8).data;
+          for (let i = 3; i < d.length; i += 4) if (d[i] < 250) return resolve(src);
+        } catch { return resolve(src); }
+        this.removeLegacyWhite(src, size).then(resolve);
+      };
+      img.src = src;
+    });
   }
   // Compatibility for older callers. Supplied PNGs never go through flood fill.
   static cutout(src, size = 256) { return this.asset(src, size); }

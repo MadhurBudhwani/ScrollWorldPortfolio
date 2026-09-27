@@ -345,24 +345,56 @@
   }
 
   /* ---------------- Stage transition ---------------- */
-  function disintegrate(host, cols = 9) {
+  /* The old view breaking apart under the discharge. Shards carry a snapshot of
+     the frame they came from, so what flies away is the scene the visitor was
+     just looking at rather than a grid of grey tiles. The fracture starts at
+     `origin` and runs outward, and every shard travels along its own radial
+     from that point, which is what makes it read as a blast instead of gravity. */
+  function shatter(host, { origin = { x: .5, y: .45 }, cols = 12, tone = '#84f5ad', snapshot = null, ms = 980 } = {}) {
     return new Promise(resolve => {
       const r = host.getBoundingClientRect();
-      const rows = Math.max(6, Math.round(cols * r.height / r.width));
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const veil = el('div', 'world-shatter is-gentle');
+        host.append(veil);
+        return setTimeout(() => { veil.remove(); resolve(); }, 320);
+      }
+      const rows = Math.max(7, Math.round(cols * r.height / r.width));
       const wrap = el('div', 'world-shatter');
+      wrap.style.setProperty('--tone', tone);
+
+      const ring = el('i', 'shock');
+      ring.style.left = (origin.x * 100) + '%';
+      ring.style.top = (origin.y * 100) + '%';
+      wrap.append(ring);
+
+      const reach = Math.hypot(Math.max(origin.x, 1 - origin.x), Math.max(origin.y, 1 - origin.y));
       for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
-        const brick = el('i');
+        const cx = (x + .5) / cols, cy = (y + .5) / rows;
+        const vx = cx - origin.x, vy = cy - origin.y;
+        const dist = Math.hypot(vx, vy), unit = dist || .0001;
+        const near = 1 - Math.min(1, dist / reach);          // closest shards take the most force
+        const brick = el('i', 'shard');
         brick.style.left = (x / cols * 100) + '%'; brick.style.top = (y / rows * 100) + '%';
         brick.style.width = (100 / cols) + '%'; brick.style.height = (100 / rows) + '%';
-        brick.style.setProperty('--dx', ((Math.random() - .5) * 90).toFixed(0) + 'px');
-        brick.style.setProperty('--rot', ((Math.random() - .5) * 120).toFixed(0) + 'deg');
-        brick.style.animationDelay = (y * 28 + Math.random() * 90) + 'ms';
+        if (snapshot) {
+          brick.style.backgroundImage = 'url(' + snapshot + ')';
+          brick.style.backgroundSize = r.width + 'px ' + r.height + 'px';
+          brick.style.backgroundPosition = (-x / cols * r.width) + 'px ' + (-y / rows * r.height) + 'px';
+        }
+        const throwBy = 120 + near * 460;
+        brick.style.setProperty('--dx', (vx / unit * throwBy).toFixed(0) + 'px');
+        brick.style.setProperty('--dy', (vy / unit * throwBy + 90).toFixed(0) + 'px');
+        brick.style.setProperty('--rot', ((Math.random() - .5) * (60 + near * 200)).toFixed(0) + 'deg');
+        brick.style.setProperty('--lit', (near * .85).toFixed(2));
+        brick.style.animationDelay = (dist / reach * 260 + Math.random() * 60) + 'ms';
         wrap.append(brick);
       }
       host.append(wrap);
-      setTimeout(() => { wrap.remove(); resolve(); }, 900);
+      setTimeout(() => { wrap.remove(); resolve(); }, ms);
     });
   }
+  // Kept for callers that just want the plain break, with no blast point.
+  function disintegrate(host) { return shatter(host, { cols: 9, ms: 900 }); }
 
-  window.WorldEngine = { Spring, Actor, Pet, Bug, Bubble, disintegrate };
+  window.WorldEngine = { Spring, Actor, Pet, Bug, Bubble, disintegrate, shatter };
 })();

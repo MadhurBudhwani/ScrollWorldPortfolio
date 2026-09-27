@@ -2,7 +2,7 @@
    actor, so dialogue, reactions and work never race each other. */
 (() => {
   'use strict';
-  const {Pet,Bug,Bubble,disintegrate}=WorldEngine;
+  const {Pet,Bug,Bubble,disintegrate,shatter}=WorldEngine;
   const $=id=>document.getElementById(id), host=$('boot'),play=$('play');
   const renderer=new TraceRenderer(host,{
     cold:['14.webp','9.webp'],engine:['15.webp','11.webp'],vault:['16.webp','11.webp'],
@@ -18,6 +18,99 @@
   let paused=true,running=false,workTimer=0,workIndex=0,reactionUntil=0,talkAt=0;
   let choice={},log=[],targetX=.34,propToken=0;
   const anchor=()=>({x:actor.x.x,headY:actor.headY});
+  // The scene's resting floor and actor size. walkIntoDepth drives both away
+  // from these and the cut restores them, so they live in one place.
+  const groundFor=()=>W>H?.90:.84, heightFor=()=>W>H?.30:.195;
+  // Grab the frame the visitor is looking at before the backdrop swaps, so the
+  // shards that fly off are pieces of that room and not grey filler.
+  const snapScene=()=>{try{return document.querySelector('#scenery')?.toDataURL('image/webp',.72)||null;}catch{return null;}};
+  const mix=(a,b,t)=>a+(b-a)*t;
+  const smooth=t=>{const n=Math.max(0,Math.min(1,t));return n*n*(3-2*n);};
+  const leverNames=Array.from({length:32},(_,i)=>'lever-'+String(i+1).padStart(2,'0'));
+  const awayNames=Array.from({length:8},(_,i)=>'away-'+String(i+1).padStart(2,'0'));
+
+  /* The cold-start wallpaper already contains a lever, drawn head-on in the
+     middle distance. Cutting straight from that to a side-on lever sprite reads
+     as two different objects, so instead he turns his back and walks to the one
+     in the artwork, shrinking into it, and the pull is presented as its own
+     shot. The mismatch becomes a deliberate cut rather than a mistake. */
+  /* Distance is carried by size alone; the floor line does not move. Raising
+     the ground toward the walkway looked correct on paper but read as him
+     lifting off, because he starts in the dark foreground where no floor is
+     drawn, so there is nothing for the rise to travel along. Holding the feet
+     on one line and shrinking him is the cue that actually reads.
+     ?depth= overrides the shrink so it can be judged on a real phone without a
+     redeploy; ?walk= does the same for how long the recede takes. */
+  const qa=new URLSearchParams(location.search);
+  const qaNum=(key,fallback,lo,hi)=>{
+    const v=parseFloat(qa.get(key));
+    return Number.isFinite(v)&&v>=lo&&v<=hi?v:fallback;
+  };
+  const PEDESTAL={x:.50,scale:qaNum('depth',.95,.3,1)};
+  async function walkIntoDepth(token){
+    const h0=actor.charHeight,g0=actor.ground,x0=actor.x.x,seconds=qaNum('walk',3.5,.4,8),fps=9;
+    await actor.preload(awayNames);if(!alive(token))return false;
+    actor.cancelWalk();
+    await actor.set(awayNames[0]);if(!alive(token))return false;
+    play.classList.add('is-receding');
+    // The pose's foot inset scales with him, so the ground line is nudged by
+    // exactly that much each frame and his shoes stay on one line.
+    const gap=h=>actor.footInset()*Math.min(H*h,W*.62), gap0=gap(h0);
+    const t0=clock;let step=0,due=clock;
+    while(clock-t0<seconds){
+      if(!alive(token))return false;
+      const e=smooth((clock-t0)/seconds);
+      const h=mix(h0,h0*PEDESTAL.scale,e);
+      actor.charHeight=h;
+      actor.ground=g0+(gap(h)-gap0)/H;
+      actor.x.set(mix(x0,W*PEDESTAL.x,e));
+      if(clock>=due){due=clock+1/fps;actor.set(awayNames[step++%8]);}
+      await wait(1/60);
+    }
+    return alive(token);
+  }
+
+  /* The pull, played as a framed insert: black, then the machine fades up full
+     width and vertically centred, with a slow push-in under it. */
+  async function leverShot(token){
+    const urls=[];
+    for(const n of leverNames){
+      const u=await TraceRenderer.asset('./assets/worlds/anim/'+n+'.webp',512,'webp');
+      if(!alive(token))return null;
+      urls.push(u);
+    }
+    const shot=document.createElement('div');shot.className='cine-shot';shot.setAttribute('aria-hidden','true');
+    // ?shot= sizes the insert; it stays centred on both axes whatever it is.
+    shot.style.setProperty('--shot-w',(qaNum('shot',.86,.3,1)*100).toFixed(1)+'%');
+    const frame=new Image();frame.alt='';frame.className='cine-frame';frame.src=urls[0];
+    const bolt=document.createElement('i');bolt.className='world-flash';
+    shot.append(frame,bolt);host.append(shot);
+    void shot.offsetWidth;shot.classList.add('is-black');
+    await wait(.5);if(!alive(token))return null;
+    shot.classList.add('is-up');
+    await wait(.55);if(!alive(token))return null;
+    const gentle=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    for(let i=0;i<urls.length;i++){
+      if(!alive(token)){shot.remove();return null;}
+      frame.src=urls[i];
+      if(i===19&&!gentle){bolt.classList.remove('is-live');void bolt.offsetWidth;bolt.classList.add('is-live');}
+      await wait(i===0?.14:i===urls.length-1?.22:1/12);
+    }
+    return {shot,frame};
+  }
+
+  /* Paint the insert into a canvas at its on-screen framing, so the shards that
+     blow it apart are pieces of the shot the visitor was just watching. */
+  function snapCine(frame){
+    try{
+      const r=host.getBoundingClientRect(),cv=document.createElement('canvas');
+      cv.width=Math.round(r.width);cv.height=Math.round(r.height);
+      const c=cv.getContext('2d');c.imageSmoothingEnabled=false;
+      c.fillStyle='#000';c.fillRect(0,0,cv.width,cv.height);
+      c.drawImage(frame,0,Math.round((cv.height-cv.width)/2),cv.width,cv.width);
+      return cv.toDataURL('image/webp',.72);
+    }catch{return null;}
+  }
   const alive=token=>token===epoch;
   const record=(heading,text)=>{log.push({heading,text});$('traceCount').textContent=String(log.length);};
   const announce=text=>{$('live').textContent=text;};
@@ -27,8 +120,7 @@
   function measure(){
     const r=host.getBoundingClientRect(),oldW=W;W=r.width;H=r.height;
     if(oldW&&oldW!==W){const ratio=W/oldW;actor.x.x*=ratio;actor.x.target*=ratio;pet.x.x*=ratio;pet.x.target*=ratio;}
-    const wide=W>H;
-    actor.ground=wide?.90:.84;pet.ground=actor.ground;actor.charHeight=wide?.30:.195;
+    actor.ground=groundFor();pet.ground=actor.ground;actor.charHeight=heightFor();
     prop.style.width=Math.min(W*.40,H*.235)+'px';prop.style.left=(W*targetX)+'px';
     prop.style.top=(H*actor.ground+6)+'px';
     targetLabel.style.left=(W*targetX)+'px';targetLabel.style.top=(H*actor.ground+13)+'px';
@@ -210,7 +302,7 @@
     await disintegrate(host);if(!alive(token))return;
     await startStage(stageIndex+1,token);
   }
-  async function startStage(i,token){
+  async function startStage(i,token,arriving=false){
     if(!alive(token))return;
     stageIndex=i;stage=STAGES[i];beatIndex=0;kills=0;armouredCount=0;paused=true;running=false;
     document.documentElement.style.setProperty('--ac',stage.accent);
@@ -221,7 +313,11 @@
     await showProp(stage.key==='vault'?'prop-vault-core':stage.key==='delivery'?'prop-capsule':null,
       stage.key==='vault'?'PROTECT THE VAULT':'RELEASE CAPSULE',token);
     if(!alive(token))return;
-    actor.place(stage.key==='engine'?W*.18:W*.42);pet.x.set(stage.key==='engine'?W*.06:W*.24);
+    const restX=stage.key==='engine'?W*.18:W*.42, petX=stage.key==='engine'?W*.06:W*.24;
+    // Arriving from the breaker, he walks into the room he just powered up
+    // rather than appearing in it. Everything else still starts in position.
+    actor.place(arriving?-W*.16:restX);pet.x.set(arriving?-W*.34:petX);
+    if(arriving){await actor.walkTo(restX);if(!alive(token))return;}
     await actor.set(stage.key==='engine'?'desk-01':'talk-10');if(!alive(token))return;
     if(stage.key==='engine'){await actor.play('desk',1,3,5);if(!alive(token))return;}
     else await actor.set('talk-05');
@@ -238,26 +334,6 @@
     record('System ready',line);
     if(await speak(line,'BACKEND · CLOUD · DELIVERY',token,{cta:'Open my boot log',tone:'win',pose:false}))openLog();
   }
-  function playLeverWebP(layer,token){
-    return new Promise(resolve=>{
-      if(!alive(token)){resolve(false);return;}
-      const img=document.createElement('img');
-      img.src='./assets/worlds/anim/lever.webp';
-      img.alt='';img.className='lever-anim';
-      const H2=H,W2=W;
-      const h=Math.min(H2*.42,W2*.9);
-      img.style.cssText=`position:absolute;bottom:${(1-actor.ground)*H2+4}px;left:${actor.x.x}px;`+
-        `transform:translateX(-42%);height:${h}px;z-index:9;pointer-events:none;image-rendering:pixelated`;
-      layer.append(img);
-      // WebP animation duration — adjust to match your file's actual length
-      const MS=1800;
-      const tid=setTimeout(()=>{img.remove();resolve(alive(token));},MS);
-      // if epoch changes (cancel), abort early
-      const check=setInterval(()=>{if(!alive(token)){clearTimeout(tid);clearInterval(check);img.remove();resolve(false);}},80);
-      setTimeout(()=>clearInterval(check),MS+100);
-    });
-  }
-
   async function coldStart(){
     cancelRun();const token=epoch;
     stage=null;stageIndex=-1;log=[];choice={};$('traceCount').textContent='0';
@@ -268,15 +344,21 @@
     await actor.set('talk-10');if(!alive(token))return;
     if(!await speak('We start at the core. Watch what happens when we bring the engine online.',null,token,{cta:'Boot it up',pose:false}))return;
     $('intro').textContent='';
-    await actor.walkTo(W*.48);if(!alive(token))return;
-    actor.stop();
-    // Lever pull: animated WebP overlay, plays once then hides
-    await playLeverWebP(play,token);if(!alive(token))return;
+    // He turns his back and walks to the lever that is already drawn into the
+    // wallpaper, shrinking as he goes.
+    if(!await walkIntoDepth(token))return;
+    const shot=await leverShot(token);
+    if(!shot||!alive(token))return;
     record('Cold start','Pulled the main breaker. The engine room lit up.');
+    // The insert is torn apart from the lever's own contact point, and the
+    // engine room is what was waiting behind it.
+    const torn=snapCine(shot.frame);
     renderer.set('engine');renderer.dim=.23;
-    await wait(.28);if(!alive(token))return;
-    await disintegrate(host);if(!alive(token))return;
-    await startStage(0,token);
+    play.classList.remove('is-receding');
+    actor.ground=groundFor();actor.charHeight=heightFor();
+    shot.shot.remove();
+    await shatter(host,{origin:{x:.42,y:.5},tone:'#84f5ad',snapshot:torn});if(!alive(token))return;
+    await startStage(0,token,true);
   }
 
   function frame(now){
@@ -353,7 +435,7 @@
       if(!loaded)throw new Error('Background artwork unavailable');
       await actor.preload(warm.slice(0,5));
       actor.preload(warm.slice(5));
-      actor.preload(Array.from({length:10},(_,i)=>'lever-'+String(i+1).padStart(2,'0')));
+      actor.preload(Array.from({length:32},(_,i)=>'lever-'+String(i+1).padStart(2,'0')));
       for(const name of ['bug','bug-armour','runtime','data','cache','jobs'])TraceRenderer.asset('./assets/worlds/icon-'+name+'.webp');
       $('loading').remove();coldStart();
     }catch{

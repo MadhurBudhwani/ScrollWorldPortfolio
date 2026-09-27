@@ -38,14 +38,30 @@
 .world-hint.in{opacity:1;transform:translate(-50%,0)}
 
 /* ---- stage transition: the screen breaks into bricks ---- */
-.world-shatter{position:absolute;inset:0;z-index:30;pointer-events:none}
-.world-shatter i{position:absolute;display:block;background:#0a1626;
-  box-shadow:inset 0 0 0 1px #1d3348, inset 2px 2px 0 #14273c;
-  animation:brick-fall .62s cubic-bezier(.4,0,.75,0) forwards}
-@keyframes brick-fall{
-  0%{transform:translate(0,0) rotate(0);opacity:1}
-  22%{transform:translate(0,-8px) rotate(-2deg);opacity:1}
-  100%{transform:translate(var(--dx),115vh) rotate(var(--rot));opacity:.15}
+.world-shatter{position:absolute;inset:0;z-index:30;pointer-events:none;--tone:#84f5ad}
+.world-shatter.is-gentle{background:#050a12;animation:shatterVeil .32s ease-out forwards}
+@keyframes shatterVeil{from{opacity:1}to{opacity:0}}
+
+/* Shards carry a slice of the frame they broke off. The overlay is the blast
+   light catching each face; --lit falls off with distance from the impact. */
+.world-shatter .shard{position:absolute;display:block;background:#0a1626 no-repeat;
+  box-shadow:inset 0 0 0 1px #1d3348;
+  animation:shardBlast .74s cubic-bezier(.22,.62,.3,1) forwards}
+.world-shatter .shard::after{content:'';position:absolute;inset:0;
+  background:var(--tone);opacity:calc(var(--lit,0) * .55);mix-blend-mode:screen}
+@keyframes shardBlast{
+  0%{transform:translate(0,0) rotate(0) scale(1);opacity:1}
+  12%{transform:translate(calc(var(--dx)*-.05),calc(var(--dy)*-.05)) rotate(0) scale(1.02);opacity:1}
+  100%{transform:translate(var(--dx),var(--dy)) rotate(var(--rot)) scale(.86);opacity:0}
+}
+
+/* The discharge itself, thrown from the contact point ahead of the break. */
+.world-shatter .shock{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;
+  border:3px solid var(--tone);box-shadow:0 0 34px 10px var(--tone);
+  animation:shockRing .5s cubic-bezier(.16,.8,.3,1) forwards}
+@keyframes shockRing{
+  0%{transform:scale(1);opacity:.95;border-width:6px}
+  100%{transform:scale(150);opacity:0;border-width:1px}
 }
 
 /* ---- progress pips ---- */
@@ -116,3 +132,31 @@
 /* a threat that got through stops and bites */
 .world-bug.biting{animation:bug-bite .34s ease-in-out infinite alternate}
 @keyframes bug-bite{from{transform:translateY(0)}to{transform:translateY(-4px) rotate(-5deg)}}
+
+/* Lightning answer to the breaker's strike frames. Double-peaked, because a
+   single fade reads as a lamp turning on rather than a discharge. */
+.world-flash{position:absolute;inset:0;z-index:20;pointer-events:none;opacity:0;mix-blend-mode:screen;
+  background:radial-gradient(circle at 42% 64%,#d9ffe9 0%,#84f5ad 24%,rgba(132,245,173,0) 66%)}
+.world-flash.is-live{animation:worldFlash .62s ease-out}
+@keyframes worldFlash{0%{opacity:0}6%{opacity:.92}15%{opacity:.26}23%{opacity:.68}50%{opacity:.11}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.world-flash.is-live{animation:none}}
+
+/* The lever pull as a framed insert. Black first, then the machine fades up at
+   full width, vertically centred, with a slow push-in running under it. */
+.cine-shot{position:absolute;inset:0;z-index:26;background:#000;pointer-events:none;
+  opacity:0;transition:opacity .45s ease;overflow:hidden}
+.cine-shot.is-black{opacity:1}
+.cine-frame{position:absolute;left:50%;top:50%;width:var(--shot-w,86%);height:auto;
+  transform:translate(-50%,-50%);transform-origin:50% 50%;
+  image-rendering:pixelated;opacity:0;transition:opacity .55s ease}
+.cine-shot.is-up .cine-frame{opacity:1;animation:cinePush 3.6s linear forwards}
+@keyframes cinePush{from{transform:translate(-50%,-50%) scale(1)}to{transform:translate(-50%,-50%) scale(1.13)}}to{transform:translateY(-50%) scale(1.13)}}
+.cine-shot .world-flash{z-index:2}
+
+/* The companion has no depth scale of its own, so it steps out while he walks
+   into the room rather than staying full size beside a shrinking figure. */
+#play.is-receding .world-pet{opacity:0;transition:opacity .5s ease}
+
+@media (prefers-reduced-motion:reduce){
+  .cine-shot.is-up .cine-frame{animation:none}
+}

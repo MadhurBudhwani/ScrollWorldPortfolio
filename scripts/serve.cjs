@@ -20,4 +20,16 @@ const server=http.createServer((req,res)=>{
     if(req.method==='HEAD'||!stat.size)return res.end();fs.createReadStream(file,{start,end}).on('error',()=>res.destroy()).pipe(res);
   });
 });
-server.listen(Number(process.env.PORT)||4173,'127.0.0.1',()=>console.log('Scrollworld: http://127.0.0.1:'+server.address().port));
+// Loopback by default. Set HOST=0.0.0.0 to reach this from a phone on the same
+// Wi-Fi; that exposes the whole served folder to the local network, so it is
+// opt-in per run rather than the default.
+const host=process.env.HOST||'127.0.0.1';
+server.listen(Number(process.env.PORT)||4173,host,()=>{
+  const port=server.address().port;
+  console.log('Scrollworld: http://127.0.0.1:'+port);
+  if(host!=='127.0.0.1'){
+    for(const list of Object.values(require('node:os').networkInterfaces()))
+      for(const net of list||[])
+        if(net.family==='IPv4'&&!net.internal)console.log('         LAN: http://'+net.address+':'+port);
+  }
+});

@@ -11,11 +11,23 @@
     talk:  { x: .51, foot: .969, head: .035, fill: .934, posture: 1 },
     react: { x: .50, foot: .967, head: .043, fill: .924, posture: 1 },
     // posture normalised so size = 1.07×personHeight across all groups — prevents size-jump on crossfade
-    lever: { x: .245, foot: .888, head: .180, fill: .708, posture: .76 },
+    // Re-measured from the 32-frame rebuild. Calibrated on a standing frame,
+    // so posture is 1: he renders at personHeight upright and genuinely
+    // shortens as he crouches, instead of being scaled to a fixed height.
+    lever: { x: .167, foot: .994, head: .273, fill: .721, posture: 1 },
     desk:  { x: .39, foot: .891, head: .103, fill: .788, posture: .84 },
+    // Rear view, walking away from camera. Anchored on the head rather than
+    // the bounding box, so the arm swing does not rock him side to side.
+    away:  { x: .500, foot: .916, head: .158, fill: .758, posture: 1 },
   };
+  // Frames that ship as transparent WebP with no PNG twin. Add a pattern here
+  // when art is converted, so the loader stops spending a 404 on the PNG it
+  // will never find. Matched by name, not by group: desk-r* is already cut out
+  // while desk-0* still has PNG twins.
+  const cutWebp = [/^lever-/, /^desk-r/, /^away-/];
   function loadPose(name) {
-    if (!cache.has(name)) cache.set(name, TraceRenderer.asset('./assets/worlds/anim/' + name + '.webp', 512).then(async url => {
+    if (!cache.has(name)) cache.set(name, TraceRenderer.asset('./assets/worlds/anim/' + name + '.webp', 512,
+      cutWebp.some(re => re.test(name)) ? 'webp' : null).then(async url => {
       if (!url) return null;
       const image = new Image(); image.src = url;
       try { await image.decode(); } catch { return null; }
@@ -40,6 +52,13 @@
       this.gentle = matchMedia('(prefers-reduced-motion: reduce)').matches;
     }
     preload(names) { return Promise.all(names.map(loadPose)); }
+    /* Fraction of personHeight that sits below his drawn feet. A scene shrinking
+       him for depth needs this to keep the contact point still, because the
+       inset shrinks with him and would otherwise slide the feet down. */
+    footInset() {
+      const r = registration[group(this.pose || 'talk')] || registration.talk;
+      return (1 - r.foot) * r.posture / r.fill;
+    }
     place(px) { this.cancelWalk(); this.x.set(px); }
     walkTo(px) {
       this.cancelWalk(); this.x.target = px;
@@ -58,7 +77,10 @@
       this.front = 1-this.front; this.blend = 0;
       return true;
     }
-    async play(prefix, from, to, fps = 9) {
+    /* onFrame fires with the artwork's own frame number as each one goes up, so
+       a scene can hang an effect on a specific drawing instead of a timer that
+       drifts the moment a frame loads slowly. */
+    async play(prefix, from, to, fps = 9, onFrame = null) {
       this.stop();
       const token = this._sequenceToken, names = [], direction = from <= to ? 1 : -1;
       for (let n=from; direction>0 ? n<=to : n>=to; n+=direction) names.push(prefix+'-'+String(n).padStart(2,'0'));
@@ -66,7 +88,8 @@
       if (token !== this._sequenceToken) return false;
       await this.set(names[0]);
       if (token !== this._sequenceToken) return false;
-      return new Promise(resolve => { this.seq = { names, i:0, acc:0, step:1/fps, resolve, pending:false }; });
+      onFrame?.(from);
+      return new Promise(resolve => { this.seq = { names, i:0, acc:0, step:1/fps, resolve, pending:false, first:from, dir:direction, onFrame }; });
     }
     stop() {
       this._sequenceToken++; this._token++;
@@ -86,6 +109,7 @@
           if (s.i < s.names.length-1) {
             s.pending = true;
             this.set(s.names[++s.i]).then(() => { if (this.seq===s) s.pending=false; });
+            s.onFrame?.(s.first + s.i*s.dir);
           } else { this.seq = null; s.resolve(true); }
         }
       }
