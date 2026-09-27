@@ -201,3 +201,7 @@ html.orientation-paused { overflow: hidden; overscroll-behavior: none; }
 .autoplay-controls{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));z-index:100;display:flex;align-items:center;gap:10px;padding:10px;background:#0b1b24f5;border:1px solid #5d8c80;border-radius:7px;box-shadow:0 8px 35px #0008}
 .autoplay-controls span{font:11px monospace;color:#adc7c9}.autoplay-controls button{min-height:44px;padding:10px 12px;border:1px solid #5d8c80;background:#17332e;border-radius:4px;color:#c1ffdc;font:12px monospace}
 @media(max-width:540px){.autoplay-start{padding:8px 12px;font-size:12px}.autoplay-controls{left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));gap:6px}.autoplay-controls span{flex:1;min-width:0;line-height:1.5}.autoplay-controls button{padding:8px 10px}}
+
+/* Delivery exit: he steps in front of the deck rails to make the jump, so he
+   rises above the foreground canvas that paints them. */
+.player.over-rails { z-index: 40; }

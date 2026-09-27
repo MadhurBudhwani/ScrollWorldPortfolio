@@ -160,3 +160,142 @@
 @media (prefers-reduced-motion:reduce){
   .cine-shot.is-up .cine-frame{animation:none}
 }
+
+/* A squashed bug: flash first, sparks off the break, then the heavy parts. */
+.blast{position:absolute;z-index:8;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;
+  pointer-events:none;background:radial-gradient(circle,#ffffff 0%,#bff4ff 30%,rgba(120,220,255,.45) 55%,rgba(120,220,255,0) 72%);
+  animation:bug-blast .34s cubic-bezier(.12,.75,.3,1) forwards}
+@keyframes bug-blast{0%{transform:scale(.3);opacity:1}60%{opacity:.85}100%{transform:scale(5.2);opacity:0}}
+
+.spark{position:absolute;z-index:8;width:7px;height:2px;margin:-1px 0 0 -3px;pointer-events:none;
+  transform-origin:0 50%;animation:bug-spark .42s cubic-bezier(.1,.7,.3,1) forwards}
+@keyframes bug-spark{
+  0%{transform:rotate(var(--rot)) translateX(0) scaleX(.5);opacity:1}
+  70%{opacity:.9}
+  100%{transform:rotate(var(--rot)) translateX(var(--len,48px)) scaleX(1.9);opacity:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .blast,.spark{animation-duration:.14s}
+}
+
+/* Cold start carries no body copy, so the headline does not need to shout. */
+#boot #brief.is-cold h1{font-size:clamp(21px,5.6vw,29px);letter-spacing:-.6px}
+#boot #brief.is-cold p:not(.eyebrow){display:none}
+
+/* Intrusion alarm. The amber lamp belongs to the wallpaper, so a red bloom is
+   laid over it and the set flinches; the chrome stays still so the copy and the
+   dock never become unreadable. */
+.alarm-lamp{position:absolute;left:50%;top:23%;width:30%;aspect-ratio:1;margin:-15% 0 0 -15%;
+  z-index:3;pointer-events:none;
+  background:radial-gradient(circle,#ff6a52 0%,rgba(255,74,58,.55) 20%,rgba(255,50,40,0) 62%);
+  animation:alarmPulse .62s steps(1,end) infinite}
+.alarm-wash{position:absolute;inset:0;z-index:6;pointer-events:none;
+  background:radial-gradient(circle at 50% 26%,rgba(255,52,40,.2),rgba(255,30,26,.05) 46%,transparent 72%);
+  animation:alarmPulse .62s steps(1,end) infinite}
+@keyframes alarmPulse{0%,44%{opacity:1}45%,100%{opacity:.08}}
+
+#boot.is-alarmed #scenery,#boot.is-alarmed #play{animation:roomShake .52s cubic-bezier(.36,.07,.19,.97) 3}
+@keyframes roomShake{
+  0%,100%{transform:translate(0,0)}
+  14%{transform:translate(-3px,2px)}
+  30%{transform:translate(3px,-2px)}
+  46%{transform:translate(-2px,-3px)}
+  62%{transform:translate(2px,2px)}
+  80%{transform:translate(-1px,1px)}
+}
+@media (prefers-reduced-motion:reduce){
+  #boot.is-alarmed #scenery,#boot.is-alarmed #play{animation:none}
+  .alarm-lamp,.alarm-wash{animation-duration:1.4s}
+}
+
+/* Ambience around the insert. Layer order inside .cine-shot is glow, motes,
+   the frame, grain, then the strike, so nothing sits on top of the artwork
+   except texture that is meant to. */
+.cine-glow{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 62% 44% at 50% 50%,rgba(70,180,150,.16),rgba(40,120,110,.05) 48%,transparent 72%);
+  opacity:0;transition:opacity .6s ease;animation:cineBreathe 5.5s ease-in-out infinite}
+.cine-shot.is-up .cine-glow{opacity:1}
+.cine-shot.is-charged .cine-glow{
+  background:radial-gradient(ellipse 78% 58% at 50% 50%,rgba(132,245,173,.3),rgba(60,180,140,.08) 50%,transparent 74%)}
+@keyframes cineBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+/* Same CRT texture the live scene wears, plus a vignette so the black has depth. */
+.cine-grain{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .6s ease;
+  background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(211,238,233,.05) 3px 4px),
+             radial-gradient(ellipse 70% 62% at 50% 50%,transparent 42%,rgba(0,0,0,.62) 100%)}
+.cine-shot.is-up .cine-grain{opacity:1}
+
+/* Embers lifting off the machine. Slow and few — they fill the space without
+   asking to be watched. */
+.cine-motes{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .8s ease}
+.cine-shot.is-up .cine-motes{opacity:.75}
+.cine-motes b{position:absolute;bottom:-4%;width:var(--size,2px);height:var(--size,2px);border-radius:50%;
+  background:#9fe8c6;box-shadow:0 0 6px #6fd6ae;animation-name:cineMote;animation-timing-function:linear;
+  animation-iteration-count:infinite}
+@keyframes cineMote{
+  0%{transform:translate(0,0);opacity:0}
+  12%{opacity:.85}
+  80%{opacity:.5}
+  100%{transform:translate(var(--drift,0),-108vh);opacity:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .cine-glow{animation:none}
+  .cine-motes{display:none}
+}
+
+/* The rope and the descent threads, under the bugs that hang from them. */
+.world-web{position:absolute;inset:0;z-index:6;pointer-events:none!important;image-rendering:pixelated}
+
+/* Laptop health, parked under the pair of them. Colour tracks what is LEFT, so
+   the same bar reads correctly whether the run started on four or on the spare's
+   three — a retry simply opens on amber. */
+.laptop-health{position:absolute;z-index:13;transform:translateX(-50%);pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:4px 6px 5px;border:1px solid #33505f;border-radius:4px;
+  background:#050d14e0;box-shadow:0 2px 0 #01060acc}
+.laptop-health::before{content:'LAPTOP';font:700 7px/1 monospace;letter-spacing:.18em;
+  color:#7f98a6}
+.laptop-health .row{display:flex;gap:3px}
+.laptop-health i{display:block;width:20px;height:5px;border-radius:1px;background:#2b3a44;
+  transition:background .25s ease,box-shadow .25s ease}
+.laptop-health[data-left="4"] i.on{background:#84f5ad;box-shadow:0 0 6px #84f5ad66}
+.laptop-health[data-left="3"] i.on{background:#f3e070;box-shadow:0 0 6px #f3e07066}
+.laptop-health[data-left="2"] i.on{background:#f5a54b;box-shadow:0 0 6px #f5a54b66}
+.laptop-health[data-left="1"] i.on{background:#f2574b;box-shadow:0 0 8px #f2574b88;
+  animation:hpCritical .9s ease-in-out infinite}
+@keyframes hpCritical{0%,100%{opacity:1}50%{opacity:.4}}50%{opacity:.4}}
+
+/* Swept off by the line the bugs string across the top. */
+#boot #brief{transition:transform .55s cubic-bezier(.55,0,.85,.25),opacity .4s ease}
+#boot #brief.is-swept{transform:translateX(-118%);opacity:0}
+@media (prefers-reduced-motion:reduce){
+  #boot #brief.is-swept{transform:none;opacity:0}
+}50%{opacity:.45}}
+
+/* A bug that reaches the laptop is pulled into it rather than sitting there. */
+.world-bug.absorbed{pointer-events:none;animation:bugAbsorb .46s cubic-bezier(.5,0,.75,0) forwards}
+@keyframes bugAbsorb{
+  0%{transform:scale(1) translateY(0);opacity:1;filter:none}
+  40%{transform:scale(.72) translateY(-4px);opacity:.85;filter:brightness(1.8)}
+  100%{transform:scale(.06) translateY(-10px);opacity:0;filter:brightness(2.6)}
+}
+
+/* The set takes the hit, not the chrome. */
+#boot.is-struck #scenery,#boot.is-struck #play{animation:hitJolt .34s cubic-bezier(.36,.07,.19,.97)}
+@keyframes hitJolt{
+  0%,100%{transform:translate(0,0)}
+  20%{transform:translate(4px,-3px)}
+  45%{transform:translate(-4px,2px)}
+  70%{transform:translate(2px,2px)}
+}
+
+/* The line carried over a framed insert. */
+.cine-line{position:absolute;left:0;right:0;top:9%;z-index:3;margin:0;padding:0 24px;
+  text-align:center;font:500 15px/1.5 Inter,system-ui,sans-serif;color:#cfe0dc;
+  letter-spacing:.2px;text-wrap:balance;opacity:0;transition:opacity .9s ease .6s}
+.cine-shot.is-up .cine-line{opacity:.92}
+
+@media (prefers-reduced-motion:reduce){
+  #boot.is-struck #scenery,#boot.is-struck #play{animation:none}
+  .laptop-health[data-left="1"] i.on{animation:none}
+}

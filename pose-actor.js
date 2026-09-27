@@ -15,7 +15,10 @@
     // so posture is 1: he renders at personHeight upright and genuinely
     // shortens as he crouches, instead of being scaled to a fixed height.
     lever: { x: .167, foot: .994, head: .273, fill: .721, posture: 1 },
-    desk:  { x: .39, foot: .891, head: .103, fill: .788, posture: .84 },
+    // Re-measured from the rebuilt set. `head` is his SEATED head, since nine
+    // of the ten frames are seated and it anchors the speech bubble; `posture`
+    // then carries the size so he still renders at personHeight standing.
+    desk:  { x: .372, foot: .939, head: .162, fill: .777, posture: .879 },
     // Rear view, walking away from camera. Anchored on the head rather than
     // the bounding box, so the arm swing does not rock him side to side.
     away:  { x: .500, foot: .916, head: .158, fill: .758, posture: 1 },
@@ -24,7 +27,7 @@
   // when art is converted, so the loader stops spending a 404 on the PNG it
   // will never find. Matched by name, not by group: desk-r* is already cut out
   // while desk-0* still has PNG twins.
-  const cutWebp = [/^lever-/, /^desk-r/, /^away-/];
+  const cutWebp = [/^lever-/, /^desk-/, /^away-/, /^fail-/];
   function loadPose(name) {
     if (!cache.has(name)) cache.set(name, TraceRenderer.asset('./assets/worlds/anim/' + name + '.webp', 512,
       cutWebp.some(re => re.test(name)) ? 'webp' : null).then(async url => {
@@ -55,6 +58,16 @@
     /* Fraction of personHeight that sits below his drawn feet. A scene shrinking
        him for depth needs this to keep the contact point still, because the
        inset shrinks with him and would otherwise slide the feet down. */
+    /* Screen position of a point given as a fraction of the current pose's own
+       artwork. The desk set draws the laptop at a fixed spot inside its frames,
+       so this is how the fight finds what the bugs are trying to break. */
+    mapPoint(fx, fy) {
+      const layer = this.layers[this.front];
+      if (!layer.name) return null;
+      const n = layer.node, size = parseFloat(n.style.width) || 0;
+      if (!size) return null;
+      return { x: parseFloat(n.style.left) + size * fx, y: parseFloat(n.style.top) + size * fy };
+    }
     footInset() {
       const r = registration[group(this.pose || 'talk')] || registration.talk;
       return (1 - r.foot) * r.posture / r.fill;

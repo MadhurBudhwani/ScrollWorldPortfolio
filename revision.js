@@ -258,8 +258,18 @@ function renderForeground(pose,transition,dt){
   }else{
     revisionUI.bubble.hidden=true;revisionUI.hoverKey=null;revisionUI.manualTransition=null;
   }
+  /* The delivery rails are queued during the scene pass and painted here, above
+     the actors, so the two of them walk behind them. Leaving the PRODUCTION
+     deck reverses that: he steps past the rail to jump, so from just before the
+     exit begins the plates go down first and both actors draw over them. The
+     swap is made while he is still clear of the nearest rail rather than at the
+     moment of the jump, so nothing pops through. */
+  const leavingDeck = scenes[state.scene]?.key==='delivery' && state.local>.80;
+  const plates = typeof drawDeliveryPlates==='function' ? drawDeliveryPlates : null;
+  if(leavingDeck&&plates)plates(frontCtx);
   drawPullRope(frontCtx,state.reelRope);
   drawCompanion(frontCtx,pose,transition,dt);
+  if(!leavingDeck&&plates)plates(frontCtx);
   // The avatar is a DOM layer while the main portal is painted on the rear
   // canvas. Repaint only the hatch's near lip here so both the avatar and dog
   // emerge from behind the rim, including the train's final portal descent.

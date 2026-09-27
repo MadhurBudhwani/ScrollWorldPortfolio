@@ -783,6 +783,10 @@ function updatePlayer(dt,paintForeground=true) {
     :0;
   player.classList.toggle('portal-masked',portalMask);
   player.style.setProperty('--portal-clip-bottom',portalClip+'px');
+  // The rails are painted on the foreground canvas, which sits above him. On the
+  // way out of the delivery chapter he has to pass in front of one to jump, so
+  // he is lifted over that canvas — early, while he is still clear of it.
+  player.classList.toggle('over-rails',scenes[state.scene]?.key==='delivery'&&state.local>.80);
   player.style.opacity='1';
   player.classList.toggle('walking',movement!==0);
   avatar?.update(dt,{

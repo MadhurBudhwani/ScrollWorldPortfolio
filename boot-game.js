@@ -2,14 +2,14 @@
    actor, so dialogue, reactions and work never race each other. */
 (() => {
   'use strict';
-  const {Pet,Bug,Bubble,disintegrate,shatter}=WorldEngine;
+  const {Pet,Bug,Bubble,Web,disintegrate,shatter}=WorldEngine;
   const $=id=>document.getElementById(id), host=$('boot'),play=$('play');
   const renderer=new TraceRenderer(host,{
     cold:['14.webp','9.webp'],engine:['15.webp','11.webp'],vault:['16.webp','11.webp'],
     cloud:['17.webp','12.webp'],delivery:['18.webp','13.webp']
   });
   const actor=new PoseActor(play,{ground:.84,charHeight:.195});
-  const pet=new Pet(play),bubble=new Bubble(play);
+  const pet=new Pet(play),bubble=new Bubble(play),web=new Web(play);
   const prop=document.createElement('div');prop.className='stage-prop';prop.hidden=true;
   const propImage=new Image();propImage.alt='';prop.append(propImage);play.append(prop);
   const targetLabel=document.createElement('div');targetLabel.className='stage-target';targetLabel.hidden=true;play.append(targetLabel);
@@ -27,6 +27,56 @@
   const mix=(a,b,t)=>a+(b-a)*t;
   const smooth=t=>{const n=Math.max(0,Math.min(1,t));return n*n*(3-2*n);};
   const leverNames=Array.from({length:32},(_,i)=>'lever-'+String(i+1).padStart(2,'0'));
+  const failNames=Array.from({length:16},(_,i)=>'fail-'+String(i+1).padStart(2,'0'));
+  /* Centre of the laptop screen inside a desk-* frame, measured off the art.
+     It is what the bugs are actually coming for, so the fight has to be able to
+     find it wherever the pose happens to put him. */
+  const LAPTOP={x:.721,y:.420}, ROPE_Y=.13, KILLS_PER_BEAT=5;
+  /* Only the desk-0* frames draw the laptop where LAPTOP says it is; desk-r* is
+     a different set of reaction art. Read the anchor from a working frame and
+     hold it, so a reaction does not teleport what the bugs are walking toward. */
+  let laptopMark=null;
+  function laptopAt(){
+    if(/^desk-\d/.test(actor.pose||'')){
+      const p=actor.mapPoint(LAPTOP.x,LAPTOP.y);
+      if(p)laptopMark=p;
+    }
+    return laptopMark;
+  }
+  let laptopHp=0,laptopMax=0,attempts=0,undefended=0;
+
+  const health=document.createElement('div');health.className='laptop-health';
+  health.setAttribute('aria-hidden','true');health.hidden=true;play.append(health);
+  function renderHealth(){
+    health.hidden=!laptopMax;
+    if(!laptopMax)return;
+    health.dataset.left=String(laptopHp);
+    health.innerHTML='';
+    const row=document.createElement('div');row.className='row';
+    for(let i=0;i<laptopMax;i++){
+      const seg=document.createElement('i');
+      if(i<laptopHp)seg.className='on';
+      row.append(seg);
+    }
+    health.append(row);
+  }
+  function strike(){
+    host.classList.remove('is-struck');void host.offsetWidth;host.classList.add('is-struck');
+    setTimeout(()=>host.classList.remove('is-struck'),400);
+  }
+  /* A bug that gets there does not bite and linger: it fastens onto the laptop
+     and is drawn into it, which is why the screen takes the hit a beat later. */
+  function consume(bug){
+    if(bug.consumed||bug.dead)return;
+    bug.consumed=true;bug.node.classList.add('absorbed');
+    setTimeout(()=>{
+      bug.dead=true;bug.node.remove();bugs=bugs.filter(b=>b!==bug);
+      if(!running)return;
+      laptopHp=Math.max(0,laptopHp-1);renderHealth();strike();
+      announce(laptopHp?`Laptop damaged. ${laptopHp} left.`:'The laptop is gone.');
+      if(laptopHp<=0)defeat(epoch);
+    },460);
+  }
   const awayNames=Array.from({length:8},(_,i)=>'away-'+String(i+1).padStart(2,'0'));
 
   /* The cold-start wallpaper already contains a lever, drawn head-on in the
@@ -70,21 +120,54 @@
     return alive(token);
   }
 
-  /* The pull, played as a framed insert: black, then the machine fades up full
-     width and vertically centred, with a slow push-in under it. */
-  async function leverShot(token){
+  /* The room notices before he does. The wallpaper's amber lamp is part of the
+     artwork, so a red bloom is laid over it and the set flinches underneath.
+     23% rather than the artwork's own 25% because the backdrop is drawn at a
+     1.09 cover zoom about the centre, which pulls everything toward the middle. */
+  async function alarm(token){
+    const lamp=document.createElement('i');lamp.className='alarm-lamp';
+    // ?lamp= nudges the bloom onto the drawn lamp if the cover zoom shifts.
+    lamp.style.top=(qaNum('lamp',.23,.05,.6)*100).toFixed(1)+'%';
+    const wash=document.createElement('i');wash.className='alarm-wash';
+    for(const n of [lamp,wash]){n.setAttribute('aria-hidden','true');play.append(n);}
+    host.classList.add('is-alarmed');
+    announce('Warning: intrusion detected.');
+    await wait(1.7);
+    host.classList.remove('is-alarmed');lamp.remove();wash.remove();
+    return alive(token);
+  }
+
+  /* A framed insert: black, then the artwork fades up centred with a slow
+     push-in under it. Used for the lever and for losing the laptop, so the two
+     moments are presented the same way. */
+  async function cineShot(token,names,{fps=12,onFrame=null,caption=null}={}){
     const urls=[];
-    for(const n of leverNames){
+    for(const n of names){
       const u=await TraceRenderer.asset('./assets/worlds/anim/'+n+'.webp',512,'webp');
       if(!alive(token))return null;
       urls.push(u);
     }
     const shot=document.createElement('div');shot.className='cine-shot';shot.setAttribute('aria-hidden','true');
-    // ?shot= sizes the insert; it stays centred on both axes whatever it is.
-    shot.style.setProperty('--shot-w',(qaNum('shot',.86,.3,1)*100).toFixed(1)+'%');
+    shot.style.setProperty('--shot-w',(qaNum('shot',.5,.3,1)*100).toFixed(1)+'%');
     const frame=new Image();frame.alt='';frame.className='cine-frame';frame.src=urls[0];
     const bolt=document.createElement('i');bolt.className='world-flash';
-    shot.append(frame,bolt);host.append(shot);
+    const glow=document.createElement('i');glow.className='cine-glow';
+    const grain=document.createElement('i');grain.className='cine-grain';
+    const motes=document.createElement('i');motes.className='cine-motes';
+    for(let i=0;i<16;i++){
+      const m=document.createElement('b');
+      m.style.left=(Math.random()*100).toFixed(1)+'%';
+      m.style.setProperty('--drift',((Math.random()-.5)*60).toFixed(0)+'px');
+      m.style.setProperty('--size',(1+Math.random()*2.2).toFixed(1)+'px');
+      m.style.animationDuration=(5+Math.random()*6).toFixed(1)+'s';
+      m.style.animationDelay=(-Math.random()*8).toFixed(1)+'s';
+      motes.append(m);
+    }
+    for(const n of [glow,grain,motes]) n.setAttribute('aria-hidden','true');
+    shot.append(glow,motes,frame,grain,bolt);
+    let line=null;
+    if(caption){line=document.createElement('p');line.className='cine-line';line.textContent=caption;shot.append(line);}
+    host.append(shot);
     void shot.offsetWidth;shot.classList.add('is-black');
     await wait(.5);if(!alive(token))return null;
     shot.classList.add('is-up');
@@ -93,11 +176,16 @@
     for(let i=0;i<urls.length;i++){
       if(!alive(token)){shot.remove();return null;}
       frame.src=urls[i];
-      if(i===19&&!gentle){bolt.classList.remove('is-live');void bolt.offsetWidth;bolt.classList.add('is-live');}
-      await wait(i===0?.14:i===urls.length-1?.22:1/12);
+      onFrame?.(i+1,{shot,bolt,gentle});
+      await wait(i===0?.14:i===urls.length-1?.22:1/fps);
     }
     return {shot,frame};
   }
+  const leverShot=token=>cineShot(token,leverNames,{fps:12,onFrame:(n,{bolt,shot,gentle})=>{
+    if(n!==20||gentle)return;
+    bolt.classList.remove('is-live');void bolt.offsetWidth;bolt.classList.add('is-live');
+    shot.classList.add('is-charged');
+  }});
 
   /* Paint the insert into a canvas at its on-screen framing, so the shards that
      blow it apart are pieces of the shot the visitor was just watching. */
@@ -116,7 +204,10 @@
   const announce=text=>{$('live').textContent=text;};
   const wait=seconds=>new Promise(resolve=>waiters.push({until:clock+seconds,resolve}));
   const TALK=['talk-01','talk-02','talk-05','talk-03'];
-  const WORK=['desk-03','desk-08','desk-04','desk-10','desk-03','desk-07','desk-09','desk-06'];
+  // Idle rotation while the engine stage waits. 01-03 are the arrival, so the
+  // loop lives in 04-10, with typing recurring often enough that he reads as
+  // working rather than posing.
+  const WORK=['desk-04','desk-05','desk-06','desk-04','desk-07','desk-10','desk-08','desk-05','desk-09','desk-06'];
   function measure(){
     const r=host.getBoundingClientRect(),oldW=W;W=r.width;H=r.height;
     if(oldW&&oldW!==W){const ratio=W/oldW;actor.x.x*=ratio;actor.x.target*=ratio;pet.x.x*=ratio;pet.x.target*=ratio;}
@@ -131,13 +222,21 @@
     {
       key: 'engine', bg: 'engine', accent: '#84f5ad',
       chapter: '01 / ENGINE ROOM', title: 'The core comes online.',
-      open: 'Give me room to work and I will have this thing running.',
-      spawn: { pattern: 'crawl', max: 2, speed: 22, hp: 1 },
+      open: 'Everything I need is on that laptop. Keep them off it and I’ll have the rest of this running.',
+      // They come in along a line at the top, walk it, then lower themselves
+      // on a thread. A phone has no horizontal runway to spare, and the
+      // descent is what makes the fight readable instead of frantic.
+      spawn: { pattern: 'rope', max: 3, surge: 5, speed: 30, hp: 1, dropSpeed: .2 },
+      /* Three stops, not four. Each one is what he just got working and why it
+         helps him in the fight he is currently losing - the tech is the reason,
+         not the lesson. */
       beats: [
-        ['The engine is online. Every request now has a route to the application logic that handles it.', '.NET 10 · ASP.NET CORE', null, 'runtime'],
-        ['EF Core connects the C# application to SQL Server. Migrations keep database changes alongside the code that uses them.', 'EF CORE · SQL SERVER', null, 'data'],
-        ['I cache frequently needed information so the app can reuse it. Refresh rules keep that shortcut useful when the data changes.', 'REDIS', null, 'cache'],
-        ['Syncs, exports and scheduled processing can run in the background. Your request does not have to carry the whole job.', 'BACKGROUND JOBS · AZURE FUNCTIONS',
+        ['Engine’s up. Every request that lands has somewhere to go now — before this they just stacked up at the door.',
+          '.NET 10 · ASP.NET CORE', null, 'runtime'],
+        ['It can remember things again. The database travels with the code so they never drift apart, and the answers we keep reaching for stay close instead of being dug up every time.',
+          'EF CORE · SQL SERVER · REDIS', null, 'data'],
+        ['Now the slow work moves off to one side. Nothing that takes a minute should be holding up something that takes a millisecond.',
+          'BACKGROUND JOBS · AZURE FUNCTIONS',
           { q: 'Same engine, two front doors. Which one do you want me to build?', a: 'A web app', b: 'A desktop app', key: 'client' }, 'jobs'],
       ],
     },
@@ -244,7 +343,7 @@
     const armoured=spec.armouredEvery&&armouredCount%spec.armouredEvery===0;
     const from=stage.key==='delivery'?1:-1; // bugs always from right except delivery conveyor
     const bug=new Bug(play,{pattern:spec.pattern,from,y:actor.ground,speed:spec.speed*1.35*(.92+Math.random()*.16),
-      hp:armoured?2:1,target:targetX});
+      hp:armoured?2:1,target:targetX,ropeY:ROPE_Y,dropSpeed:spec.dropSpeed||.10});
     bug.node.setAttribute('aria-label',armoured?'Armoured bug: tap twice to protect the vault':'Remove the bug to protect '+(stage.key==='vault'?'the vault':stage.key==='delivery'?'the release capsule':'the system'));
     bugs.push(bug);
   }
@@ -254,11 +353,13 @@
     actor.react(killed?.65:.3);
     if(!killed)return;
     bugs=bugs.filter(b=>b!==bug);kills++;
-    if(kills%2===0){nextBeat(epoch);return;}
+    undefended=Math.max(0,undefended-3.4);
+    if(kills%KILLS_PER_BEAT===0){nextBeat(epoch);return;}
     reactionUntil=clock+.65;
     const rFrame='desk-r'+String(1+Math.floor(Math.random()*10)).padStart(2,'0');
     actor.set(stage?.key==='engine'?rFrame:'react-01');
-    bubble.hint('One more — then I can bring the next part online.');
+    const left=KILLS_PER_BEAT-(kills%KILLS_PER_BEAT);
+    bubble.hint(left===1?'One more and the next piece goes in.':left+' more and the next piece goes in.');
   }
   play.addEventListener('click',e=>{const node=e.target.closest('.world-bug');if(node){const bug=bugs.find(b=>b.node===node);if(bug)hit(bug);}});
 
@@ -307,8 +408,15 @@
     stageIndex=i;stage=STAGES[i];beatIndex=0;kills=0;armouredCount=0;paused=true;running=false;
     document.documentElement.style.setProperty('--ac',stage.accent);
     renderer.set(stage.bg);renderer.dim=.23;
+    $('brief').classList.remove('is-cold','is-swept');
     $('chapter').textContent=stage.chapter;$('title').textContent=stage.title;$('intro').textContent='';
-    pips(stage.beats.length,0);clearBugs();
+    pips(stage.beats.length,0);clearBugs();web.clear();
+    // Only the engine stage has a laptop to lose. A retry gets the spare, which
+    // is a worse machine, and the copy says so rather than the number changing
+    // silently.
+    laptopMark=null;
+    laptopMax=stage.key==='engine'?(attempts?3:4):0;
+    laptopHp=laptopMax;undefended=0;renderHealth();
     targetX=stage.key==='vault'?.73:stage.key==='delivery'?.73:stage.key==='cloud'?.67:.35;
     await showProp(stage.key==='vault'?'prop-vault-core':stage.key==='delivery'?'prop-capsule':null,
       stage.key==='vault'?'PROTECT THE VAULT':'RELEASE CAPSULE',token);
@@ -321,10 +429,16 @@
     await actor.set(stage.key==='engine'?'desk-01':'talk-10');if(!alive(token))return;
     if(stage.key==='engine'){await actor.play('desk',1,3,5);if(!alive(token))return;}
     else await actor.set('talk-05');
-    if(!await speak(stage.open,null,token,{cta:'I’m ready',pose:false}))return;
+    const opening=stage.key==='engine'&&attempts?RETRY_LINE:stage.open;
+    if(!await speak(opening,null,token,{cta:attempts&&stage.key==='engine'?'Again':'I’m ready',pose:false}))return;
     await actor.set(restPose());if(!alive(token))return;
+    // The chapter card gets swept off by the line the bugs are stringing across
+    // the top: it arrives from the right and pushes the copy out of frame, so
+    // the fight takes the screen over rather than appearing beside the titles.
+    $('brief').classList.add('is-swept');
+    await wait(.22);if(!alive(token))return;
     workTimer=0;spawnTimer=.4;paused=false;running=true;
-    bubble.hint(stage.key==='vault'?'Tap the bugs before they reach the vault.':stage.key==='delivery'?'Clear the conveyor. Arm the next release gate.':'Tap the bugs. Two cleared unlock the next piece.');
+    bubble.hint(stage.key==='vault'?'Tap the bugs before they reach the vault.':stage.key==='delivery'?'Clear the conveyor. Arm the next release gate.':'Tap them on the way down — that’s the easy window. Five clears the next piece.');
   }
   async function finish(token){
     paused=true;running=false;clearBugs();pips(0,0);prop.hidden=true;targetLabel.hidden=true;
@@ -334,16 +448,45 @@
     record('System ready',line);
     if(await speak(line,'BACKEND · CLOUD · DELIVERY',token,{cta:'Open my boot log',tone:'win',pose:false}))openLog();
   }
+  const DEFEAT_LINE='Everything I know how to build. None of it worth anything down here.';
+  const RETRY_LINE='I keep a spare. It is slower and it will not take as much — so let us not need it twice.';
+
+  /* Losing the laptop is not a game over screen, it is the same framed insert
+     the lever gets. Then we drop straight back to the first bug rather than
+     replaying the walk in, because the story beat already happened. */
+  async function defeat(token){
+    if(!alive(token))return;
+    paused=true;running=false;clearBugs();web.clear();
+    laptopHp=0;renderHealth();
+    announce('The laptop is destroyed. Starting again.');
+    const shot=await cineShot(token,failNames,{fps:9,caption:DEFEAT_LINE});
+    if(!shot||!alive(token))return;
+    await wait(1.3);if(!alive(token))return;
+    shot.shot.remove();
+    attempts++;
+    await startStage(0,token);
+  }
+
   async function coldStart(){
     cancelRun();const token=epoch;
     stage=null;stageIndex=-1;log=[];choice={};$('traceCount').textContent='0';
+    attempts=0;laptopMax=0;renderHealth();
     renderer.set('cold');renderer.dim=.12;document.documentElement.style.setProperty('--ac','#f3cc70');
-    $('chapter').textContent='00 / COLD START';$('title').textContent='You’re inside the system now.';
-    $('intro').textContent='I’ll walk you through every layer we’ve got running — from the engine to the release pipeline.';
+    $('chapter').textContent='00 / COLD START';
+    $('title').textContent='We’re inside the system now.';
+    $('intro').textContent='';
+    $('brief').classList.add('is-cold');
     pips(0,0);measure();actor.place(W*.42);pet.x.set(W*.24);
     await actor.set('talk-10');if(!alive(token))return;
     if(!await speak('We start at the core. Watch what happens when we bring the engine online.',null,token,{cta:'Boot it up',pose:false}))return;
-    $('intro').textContent='';
+
+    if(!await alarm(token))return;
+    await actor.set('react-01');if(!alive(token))return;
+    if(!await speak('Something is already in here. Bugs, in the layers we have not hardened yet. Keep them off me while I get the stack ready to take a hit.',null,token,{cta:'I have got your back',pose:false}))return;
+    await actor.set('talk-05');if(!alive(token))return;
+    // Why the lever matters: cutting the power is what breaks their hold.
+    if(!await speak('That breaker cuts the power on their way in. Everything comes back up cold with the guards already running, and whatever they left behind has nothing to hold on to.',null,token,{cta:'Pull the breaker',pose:false}))return;
+
     // He turns his back and walks to the lever that is already drawn into the
     // wallpaper, shrinking as he goes.
     if(!await walkIntoDepth(token))return;
@@ -358,7 +501,10 @@
     actor.ground=groundFor();actor.charHeight=heightFor();
     shot.shot.remove();
     await shatter(host,{origin:{x:.42,y:.5},tone:'#84f5ad',snapshot:torn});if(!alive(token))return;
-    await startStage(0,token,true);
+    // No walk-in here: the desk is part of his pose artwork, so walking on with
+    // the walk-cycle sprite means arriving into an empty room and having the
+    // whole workstation pop in when he sits. The shatter is the transition.
+    await startStage(0,token);
   }
 
   function frame(now){
@@ -375,17 +521,40 @@
         workTimer+=delta;spawnTimer-=delta;
         if(reactionUntil&&clock>=reactionUntil){reactionUntil=0;actor.set(restPose());}
         if(stage.key==='engine'&&!reactionUntil&&workTimer>2.1){workTimer=0;actor.set(WORK[++workIndex%WORK.length]);}
-        if(bugs.filter(b=>!b.dead).length<stage.spawn.max&&spawnTimer<=0){spawnBug();spawnTimer=1.05+Math.random()*.4;}
+        // Leaving it alone is not a strategy. The longer nothing has been killed,
+        // the tighter the spawn interval gets, so standing still turns into
+        // being overrun at about ten seconds.
+        undefended+=delta;
+        const pressure=Math.min(1,undefended/10);
+        // The cap has to rise with the rate, or the ramp just queues bugs behind
+        // a ceiling of four and nothing ever gets worse.
+        const cap=Math.round(stage.spawn.max+pressure*(stage.spawn.surge||0));
+        if(bugs.filter(b=>!b.dead).length<cap&&spawnTimer<=0){
+          spawnBug();spawnTimer=(1.05+Math.random()*.4)*(1-pressure*.68);
+        }
         bugs=bugs.filter(b=>!b.dead);
+        const lap=stage.key==='engine'?laptopAt():null;
+        const ropeAt=x=>web.sample(x,H*ROPE_Y);
         let underAttack=false;
         for(const b of bugs){
-          b.target=stage.key==='engine'?actor.x.x/W:targetX;
+          b.target=lap?lap.x/W:targetX;b.ropeAt=ropeAt;b.goal=lap;
           const arrived=b.update(delta,W,H);
           // Fire when bug enters a zone 22% of screen width before the target —
           // the projectile intercepts it before it can reach the actor.
+          // The dog covers the floor. Anything still on the rope or on its thread
+          // is the player's to deal with — that window is the whole point of the
+          // slow descent, and letting the dog clear it made the fight play itself.
+          const onFoot=b.pattern!=='rope'||b.phase==='crawl'||b.phase==='climb';
           const distToTarget=Math.abs(b.p*W - b.target*W);
-          if(distToTarget<W*.22)pet.fire(b);
-          if(arrived)underAttack=true;
+          if(onFoot&&distToTarget<W*.22)pet.fire(b);
+          if(arrived){underAttack=true;if(lap)consume(b);}
+        }
+        web.update(delta,W,H,bugs,ROPE_Y,stage.spawn.pattern==='rope');
+        if(laptopMax){
+          // Sits under the pair of them rather than floating in a corner, so it
+          // reads as their health and not as chrome.
+          health.style.left=Math.round(actor.x.x-W*.085)+'px';
+          health.style.top=Math.round(H*actor.ground+10)+'px';
         }
         targetLabel.classList.toggle('under-attack',underAttack);
       }

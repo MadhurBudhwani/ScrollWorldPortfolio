@@ -7,7 +7,9 @@ const actorViewportScale = () => Math.min(1,state.h/650);
 const BACKEND_ACTOR_SCALE = .75;
 const BACKEND_PORTAL_RAIL_LIFT = 18;
 const BACKEND_TRAIN_ENTRY_RIGHT_SHIFT = .26;
-const DELIVERY_ACTOR_DECK_SETTLE = 10;
+const DELIVERY_ACTOR_DECK_SETTLE = 17;
+// How far the nameplate's base sinks past the deck line, in artwork pixels.
+const DELIVERY_PLATE_SINK = 16;
 // Integrate a short smooth acceleration ramp at each end, keeping the same
 // travel window and a steady cruise through the middle of the train.
 function trainTravel(value) {
@@ -98,6 +100,54 @@ function planetTexture(kind) {
   if(kind==='moon')for(const [x,y,r]of[[38,37,10],[75,85,13],[86,39,6],[38,83,6]]){g.fillStyle='#657783';g.fillRect(x,y,r,r);g.fillStyle='#96a7b2';g.fillRect(x+3,y+3,r-4,r-4);}
   planetTextures.set(kind,c);return c;
 }
+/* A low sun on the hub, sitting behind the grid so the plane's lines run across
+   it. Drawn rather than textured because the whole point is the gradient: deep
+   red at the rim through orange to a warm core, banded toward the bottom so it
+   reads as sinking into the plane. Kept well under full brightness — it is the
+   backdrop to a menu, not the subject. */
+function hubSun(position) {
+  const hub = typeof scenes !== 'undefined' ? scenes.findIndex(s => s.key === 'hub') : 8;
+  if (hub < 0) return;
+  const near = clamp(1 - Math.abs(position - hub) / 1.15);
+  if (near <= .01) return;
+
+  const cx = state.w * .17, cy = state.h * (state.w < 700 ? .40 : .43);
+  const r = Math.min(state.w * .34, state.h * .40) * (state.w < 700 ? .8 : 1);
+  const breathe = 1 + Math.sin(state.time * .28) * .012;
+  const warm = .5 + .5 * Math.sin(state.time * .21);        // slow drift, red <-> orange
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+
+  // Atmosphere. Most of the fire feeling is out here, not on the disc.
+  const halo = ctx.createRadialGradient(cx, cy, r * .55, cx, cy, r * 2.3);
+  halo.addColorStop(0, `rgba(255,${86 + warm * 34},26,${.17 * near})`);
+  halo.addColorStop(.45, `rgba(214,52,18,${.07 * near})`);
+  halo.addColorStop(1, 'rgba(120,20,10,0)');
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(cx, cy, r * 2.3, 0, Math.PI * 2); ctx.fill();
+
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, r * breathe, 0, Math.PI * 2); ctx.clip();
+
+  const body = ctx.createRadialGradient(cx, cy - r * .3, 0, cx, cy, r);
+  body.addColorStop(0, `rgba(255,${196 + warm * 26},132,${.5 * near})`);
+  body.addColorStop(.42, `rgba(255,${126 + warm * 24},48,${.46 * near})`);
+  body.addColorStop(.78, `rgba(216,54,24,${.38 * near})`);
+  body.addColorStop(1, `rgba(152,24,16,${.26 * near})`);
+  ctx.fillStyle = body;
+  ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+
+  ctx.restore();
+
+  // A single hot rim on the upper edge keeps it from reading as a flat circle.
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = .22 * near;
+  ctx.strokeStyle = `rgba(255,${180 + warm * 40},120,1)`;
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(cx, cy, r * breathe, Math.PI * 1.08, Math.PI * 1.92); ctx.stroke();
+  ctx.restore();
+}
 function celestialLayer(position) {
   ctx.save();
   for(let i=0;i<17;i++){
@@ -108,6 +158,7 @@ function celestialLayer(position) {
     ctx.fillRect(x-size,y-size,size*2,size*2);
     if(i%4===0){ctx.fillRect(x-7,y-1,14,2);ctx.fillRect(x-1,y-7,2,14);}
   }
+  hubSun(position);
   const itinerary=[['earth',.84,.27,180],['sun',.84,.20,155],['jupiter',.88,.25,235],['mars',.83,.30,160],['jupiter',.13,.49,155],['earth',.86,.20,175],['mars',.85,.25,155],['sun',.83,.22,145],['moon',.79,.27,190]];
   itinerary.forEach(([kind,x,y,size],i)=>{
     const opacity=.25*clamp(1-Math.abs(position-(i+.45))/.85);
@@ -161,7 +212,9 @@ const deliveryPlatforms=[
   {label:'DEV',        crop:[18,145,272,145],deck:37},
   {label:'REVIEW',     crop:[351,108,280,182],deck:40},
   {label:'QA',         crop:[686,75,245,215],deck:43},
-  {label:'UAT',        crop:[1017,46,240,244],deck:43},
+  // Measured off the sheet: the platform runs 997..1263, and the old 1017
+  // start sliced straight through the left corner post and its lamp.
+  {label:'UAT',        crop:[997,46,266,244],deck:43},
   {label:'PRODUCTION', crop:[1341,10,423,280],deck:46},
 ];
 // Each destination finishes building before its corresponding walk begins.
@@ -252,20 +305,47 @@ function drawDeliveryPlatform(spec,at,artScale,reveal,active){
 }
 function deliveryLabel(spec,index,platform,reveal,active){
   if(reveal<=0)return;
+  // The board is registered as a target whatever it is doing visually, so the
+  // mascot does not lose DEV while its rail is still held back.
+  registerMascotTarget(spec.label,platform.x,platform.y+42*platform.scale,Math.max(86,platform.width*.76),Math.max(95,120*platform.scale));
+  // DEV's platform is there from the first frame because he climbs out onto it,
+  // but its rail would be sharing pixels with the chapter-arrival hatch. Hold
+  // that one board until the hatch has gone - the same wait, and the same
+  // numbers, that the hub portals already use for the identical reason.
+  const shown=index===0?reveal*ease((state.local-.15)/.10):reveal;
+  if(shown<=0)return;
   const label=spec.label,u=state.w<700?1.25:Math.max(1.7,2.25*platform.scale);
-  const width=(label.length*6-1)*u;
-  // Labels remain code-rendered and sit on a compact dark nameplate rather
-  // than being baked into the supplied artwork.
-  const y=platform.y+Math.max(45,58*platform.scale);
-  ctx.save();ctx.globalAlpha*=reveal;
-  ctx.fillStyle='rgba(3,13,17,.84)';ctx.fillRect(platform.x-width/2-10,y-7,width+20,7*u+14);
-  ctx.fillStyle=active>.55?'#84f5ad':'#4f7881';ctx.fillRect(platform.x-width/2-10,y-7,width+20,3);
-  pixelText(ctx,label,platform.x-width/2+2,y+2,u,'#061315');
-  pixelText(ctx,label,platform.x-width/2,y,u,active>.55?'#effff5':'#c4d4d6');
-  ctx.restore();
-  registerMascotTarget(label,platform.x,platform.y+42*platform.scale,Math.max(86,platform.width*.76),Math.max(95,120*platform.scale));
+  const width=(label.length*6-1)*u, height=7*u+14;
+  // A parapet bolted to the deck between the front posts, not a tag hanging off
+  // the front of the module. The base is sunk into the slab rather than resting
+  // on the line, so it reads as fixed to the floor instead of balanced on it.
+  const base=platform.y+DELIVERY_PLATE_SINK*platform.scale, top=base-height;
+  // Queued rather than drawn: the foreground canvas paints above the avatar, so
+  // this is what lets him walk behind the rail instead of over it.
+  state.deliveryPlates.push({x:platform.x,top,width,height,u,label,active,alpha:shown});
+}
+function drawDeliveryPlates(c){
+  if(!state.deliveryPlates||!state.deliveryPlates.length)return;
+  for(const pl of state.deliveryPlates){
+    c.save();c.globalAlpha=pl.alpha;
+    c.fillStyle='rgba(3,13,17,.88)';c.fillRect(pl.x-pl.width/2-10,pl.top,pl.width+20,pl.height);
+    c.fillStyle=pl.active>.55?'#84f5ad':'#4f7881';c.fillRect(pl.x-pl.width/2-10,pl.top,pl.width+20,3);
+    // Two short mounts running out of the bottom into the deck. Without them the
+    // rail still reads as sitting on the surface rather than fixed into it.
+    const mount=Math.max(3,4*pl.u/2), foot=pl.top+pl.height;
+    c.fillStyle='rgba(3,13,17,.9)';
+    c.fillRect(pl.x-pl.width/2-4,foot,mount,7);
+    c.fillRect(pl.x+pl.width/2+4-mount,foot,mount,7);
+    pixelText(c,pl.label,pl.x-pl.width/2+2,pl.top+9,pl.u,'#061315');
+    pixelText(c,pl.label,pl.x-pl.width/2,pl.top+7,pl.u,pl.active>.55?'#effff5':'#c4d4d6');
+    c.restore();
+  }
+  // Consumed on draw. Only the delivery pass refills it, so leaving the chapter
+  // empties it on the next frame instead of stranding rails over another scene.
+  state.deliveryPlates.length=0;
 }
 function crossing(s,p) {
+  state.deliveryPlates=[];
   if(!deliveryPlatformSheet.complete||!deliveryPlatformSheet.naturalWidth){fallbackCrossing(s,p);return;}
   const built=clamp(p/.70)*20;
   const artScale=Math.min(state.w/1774,state.h/887)*1.02;
