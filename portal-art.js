@@ -107,5 +107,19 @@
     c.restore();
   }
 
-  window.PortalArt = { draw, themes: THEMES };
+  // Repaint only the near half of a hatch above actors during chapter
+  // transitions. The full hatch belongs to the rear scene canvas; this lip is
+  // intentionally isolated so an emerging actor reads as being inside the
+  // cavity instead of standing in front of a flat portal graphic.
+  function drawFrontLip(c, x, y, width, height, themeName = 'green', visual = {}) {
+    const pad = 14;
+    c.save();
+    c.beginPath();
+    c.rect(x - width / 2 - pad, y, width + pad * 2, height / 2 + pad);
+    c.clip();
+    draw(c, x, y, width, height, themeName, visual);
+    c.restore();
+  }
+
+  window.PortalArt = { draw, drawFrontLip, themes: THEMES };
 })();

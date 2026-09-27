@@ -5,13 +5,22 @@ class ScrollPacer {
     this.direction=0;this.touchY=null;this.keys=new Map();this.heldControl=null;
     this.secondsPerChapter=10;this.trainSeconds=18;this.securitySeconds=28;this.writingSeconds=18;
     this.gestureDirection=0;this.lastGestureAt=-Infinity;this.gestureGapMs=72;
+    // A trackpad emits a wheel event every ~10ms, a mouse wheel one per notch
+    // every ~150ms. A single 72ms hold therefore ran a trackpad at full duty
+    // and a mouse at about half, which is what made wheel scrolling crawl in
+    // visible steps. Measure the cadence rather than guessing the device and
+    // hold the gesture just past the next expected notch. Pace is untouched;
+    // only the dead gaps between notches close.
+    this.gestureHoldMs=this.gestureGapMs;this.wheelHoldMs=this.gestureGapMs;
+    this.wheelGaps=[];this.lastWheelAt=-Infinity;
     this.editable=e=>e.target instanceof Element&&e.target.closest('input,textarea,select,[contenteditable="true"]');
     window.addEventListener('wheel',e=>{
       if(e.ctrlKey||reducedMotion.matches||this.editable(e)||!Number.isFinite(e.deltaY)||e.deltaY===0)return;
       window.portfolioTour?.stop();
       e.preventDefault();e.stopImmediatePropagation();
       if(state.exit)return;
-      this.pulse(Math.sign(e.deltaY));
+      this.measureWheel(performance.now());
+      this.pulse(Math.sign(e.deltaY),this.wheelHoldMs);
     },{passive:false,capture:true});
     window.addEventListener('touchstart',e=>{
       const onControl=e.target instanceof Element&&e.target.closest('[data-scroll-direction]');
@@ -39,8 +48,20 @@ class ScrollPacer {
     document.addEventListener('visibilitychange',()=>{if(document.hidden)this.cancel();});
     window.addEventListener('pointerdown',()=>this.endGesture());
   }
-  pulse(direction){this.gestureDirection=direction;this.lastGestureAt=performance.now();}
-  endGesture(){this.gestureDirection=0;this.lastGestureAt=-Infinity;}
+  pulse(direction,holdMs=this.gestureGapMs){this.gestureDirection=direction;this.lastGestureAt=performance.now();this.gestureHoldMs=holdMs;}
+  endGesture(){this.gestureDirection=0;this.lastGestureAt=-Infinity;this.gestureHoldMs=this.gestureGapMs;}
+  // Only wheel events feed the cadence sample; touch already arrives fast
+  // enough that the default hold covers it.
+  measureWheel(now){
+    const gap=now-this.lastWheelAt;this.lastWheelAt=now;
+    // A longer pause is the start of a new gesture, not the device's rhythm.
+    if(!(gap>0&&gap<500))return;
+    this.wheelGaps.push(gap);if(this.wheelGaps.length>8)this.wheelGaps.shift();
+    const sorted=[...this.wheelGaps].sort((a,b)=>a-b),median=sorted[sorted.length>>1];
+    // 1.8x absorbs the jitter between notches without leaving a coast that
+    // outlives the gesture. The ceiling keeps a very slow wheel honest.
+    this.wheelHoldMs=Math.min(220,Math.max(this.gestureGapMs,median*1.8));
+  }
   bindButtons(buttons){
     buttons.forEach(button=>{
       button.addEventListener('pointerdown',e=>{
@@ -87,7 +108,7 @@ class ScrollPacer {
   cancel(){this.releaseControl();this.touchY=null;this.keys.clear();}
   tick(time,dt){
     if(state.exit||window.landscapePrompt?.blocked||(reducedMotion.matches&&!this.heldControl)){this.cancel();return;}
-    const gestureActive=time-this.lastGestureAt<this.gestureGapMs;
+    const gestureActive=time-this.lastGestureAt<this.gestureHoldMs;
     this.direction=this.heldControl?.direction||(this.keys.size?[...this.keys.values()].at(-1):gestureActive?this.gestureDirection:0);
     if(!this.direction)return;
     this.advance(this.direction,Math.min(dt,1/30));

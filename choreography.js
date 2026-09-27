@@ -384,7 +384,10 @@ function scenePose(index,p) {
     // Centre the avatar + right-offset companion as one group on every deck.
     // Without this shared nudge the avatar sits at the platform centre while
     // the dog hangs beyond its right edge on REVIEW, QA and UAT.
-    const stageGroupShift=state.w<700?20:38;
+    // The actor leaves the canonical portal on its centre, then the chapter's
+    // own deck composition takes over and eases the pair into their approved
+    // left-shifted stage position.
+    const stageGroupShift=(state.w<700?20:38)*ease((state.local-.15)/.04);
     // On the initial flat gantry the generated decks read smaller than the old
     // blocks. Apply a delivery-only correction to both actors, then restore the
     // original perspective scale as the staircase begins to rise.

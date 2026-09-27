@@ -118,15 +118,20 @@ function drawCompanion(c,pose,transition,dt){
   }
   updateMascotTargets();
   const exiting=transition.mode||transition.trainExit||state.exit;
-  // SS2 establishes the dog height: 60% of the avatar's registered height.
-  const height=232*pose.scale*.60;
+  const portalProfile=window.chapterPortalProfile||{actorOffsetPerActorScale:-32/.82,emergeRegistrationCompensationPerActorScale:-14/.82,companionHeightRatio:.60,companionOffsetPerActorScale:90/.82};
+  const height=232*pose.scale*portalProfile.companionHeightRatio;
   const offset=(state.scene===1?-80:90)*pose.scale/.82;
-  // Standard chapter portals pull the companion towards the avatar as both
-  // actors descend. The wider train-exit portal already accommodates them side
-  // by side, so keep the dog's offset instead of sliding it through the avatar.
-  const portalOffset=transition.mode&&!transition.trainExit?1-transition.progress:1;
-  const trainExitNudge=transition.trainExit?Math.min(50,height*.60):0;
-  const x=clamp(pose.x+offset*portalOffset+trainExitNudge,height*.65,state.w-height*.65);
+  let requestedX=pose.x+offset;
+  if(transition.mode&&transition.portalProfile==='genai-exit'){
+    // The entrance is the exact temporal mirror of the approved GenAI exit:
+    // together at the deepest point, then separating to their fixed spacing.
+    const separation=transition.mode==='emerge'?transition.progress:1-transition.progress;
+    const entryCompensation=transition.mode==='emerge'?portalProfile.emergeRegistrationCompensationPerActorScale:0;
+    requestedX=(transition.portalX??pose.x)+pose.scale*(portalProfile.actorOffsetPerActorScale+entryCompensation+portalProfile.companionOffsetPerActorScale*separation);
+  }else if(transition.trainExit){
+    requestedX+=Math.min(50,height*.60);
+  }
+  const x=clamp(requestedX,height*.65,state.w-height*.65);
   const dx=mascot.x===null?0:x-mascot.x;
   // Delivery platforms reposition during their cinematic perspective turn.
   // That camera/layout motion must not make the dog walk in place: on this

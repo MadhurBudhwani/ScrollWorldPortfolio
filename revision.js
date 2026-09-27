@@ -3,11 +3,28 @@ const revisionUI={active:null,buttons:[],bubble:null,petBubble:null,petTarget:nu
   narrativeKey:0,hoverKey:null,displayKey:null,manualTransition:null,petActive:false};
 const SLIDE_ONE_TIMELINE=window.PortfolioChapters[0].timeline;
 let foreground,frontCtx;
-// Locked actor-to-hole ratio for every chapter transition. The final hub keeps
-// its independently tuned ground portals and arrival treatment.
-const CHAPTER_PORTAL_WIDTH_PER_ACTOR_SCALE=250;
-const CHAPTER_PORTAL_ASPECT=240/52;
+// GenAI's approved exit is the canonical transition composition. Every
+// chapter entrance mirrors that exit: avatar on the hatch centre, companion
+// separating to the right as it emerges (and converging while it drops), with
+// all three sizes derived from the same actor scale.
+const CHAPTER_PORTAL_PROFILE=Object.freeze({
+  widthPerActorScale:250,
+  aspect:240/52,
+  actorOffsetPerActorScale:-32/.82,
+  emergeRegistrationCompensationPerActorScale:-14/.82,
+  companionHeightRatio:.60,
+  companionOffsetPerActorScale:90/.82,
+});
+window.chapterPortalProfile=CHAPTER_PORTAL_PROFILE;
+const CHAPTER_PORTAL_WIDTH_PER_ACTOR_SCALE=CHAPTER_PORTAL_PROFILE.widthPerActorScale;
+const CHAPTER_PORTAL_ASPECT=CHAPTER_PORTAL_PROFILE.aspect;
 const hubArrivalX=()=>state.w*.14-(state.w<700?20:36);
+function canonicalPortalX(requested,scale){
+  const portalHalf=scale*CHAPTER_PORTAL_WIDTH_PER_ACTOR_SCALE/2;
+  const petHeight=232*scale*CHAPTER_PORTAL_PROFILE.companionHeightRatio;
+  const petRight=scale*CHAPTER_PORTAL_PROFILE.companionOffsetPerActorScale+petHeight*.52;
+  return clamp(requested,portalHalf+8,state.w-petRight-8);
+}
 // Slide 1 begins suggesting the exit before the existing drop sequence. The
 // completed portal and actor transition still begin at the original .85 mark.
 const SLIDE_ONE_PORTAL_HINT_START=SLIDE_ONE_TIMELINE.portalHintStart;
@@ -157,8 +174,8 @@ function chapterTransition(index,p,pose){
     const start=scenePose(1,.85),t=clamp((p-.745)/.155);
     const portalWidth=Math.min(state.w*.8,Math.round(start.scale*CHAPTER_PORTAL_WIDTH_PER_ACTOR_SCALE));
     const portalHeight=Math.round(portalWidth/CHAPTER_PORTAL_ASPECT);
-    const destination=Math.min(state.w-portalWidth/2-8,start.x+(state.w<700?72:155));
-    const actorDestination=destination-(state.w<700?4:8);
+    const destination=canonicalPortalX(start.x+(state.w<700?72:155),start.scale);
+    const actorDestination=destination+start.scale*CHAPTER_PORTAL_PROFILE.actorOffsetPerActorScale;
     const exitPortalY=backendPortalY();
     const sink=clamp((p-.90)/.10);
     pose={...start,x:mix(start.x,actorDestination,ease(t)),feet:mix(start.feet,exitPortalY,t*t)-Math.sin(t*Math.PI)*85,mode:t<1?'jump':'drop',jumpProgress:t<1?t:null,phase:t*4};
@@ -166,7 +183,7 @@ function chapterTransition(index,p,pose){
     Object.assign(hole.style,{left:destination+'px',top:exitPortalY+'px',opacity:String(opacity),width:portalWidth+'px'});
     hole.style.setProperty('--portal-color',colors[1]);
     state.chapterPortal={x:destination,y:exitPortalY,width:portalWidth,height:portalHeight,theme:'cyan',opacity,approach,entering:sink,phase:p*4,reducedMotion:reducedMotion.matches};
-    return {pose,mode:t<1?null:'drop',progress:sink,portalY:exitPortalY,trainExit:true};
+    return {pose,mode:t<1?null:'drop',progress:sink,portalX:destination,portalY:exitPortalY,trainExit:true,portalProfile:'genai-exit'};
   }
   let mode=null,progress=0,opacity=0;
   if(!reducedMotion.matches&&index>0&&p<.15){
@@ -187,20 +204,12 @@ function chapterTransition(index,p,pose){
   const deliveryPortalAt=index===6&&mode==='emerge'
     ?bridgePoint(0,shotTime(state.directedLocal))
     :null;
-  let portalX=deliveryPortalAt?.x??pose.x;
+  let portalX=canonicalPortalX(deliveryPortalAt?.x??pose.x,pose.scale);
   const portalY=deliveryPortalAt?.y??(index===0||(index===1&&p<.15)?backendPortalY():state.h-82);
-  if(index===6&&mode==='drop'){
-    // Reproduce the entrance composition at the smaller exit scale: avatar on
-    // the left, companion on the right, hatch centred between them. Move the
-    // complete three-part arrangement right without changing that ratio.
-    const entryScale=(state.w<700?.67:.82)*actorViewportScale()*.92;
-    const entryAvatarToHole=state.w<700?20:38;
-    const scaledAvatarToHole=entryAvatarToHole*(pose.scale/entryScale);
-    const exitGroupNudge=state.w<700?11:20;
-    pose={...pose,x:pose.x+exitGroupNudge};
-    portalX=pose.x+scaledAvatarToHole;
+  if(mode){
+    const entryCompensation=mode==='emerge'?CHAPTER_PORTAL_PROFILE.emergeRegistrationCompensationPerActorScale:0;
+    pose={...pose,x:portalX+pose.scale*(CHAPTER_PORTAL_PROFILE.actorOffsetPerActorScale+entryCompensation),feet:mode==='drop'?mix(pose.feet,portalY,ease(progress/.25)):mix(portalY,pose.feet,ease((progress-.65)/.35)),mode};
   }
-  if(mode){pose={...pose,feet:mode==='drop'?mix(pose.feet,portalY,ease(progress/.25)):mix(portalY,pose.feet,ease((progress-.65)/.35)),mode};}
   const slideOneBuildup=index===0&&p>=SLIDE_ONE_PORTAL_HINT_START;
   const build=slideOneBuildup
     ?clamp((p-SLIDE_ONE_PORTAL_HINT_START)/(SLIDE_ONE_PORTAL_COMPLETE-SLIDE_ONE_PORTAL_HINT_START))
@@ -220,7 +229,7 @@ function chapterTransition(index,p,pose){
     state.chapterPortal={x:portalX,y:portalY,width,height,theme:index===6?'cyan':themes[index%4],opacity:portalOpacity,
       approach:mode?1:build*.65,entering:progress,build,phase:p*4,reducedMotion:reducedMotion.matches};
   }
-  return {pose,mode,progress,portalY};
+  return {pose,mode,progress,portalX,portalY,portalProfile:mode?'genai-exit':null};
 }
 function revisionPose(index,p){
   if(index===5){
@@ -251,6 +260,13 @@ function renderForeground(pose,transition,dt){
   }
   drawPullRope(frontCtx,state.reelRope);
   drawCompanion(frontCtx,pose,transition,dt);
+  // The avatar is a DOM layer while the main portal is painted on the rear
+  // canvas. Repaint only the hatch's near lip here so both the avatar and dog
+  // emerge from behind the rim, including the train's final portal descent.
+  if(transition.mode&&transition.portalProfile==='genai-exit'&&state.chapterPortal&&window.PortalArt?.drawFrontLip){
+    const portal=state.chapterPortal;
+    PortalArt.drawFrontLip(frontCtx,portal.x,portal.y,portal.width,portal.height,portal.theme,portal);
+  }
   layoutPetInteraction();
 }
 // Capture the current hand once, after the avatar frame is updated. Both rope

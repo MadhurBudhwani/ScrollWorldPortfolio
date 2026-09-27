@@ -183,18 +183,35 @@
         var v = window.__v || Math.floor(Date.now()/300000);
         var files = ['./story-data.js','./orientation.js','./scene-viewport.js','./assets/lenis.min.js','./assets/lucide.min.js','./avatar.js','./train-art.js','./portal-art.js','./choreography.js','./revision.js','./companion.js','./mascot-catalog.js','./mascot-crops.js','./mascot.js','./pacing.js','./autoplay.js','./director.js'];
         var bar = document.querySelector('#bootProgress');
-        var loaded = 0, revealed = false;
+        var loaded = 0, revealed = false, scheduled = false;
 
-        function reveal(){
-          if (revealed) return;
+        function uncover(){
           revealed = true;
+          document.documentElement.classList.remove('booting');
+        }
+        function reveal(){
+          /* Only uncover() may set `revealed`. If this scheduled a wait that
+             never completes, the safety net below has to still be armed. */
+          if (revealed || scheduled) return;
+          scheduled = true;
           /* Two frames: let the last script's top-level setup paint into the
              canvas before we uncover it, so no half-built scene shows. */
-          requestAnimationFrame(function(){
-            requestAnimationFrame(function(){
-              document.documentElement.classList.remove('booting');
+          function afterTwoFrames(){
+            requestAnimationFrame(function(){ requestAnimationFrame(uncover); });
+          }
+          /* A background tab never fires rAF, so waiting on it there would hold
+             the boot screen until the visitor comes back — and it would still be
+             covering a canvas nothing has drawn into yet. Wait for the tab to be
+             looked at, then take the usual two frames. */
+          if (document.hidden) {
+            document.addEventListener('visibilitychange', function seen(){
+              if (document.hidden) return;
+              document.removeEventListener('visibilitychange', seen);
+              afterTwoFrames();
             });
-          });
+            return;
+          }
+          afterTwoFrames();
         }
         function step(){
           loaded++;
@@ -209,8 +226,10 @@
           document.body.appendChild(s);
         });
 
-        /* Never trap a visitor behind the boot screen if something fails. */
-        setTimeout(reveal, 8000);
+        /* Never trap a visitor behind the boot screen if something fails. This
+           uncovers directly rather than through reveal(), whose frame wait is
+           exactly what a stalled or hidden page cannot deliver. */
+        setTimeout(function(){ if (!revealed) uncover(); }, 8000);
       })();
     </script>
   </body>

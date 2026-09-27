@@ -773,6 +773,16 @@ function updatePlayer(dt,paintForeground=true) {
   player.style.bottom=(state.h-pose.feet-232*pose.scale*.02)+'px';
   player.style.setProperty('--player-s',pose.scale);
   player.style.setProperty('--facing',pose.direction||1);
+  // Avatar frames deliberately overflow their DOM wrapper. During a chapter
+  // transition that overflow used to remain visible below the hatch, making
+  // the avatar look pasted in front while the canvas-drawn dog was correctly
+  // clipped inside it. Pin the avatar's lower clip edge to the same portal Y.
+  const portalMask=!!transition.mode&&transition.portalProfile==='genai-exit';
+  const portalClip=portalMask
+    ?Math.max(0,pose.feet-(transition.portalY??pose.feet))/Math.max(.01,pose.scale)
+    :0;
+  player.classList.toggle('portal-masked',portalMask);
+  player.style.setProperty('--portal-clip-bottom',portalClip+'px');
   player.style.opacity='1';
   player.classList.toggle('walking',movement!==0);
   avatar?.update(dt,{
