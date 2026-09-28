@@ -255,13 +255,15 @@
   // The frames are square with the figure standing in the middle of a lot of
   // empty space, so scale by height and let the stage clip the bare sides. A
   // percentage height on the image resolved against its own natural size.
-  // Drawn at its own size wherever that fits, so the pixel grid stays whole and
-  // a dense screen scales it by a round number instead of smearing it.
+  /* Fills the stage it is given, in both directions. Capping him at the frame's
+     own height kept the pixel grid whole but left him a third of the height of
+     a tall phone, where the stage runs to three times a frame. He is drawn with
+     image-rendering: pixelated, so the scale stays hard-edged either way. */
   function briefFit(){
     const st=$('talkStage');if(st.hidden)return;
-    const r=st.getBoundingClientRect();if(!r.height)return;
-    const av=$('talkAvatar'), native=av.naturalHeight||339;
-    av.style.height=Math.round(Math.min(native,r.height*.92))+'px';
+    const r=st.getBoundingClientRect();if(!r.height||!r.width)return;
+    const av=$('talkAvatar'), nh=av.naturalHeight||339, nw=av.naturalWidth||178;
+    av.style.height=Math.round(Math.min(r.height*.88,r.width*.88*(nh/nw)))+'px';
   }
   function briefHide(){
     clearInterval(briefTimer);briefTimer=0;clearInterval(typeTimer);typeTimer=0;
