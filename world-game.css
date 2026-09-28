@@ -4,6 +4,70 @@
 #play{position:absolute;inset:0;z-index:4;overflow:hidden;pointer-events:none}
 #play>*{pointer-events:auto}
 
+/* ---- level two: first-person vault sniper ---- */
+.sniper-hud{position:absolute;inset:0;z-index:14;overflow:hidden;opacity:0;visibility:hidden;
+  pointer-events:none!important;transition:opacity .32s ease,visibility 0s linear .32s;
+  --aim-x:50%;--aim-y:45%;--rifle-x:0px;--rifle-y:0px;--rifle-r:0deg}
+.sniper-hud.is-live{opacity:1;visibility:visible;transition-delay:0s}
+.sniper-rifle{position:absolute;z-index:2;right:-24%;bottom:-8%;width:min(128vw,920px);height:auto;max-width:none;
+  transform:translate(var(--rifle-x),var(--rifle-y)) rotate(var(--rifle-r));transform-origin:82% 83%;
+  filter:drop-shadow(0 14px 24px #000b);transition:transform .12s ease-out;user-select:none}
+.sniper-veil{position:absolute;inset:0;z-index:3;opacity:0;
+  background:radial-gradient(circle 91px at var(--aim-x) var(--aim-y),transparent 0 84px,rgba(0,4,10,.78) 93px);
+  transition:opacity .13s ease-out}
+.sniper-scope{position:absolute;z-index:4;left:var(--aim-x);top:var(--aim-y);width:184px;height:184px;
+  translate:-50% -50%;border:3px solid #071017;border-radius:50%;opacity:0;
+  background:
+    linear-gradient(90deg,transparent calc(50% - .5px),rgba(216,255,242,.88) 50%,transparent calc(50% + .5px)),
+    linear-gradient(0deg,transparent calc(50% - .5px),rgba(216,255,242,.88) 50%,transparent calc(50% + .5px)),
+    radial-gradient(circle,transparent 0 7px,rgba(132,245,173,.9) 8px 9px,transparent 10px 30px,rgba(132,245,173,.32) 31px 32px,transparent 33px 65px,rgba(132,245,173,.23) 66px 67px,transparent 68px),
+    repeating-radial-gradient(circle,transparent 0 20px,rgba(205,255,239,.055) 21px 22px),
+    rgba(4,21,24,.1);
+  box-shadow:0 0 0 2px rgba(132,245,173,.62),0 0 0 7px #050b10,
+    inset 0 0 28px 10px #000b,inset 0 0 3px 1px #d9fff2,0 0 30px #000d;
+  backdrop-filter:brightness(1.16) contrast(1.2) saturate(1.14);
+  transition:opacity .11s ease-out,scale .11s ease-out;scale:.82}
+.sniper-scope::before,.sniper-scope::after{content:'';position:absolute;background:#84f5ad;box-shadow:0 0 6px #84f5ad}
+.sniper-scope::before{left:50%;top:50%;width:15px;height:1px;translate:-50% -50%}
+.sniper-scope::after{left:50%;top:50%;width:1px;height:15px;translate:-50% -50%}
+.sniper-hud.is-aiming .sniper-veil,.sniper-hud.is-aiming .sniper-scope{opacity:1;scale:1}
+.sniper-hud.is-aiming .sniper-rifle{transform:translate(var(--rifle-x),calc(var(--rifle-y) + 5px)) rotate(var(--rifle-r)) scale(1.025)}
+
+/* The entire scene scales around the crosshair. Because the optic stays outside
+   #play, only the world is magnified; the dark veil hides the enlarged edges and
+   makes the circular lens read like a real scope rather than a CSS overlay. */
+#boot #scenery,#boot #play{transform-origin:var(--scope-x,50%) var(--scope-y,45%);
+  transition:transform .16s cubic-bezier(.2,.72,.3,1),filter .16s ease;will-change:transform}
+#boot.is-scoped #scenery,#boot.is-scoped #play{transform:scale(1.32);filter:contrast(1.06) brightness(.94)}
+.sniper-muzzle{position:absolute;z-index:5;left:17%;bottom:43%;width:22px;height:22px;border-radius:50%;opacity:0;
+  background:#fff;box-shadow:0 0 10px 4px #fff,0 0 28px 12px #84f5ad}
+.sniper-hud.is-firing .sniper-rifle{animation:sniperRecoil .2s cubic-bezier(.15,.8,.25,1)}
+.sniper-hud.is-firing .sniper-muzzle{animation:muzzleFlash .14s ease-out}
+@keyframes sniperRecoil{0%{translate:0 0}28%{translate:18px 15px;rotate:2deg}100%{translate:0 0}}
+@keyframes muzzleFlash{0%{opacity:1;transform:scale(.3)}45%{opacity:.9;transform:scale(1.5)}100%{opacity:0;transform:scale(3)}}
+.sniper-impact{position:absolute;z-index:15;width:10px;height:10px;translate:-50% -50%;border-radius:50%;pointer-events:none!important}
+.sniper-impact::before,.sniper-impact::after{content:'';position:absolute;left:50%;top:50%;width:46px;height:2px;
+  translate:-50% -50%;background:linear-gradient(90deg,transparent,currentColor,transparent);box-shadow:0 0 7px currentColor}
+.sniper-impact::after{rotate:90deg}
+.sniper-impact.is-hit{color:#dffff2;background:#fff;animation:scopeHit .5s ease-out forwards}
+.sniper-impact.is-miss{color:#f3cc70;background:#f3cc70;animation:scopeMiss .5s ease-out forwards}
+@keyframes scopeHit{to{transform:scale(2.7) rotate(35deg);opacity:0}}
+@keyframes scopeMiss{to{transform:scale(1.7) rotate(70deg);opacity:0}}
+#boot.is-sniping,#boot.is-sniping #play{touch-action:none;cursor:crosshair}
+@media(max-width:600px){
+  .sniper-rifle{width:142vw;right:-37%;bottom:-2%}
+  .sniper-scope{width:166px;height:166px}
+  .sniper-veil{background:radial-gradient(circle 82px at var(--aim-x) var(--aim-y),transparent 0 75px,rgba(0,4,10,.8) 84px)}
+}
+@media(pointer:coarse){
+  #boot,#boot *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+  #boot{touch-action:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .sniper-hud,.sniper-rifle,.sniper-veil,.sniper-scope{transition:none}
+  .sniper-hud.is-firing .sniper-rifle{animation:none}
+}
+
 /* ---- avatar ---- */
 .world-actor{position:absolute;z-index:8;width:146px;height:232px;translate:-50% 0;
   transform:scale(var(--player-s,.5));transform-origin:50% 100%;pointer-events:none;
@@ -37,31 +101,71 @@
   opacity:0;transition:opacity .35s,transform .35s;pointer-events:none}
 .world-hint.in{opacity:1;transform:translate(-50%,0)}
 
-/* ---- stage transition: the screen breaks into bricks ---- */
-.world-shatter{position:absolute;inset:0;z-index:30;pointer-events:none;--tone:#84f5ad}
+/* ---- stage transition: a continuous pane fractures, then drops away ---- */
+.world-shatter{position:absolute;inset:0;z-index:30;overflow:hidden;pointer-events:none;
+  perspective:900px;transform-style:preserve-3d;--tone:#84f5ad;--ox:50%;--oy:45%}
 .world-shatter.is-gentle{background:#050a12;animation:shatterVeil .32s ease-out forwards}
 @keyframes shatterVeil{from{opacity:1}to{opacity:0}}
 
-/* Shards carry a slice of the frame they broke off. The overlay is the blast
-   light catching each face; --lit falls off with distance from the impact. */
-.world-shatter .shard{position:absolute;display:block;background:#0a1626 no-repeat;
-  box-shadow:inset 0 0 0 1px #1d3348;
-  animation:shardBlast .74s cubic-bezier(.22,.62,.3,1) forwards}
-.world-shatter .shard::after{content:'';position:absolute;inset:0;
-  background:var(--tone);opacity:calc(var(--lit,0) * .55);mix-blend-mode:screen}
-@keyframes shardBlast{
-  0%{transform:translate(0,0) rotate(0) scale(1);opacity:1}
-  12%{transform:translate(calc(var(--dx)*-.05),calc(var(--dy)*-.05)) rotate(0) scale(1.02);opacity:1}
-  100%{transform:translate(var(--dx),var(--dy)) rotate(var(--rot)) scale(.86);opacity:0}
+/* Every shard carries the whole outgoing frame and reveals only its polygon.
+   Two translucent faces provide glass thickness and a travelling reflection. */
+.world-shatter .shard{position:absolute;inset:0;display:block;
+  background-color:#0a1626;background-repeat:no-repeat;background-position:0 0;background-size:100% 100%;
+  backface-visibility:visible;transform-style:preserve-3d;will-change:transform,opacity;
+  filter:drop-shadow(0 0 1px #dffcff) drop-shadow(0 7px 8px #000b);
+  animation-name:shardFall;animation-fill-mode:both}
+.world-shatter .shard::before,.world-shatter .shard::after{content:'';position:absolute;inset:0}
+.world-shatter .shard::before{background:
+  linear-gradient(var(--sheen),transparent 27%,rgba(255,255,255,.48) 45%,transparent 61%),
+  radial-gradient(circle at var(--ox) var(--oy),color-mix(in srgb,var(--tone) 50%,transparent),transparent 34%);
+  opacity:calc(.1 + var(--lit,0) * .48);mix-blend-mode:screen}
+.world-shatter .shard::after{background:
+  linear-gradient(calc(var(--sheen) + 78deg),rgba(207,244,255,.2),transparent 24%,rgba(1,10,20,.32) 80%),
+  repeating-linear-gradient(117deg,transparent 0 18px,rgba(255,255,255,.045) 19px 20px);
+  box-shadow:inset 0 0 18px rgba(188,239,255,.2);mix-blend-mode:screen}
+@keyframes shardFall{
+  0%,16%{transform:translate3d(0,0,0) rotateX(0) rotateY(0) rotateZ(0);opacity:1;
+     animation-timing-function:cubic-bezier(.08,.75,.36,1)}
+  42%{transform:translate3d(calc(var(--dx) * .72),calc(var(--dy) * .72),var(--dz))
+      rotateX(calc(var(--rx) * .48)) rotateY(calc(var(--ry) * .48)) rotateZ(calc(var(--rz) * .35));
+     opacity:1;animation-timing-function:cubic-bezier(.4,0,.92,.55)}
+  76%{opacity:.92}
+  100%{transform:translate3d(var(--dx),calc(var(--dy) + var(--fall)),calc(var(--dz) * .35))
+      rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz));opacity:0}
 }
 
-/* The discharge itself, thrown from the contact point ahead of the break. */
-.world-shatter .shock{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;
-  border:3px solid var(--tone);box-shadow:0 0 34px 10px var(--tone);
-  animation:shockRing .5s cubic-bezier(.16,.8,.3,1) forwards}
+/* Crack strokes sit exactly over the shard boundaries, flash white at impact,
+   then vanish as soon as the physical pieces begin to separate. */
+.world-shatter .fracture{position:absolute;inset:0;width:100%;height:100%;overflow:visible;
+  z-index:4;filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 7px var(--tone));
+  animation:fractureFade .43s ease-out forwards}
+.world-shatter .fracture line{stroke:#eaffff;stroke-width:1.4;vector-effect:non-scaling-stroke;
+  stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:crackTrace .26s ease-out forwards}
+.world-shatter .fracture line.minor{stroke-width:.75;opacity:.7;animation-delay:.035s}
+@keyframes crackTrace{to{stroke-dashoffset:0}}
+@keyframes fractureFade{0%{opacity:0}18%,52%{opacity:1}58%,100%{opacity:0}}
+
+.world-shatter .impact-core{position:absolute;z-index:6;left:var(--ox);top:var(--oy);width:12px;height:12px;
+  margin:-6px;border-radius:50%;background:#fff;box-shadow:0 0 8px 3px #fff,0 0 28px 12px var(--tone),0 0 90px 35px var(--tone);
+  animation:impactCore .42s ease-out forwards}
+@keyframes impactCore{0%{transform:scale(.15);opacity:0}18%{transform:scale(1.25);opacity:1}100%{transform:scale(7);opacity:0}}
+
+.world-shatter .splinter{position:absolute;z-index:5;left:var(--ox);top:var(--oy);width:2px;height:11px;
+  margin:-5px 0 0 -1px;background:linear-gradient(#fff,var(--tone));border-radius:50%;
+  box-shadow:0 0 5px #fff;animation:splinterFly .62s cubic-bezier(.12,.58,.3,1) both}
+@keyframes splinterFly{
+  0%,12%{transform:translate(0,0) rotate(0) scaleY(.2);opacity:0}
+  24%{opacity:1}
+  100%{transform:translate(var(--sx),var(--sy)) rotate(var(--sr)) scaleY(1.5);opacity:0}
+}
+
+/* A pressure ring sells the initial strike without reading as a portal. */
+.world-shatter .shock{position:absolute;z-index:5;left:var(--ox);top:var(--oy);width:12px;height:12px;
+  margin:-6px;border-radius:50%;border:2px solid color-mix(in srgb,var(--tone) 76%,white);
+  box-shadow:0 0 24px 5px var(--tone);animation:shockRing .48s cubic-bezier(.16,.8,.3,1) forwards}
 @keyframes shockRing{
-  0%{transform:scale(1);opacity:.95;border-width:6px}
-  100%{transform:scale(150);opacity:0;border-width:1px}
+  0%{transform:scale(.35);opacity:1;border-width:5px}
+  100%{transform:scale(42);opacity:0;border-width:.5px}
 }
 
 /* ---- progress pips ---- */
@@ -72,16 +176,80 @@
 
 @media(prefers-reduced-motion:reduce){
   .world-shatter i{animation-duration:.01s}
+  .world-shatter.force-motion .shock{animation-duration:.48s}
+  .world-shatter.force-motion .impact-core{animation-duration:.42s}
+  .world-shatter.force-motion .splinter{animation-duration:.62s}
   .world-bug.squashed{animation-duration:.2s}
   .world-bubble{transition:none}
 }
 
+/* Vault attack: the threat is announced in the floor before it exists. The
+   alternating left/right cracks make the second fight a pincer, not a replay of
+   the engine room's overhead descent. */
+.breach-mark{position:absolute;z-index:7;width:72px;height:22px;translate:-50% -50%;pointer-events:none;
+  border-radius:50%;border:1px solid rgba(243,204,112,.72);
+  background:radial-gradient(ellipse,rgba(255,235,157,.22) 0 12%,rgba(54,30,8,.88) 18% 34%,transparent 66%);
+  box-shadow:0 0 8px rgba(243,204,112,.44),inset 0 0 9px rgba(255,236,164,.28);
+  animation:breachWarn .82s ease-out both}
+.breach-mark::before,.breach-mark::after{content:'';position:absolute;left:50%;top:50%;height:1px;width:44px;
+  transform-origin:0 50%;background:linear-gradient(90deg,#fff1b5,rgba(243,204,112,.55),transparent);
+  box-shadow:0 0 4px #f3cc70}
+.breach-mark::before{rotate:17deg}.breach-mark::after{rotate:164deg;width:35px}
+.breach-mark.is-open{animation:breachOpen .4s ease-out forwards}
+.world-bug.breach.buried{opacity:0!important;pointer-events:none!important;animation:none!important}
+.world-bug.vault-climb{pointer-events:none!important;filter:drop-shadow(0 4px 8px #000b)}
+.world-bug.vault-climb.buried{opacity:0!important;animation:none!important}
+.world-bug.breach.surfacing,.world-bug.vault-climb.surfacing{animation:bugSurface .4s cubic-bezier(.12,.78,.28,1) both}
+.breach-mark.is-gate{width:54px;height:54px;border-radius:48% 52% 45% 55%;
+  background:radial-gradient(circle,rgba(255,244,196,.92) 0 2%,rgba(243,204,112,.34) 4% 13%,rgba(17,11,7,.86) 16% 25%,transparent 57%);
+  box-shadow:0 0 10px rgba(243,204,112,.7),inset 0 0 13px rgba(255,236,164,.34)}
+.breach-mark.is-gate::before{width:40px;rotate:38deg}.breach-mark.is-gate::after{width:38px;rotate:136deg}
+@keyframes breachWarn{
+  0%{transform:scale(.15);opacity:0}
+  28%{transform:scale(.7);opacity:.45}
+  55%,100%{transform:scale(1);opacity:1}
+}
+@keyframes breachOpen{to{transform:scale(1.45,.42);filter:brightness(1.9);opacity:0}}
+@keyframes bugSurface{
+  0%{transform:translateY(15px) scale(.25,.08);filter:brightness(2.4);opacity:0}
+  62%{transform:translateY(-5px) scale(1.12,.9);opacity:1}
+  100%{transform:translateY(0) scale(1);filter:none;opacity:1}
+}
+@media(prefers-reduced-motion:reduce){
+  .breach-mark,.breach-mark.is-open,.world-bug.breach.surfacing,.world-bug.vault-climb.surfacing{animation-duration:.01s}
+}
+
 /* ---- in-world choice ---- */
-.world-bubble.choice{cursor:default}
-.choice-btn{display:block;width:100%;margin-top:9px;min-height:46px;padding:11px 13px;text-align:left;
-  font:inherit;font-size:14px;color:#e6f6ff;background:#15304a;border:1px solid #6fa7c6;border-radius:9px;cursor:pointer}
-.choice-btn:active{background:#1d4260}
-.choice-btn:before{content:"\25B8  ";color:var(--ac,#84f5ad)}
+.world-bubble.choice{--accent:var(--ac,#84f5ad);--tailH:13px;cursor:default}
+.world-bubble.choice .bubble-line{padding:14px 16px 13px;font-weight:600;line-height:1.48;
+  color:#f1f4ef;background:linear-gradient(90deg,color-mix(in srgb,var(--ac) 9%,transparent),transparent 72%);
+  border-bottom:1px solid color-mix(in srgb,var(--ac) 32%,transparent)}
+.choice-options{display:grid;gap:8px;padding:10px 10px 12px}
+.choice-btn{position:relative;isolation:isolate;display:grid;grid-template-columns:30px minmax(0,1fr) 18px;align-items:center;gap:10px;
+  width:100%;min-height:52px;padding:8px 10px 8px 8px;text-align:left;overflow:hidden;
+  font:600 13px/1.35 "Segoe UI",system-ui,sans-serif;letter-spacing:.05px;color:#e9eeeb;
+  border:1px solid color-mix(in srgb,var(--ac) 34%,#3c4446);border-radius:0;cursor:pointer;
+  background:linear-gradient(100deg,color-mix(in srgb,var(--ac) 8%,#111719),#090d10 62%);
+  clip-path:polygon(9px 0,calc(100% - 7px) 0,100% 7px,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 9px);
+  box-shadow:inset 0 1px 0 #ffffff0b,inset 3px 0 0 color-mix(in srgb,var(--ac) 72%,transparent);
+  transition:transform .16s ease,border-color .16s ease,background .16s ease,filter .16s ease}
+.choice-btn::before{content:"";position:absolute;inset:0;z-index:-1;opacity:0;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--ac) 20%,transparent),transparent 68%);
+  transition:opacity .16s ease}
+.choice-key{display:grid;place-items:center;width:28px;height:28px;color:var(--ac);font:800 11px/1 Consolas,monospace;
+  border:1px solid color-mix(in srgb,var(--ac) 58%,#596366);
+  background:color-mix(in srgb,var(--ac) 9%,#070b0d);
+  clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px);
+  box-shadow:inset 0 0 9px color-mix(in srgb,var(--ac) 12%,transparent)}
+.choice-copy{min-width:0}
+.choice-arrow{justify-self:end;color:color-mix(in srgb,var(--ac) 76%,#d7ddd9);font:300 23px/1 Arial,sans-serif;
+  transform:translateX(-2px);opacity:.72;transition:transform .16s ease,opacity .16s ease}
+.choice-btn:hover,.choice-btn:focus-visible{transform:translateX(3px);border-color:var(--ac);filter:brightness(1.1);
+  outline:none;box-shadow:inset 0 1px 0 #ffffff12,inset 3px 0 0 var(--ac),0 0 14px color-mix(in srgb,var(--ac) 20%,transparent)}
+.choice-btn:hover::before,.choice-btn:focus-visible::before{opacity:1}
+.choice-btn:hover .choice-arrow,.choice-btn:focus-visible .choice-arrow{transform:translateX(1px);opacity:1}
+.choice-btn:active{transform:translateX(3px) scale(.985);filter:brightness(1.22)}
+@media(pointer:coarse){.choice-btn{min-height:56px}.choice-btn:hover{transform:none;filter:none}.choice-btn:active{transform:scale(.985)}}
 
 /* ---- game dock: no next buttons, just the two utilities ---- */
 .game-dock{padding-top:14px}
@@ -122,9 +290,20 @@
 .stage-prop img{display:block;width:100%;height:auto;image-rendering:pixelated}
 .stage-target{position:absolute;z-index:11;transform:translateX(-50%);pointer-events:none!important;font:10px/1.4 Consolas,monospace;letter-spacing:1px;text-align:center;color:#d1ecf6;padding:5px 8px;background:#081421da;border:1px solid #8bcae54d;border-radius:5px;white-space:nowrap}
 .stage-target.under-attack{color:#ffc8d5;border-color:#f58caf}
+.cloud-fx{position:absolute;inset:0;z-index:7;width:100%;height:100%;pointer-events:none!important}
 .stage-prop.charged{filter:drop-shadow(0 0 18px #83e8e45c)}
+.stage-prop.is-hit{animation:vaultHit .42s cubic-bezier(.36,.07,.19,.97)}
+.stage-prop.breached{filter:grayscale(.7) brightness(.55);opacity:.65}
+@keyframes vaultHit{0%,100%{translate:0 0}24%{translate:-4px 1px;filter:brightness(1.8)}52%{translate:4px -1px}76%{translate:-2px 0}}
 .stage-prop.launching{animation:capsule-launch 1.3s cubic-bezier(.42,0,.65,1) forwards}
 @keyframes capsule-launch{0%{transform:translate(-50%,-100%)}18%{transform:translate(-50%,-96%)}100%{transform:translate(-50%,-430%);opacity:0}}
+
+.world-bug.fly.latched{filter:drop-shadow(0 0 9px var(--link-colour,#b1ffcf)) drop-shadow(0 4px 10px #0009)}
+.world-bug.fly.escaping{filter:drop-shadow(0 0 8px var(--packet-colour,#b1ffcf)) drop-shadow(0 4px 10px #0009)}
+.world-bug.fly.escaping::after{content:'';position:absolute;left:8%;top:62%;width:9px;height:9px;border-radius:2px;rotate:45deg;
+  background:var(--packet-colour,#b1ffcf);border:1px solid #fff7dc;box-shadow:0 0 5px var(--packet-colour,#b1ffcf),0 0 12px var(--packet-colour,#b1ffcf);
+  animation:stolenPacket .34s ease-in-out infinite alternate}
+@keyframes stolenPacket{to{transform:translateY(3px) scale(.82);filter:brightness(1.45)}}
 #boot .game-dock{background:linear-gradient(transparent,#050a16dd);padding-top:14px}
 @media(max-height:690px){#boot h1{font-size:27px}#boot #brief{top:75px}#boot .world-hint{top:142px}#boot .bubble-line{padding:9px 13px}#boot .bubble-head{padding:7px 13px}#boot .bubble-tag{margin-bottom:8px}}
 @media(orientation:landscape) and (max-height:650px){#boot{width:min(100%,1100px)}#boot #brief{width:36%;right:auto}#boot header{width:48%}#boot .world-bubble{max-width:41%;width:350px}#boot #dock{right:55%}#boot .world-hint{top:14%;left:76%;max-width:38%}}
@@ -253,24 +432,25 @@
   display:flex;flex-direction:column;align-items:center;gap:3px;
   padding:4px 6px 5px;border:1px solid #33505f;border-radius:4px;
   background:#050d14e0;box-shadow:0 2px 0 #01060acc}
-.laptop-health::before{content:'LAPTOP';font:700 7px/1 monospace;letter-spacing:.18em;
+.laptop-health::before{content:attr(data-label);font:700 7px/1 monospace;letter-spacing:.18em;
   color:#7f98a6}
 .laptop-health .row{display:flex;gap:3px}
 .laptop-health i{display:block;width:20px;height:5px;border-radius:1px;background:#2b3a44;
   transition:background .25s ease,box-shadow .25s ease}
+.laptop-health[data-left="5"] i.on,
 .laptop-health[data-left="4"] i.on{background:#84f5ad;box-shadow:0 0 6px #84f5ad66}
 .laptop-health[data-left="3"] i.on{background:#f3e070;box-shadow:0 0 6px #f3e07066}
 .laptop-health[data-left="2"] i.on{background:#f5a54b;box-shadow:0 0 6px #f5a54b66}
 .laptop-health[data-left="1"] i.on{background:#f2574b;box-shadow:0 0 8px #f2574b88;
   animation:hpCritical .9s ease-in-out infinite}
-@keyframes hpCritical{0%,100%{opacity:1}50%{opacity:.4}}50%{opacity:.4}}
+@keyframes hpCritical{0%,100%{opacity:1}50%{opacity:.4}}
 
 /* Swept off by the line the bugs string across the top. */
 #boot #brief{transition:transform .55s cubic-bezier(.55,0,.85,.25),opacity .4s ease}
 #boot #brief.is-swept{transform:translateX(-118%);opacity:0}
 @media (prefers-reduced-motion:reduce){
   #boot #brief.is-swept{transform:none;opacity:0}
-}50%{opacity:.45}}
+}
 
 /* A bug that reaches the laptop is pulled into it rather than sitting there. */
 .world-bug.absorbed{pointer-events:none;animation:bugAbsorb .46s cubic-bezier(.5,0,.75,0) forwards}

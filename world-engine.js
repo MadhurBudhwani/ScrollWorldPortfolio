@@ -98,7 +98,7 @@
   class Pet {
     constructor(layer) {
       this.node = el('canvas', 'world-pet'); this.c = this.node.getContext('2d'); layer.append(this.node);
-      this.x = new Spring(0, 5); this.cooldown = 0; this.t = 0; this.shots = []; this.recoil = 0; this.ground=.84;
+      this.x = new Spring(0, 5); this.cooldown = 0; this.t = 0; this.shots = []; this.recoil = 0; this.ground=.84; this.scale=1;
     }
     follow(px) { this.x.target = px; }
     /* A beam, not a lob. The aim point is taken once, at the moment of firing,
@@ -126,7 +126,7 @@
       if(window.companionAtlas?.complete&&window.companionAtlas.naturalWidth&&window.companionSprites){
         // sprite[0] = sitting upright dog
         const frame=window.companionSprites[0];
-        const width=clamp(W*.17,56,92),height=width*frame[3]/frame[2];
+        const width=clamp(W*.17,56,92)*this.scale,height=width*frame[3]/frame[2];
         const bob=Math.sin(this.t*1.1)*.9;
         c.save();if(this.recoil>0)c.translate(this.recoil*-3,0);
         c.drawImage(window.companionAtlas,...frame,x-width/2,y-height+bob,width,height);
@@ -322,17 +322,26 @@
       const im = new Image();
       im.broken = true;
       ART[name] = im;
-      const cut = window.TraceRenderer?.cutout
-        ? window.TraceRenderer.cutout('./assets/worlds/' + name + '.webp', 128)
-        : Promise.resolve(null);
+      // The flying bug is already a transparent four-frame sheet, so sending it
+      // through the edge cutout would flatten the frames into one wide sprite.
+      const isFlightSheet = name === 'icon-bug-fly';
+      const cut = isFlightSheet
+        ? Promise.resolve('./assets/worlds/' + name + '.png')
+        : window.TraceRenderer?.cutout
+          ? window.TraceRenderer.cutout('./assets/worlds/' + name + '.webp', 128)
+          : Promise.resolve(null);
       cut.then(url => { if (!url) return; im.onload = () => { im.broken = false; }; im.src = url; });
     }
     return ART[name];
   }
 
+  // Warm the larger sheet early so the first Level 3 attacker never flashes the
+  // procedural fallback while its artwork is decoding.
+  bugArt('icon-bug-fly');
+
   class Bug {
     constructor(layer, { pattern = 'crawl', from = 1, y = .78, speed = 26, hp = 1, target = .5,
-                         ropeY = .13, dropAt = null, dropSpeed = .10 }) {
+                         ropeY = .13, dropAt = null, dropSpeed = .10, warmup = .82, lane = 1 }) {
       this.layer = layer;
       this.node = el('button', 'world-bug ' + pattern);
       this.node.type = 'button';
@@ -342,7 +351,10 @@
       this.node.append(this.canvas); layer.append(this.node);
       this.pattern = pattern; this.dir = from; this.yFrac = y; this.speed = speed;
       this.hp = hp; this.maxHp = hp; this.target = target;
-      this.p = from > 0 ? -.08 : 1.08; this.t = Math.random() * 6; this.dead = false; this.hit = 0;
+      // Vault attackers surface just inside the frame so their warning crack is
+      // visible. Ordinary crawlers still begin fully off-screen.
+      this.p = pattern === 'breach' ? (from > 0 ? .055 : .945) : (from > 0 ? -.08 : 1.08);
+      this.t = Math.random() * 6; this.dead = false; this.hit = 0;
       /* The rope pattern exists because a phone has almost no horizontal runway:
          a bug that walks in from the edge is on top of you immediately. These
          come in along a line strung across the top, stop somewhere of their own
@@ -350,14 +362,25 @@
          leaves them hanging still long enough to be dealt with. */
       this.ropeY = ropeY; this.dropSpeed = dropSpeed;
       this.dropAt = dropAt == null ? .18 + Math.random() * .66 : dropAt;
-      this.phase = pattern === 'rope' ? 'walk' : 'crawl';
+      this.phase = pattern === 'rope' ? 'walk'
+        : pattern === 'fly' ? 'incoming'
+        : (pattern === 'breach' || pattern === 'vault-climb') ? 'warn' : 'crawl';
       this.descent = 0;
+      this.warmup = warmup; this.warning = 0; this.breachMark = null;
+      this.lane = lane; this.path = 0;
+      this.entryDir = from; this.latchTime = 0; this.latchY = null;
+      this.targetY = .28; this.flightStart = this.p; this.latchX = null;
+      this.anchorY = .19; this.canLatch = true; this.waitTime = 0;
+      this.dockTime = 0; this.dockFromX = null; this.dockFromY = null;
+      this.orbit = Math.random() * Math.PI * 2; this.escaped = false; this.escapeProgress = 0;
+      if (pattern === 'breach' || pattern === 'vault-climb') this.node.classList.add('buried');
       this.node.classList.add('arriving');
     }
     /* It was a machine, so it comes apart like one: a short flash, sparks thrown
        off the break, and heavier parts that arc and fall. The flash goes up
        first and dies fastest, so the eye reads the hit before the debris. */
     scatter() {
+      this.breachMark?.remove(); this.breachMark = null;
       const x = this.x, y = this.y - 18, toss = [];
       const blast = el('i', 'blast');
       blast.style.left = x + 'px'; blast.style.top = y + 'px';
@@ -407,7 +430,67 @@
       this.t += dt;
       this.hit = Math.max(0, this.hit - dt * 3);
       let x, y;
-      if (this.pattern === 'rope') {
+      if (this.pattern === 'vault-climb') {
+        // Three readable routes follow the door's heavy ribs. They begin high
+        // on the wallpaper vault and bend toward the protected floor vault.
+        const starts = [[.35,.335],[.50,.255],[.65,.335]];
+        const [sx,sy] = starts[this.lane] || starts[1];
+        const floor = H * this.yFrac;
+        x = W * sx; y = H * sy;
+        if (this.phase === 'warn') {
+          if (!this.breachMark) {
+            this.breachMark = el('i', 'breach-mark is-gate');
+            this.breachMark.style.left = x + 'px';
+            this.breachMark.style.top = y + 'px';
+            this.layer.append(this.breachMark);
+          }
+          this.warning += dt;
+          if (this.warning >= this.warmup) {
+            this.phase = 'climb';
+            this.node.classList.remove('buried');
+            this.node.classList.add('surfacing');
+            this.breachMark?.classList.add('is-open');
+            setTimeout(() => {
+              this.node.classList.remove('surfacing');
+              this.breachMark?.remove(); this.breachMark = null;
+            }, 420);
+          }
+        } else {
+          if (!this.attacking) this.path = Math.min(1, this.path + this.speed * dt / (H * .48));
+          const k = this.path, e = k * k * (3 - 2 * k);
+          // Hold the gate lane for most of the descent, then converge across
+          // the floor circle only near the protected vault.
+          const converge = Math.max(0, (e - .58) / .42);
+          x = W * (sx + (this.target - sx) * converge);
+          y = H * sy + (floor - H * sy) * e;
+          this.p = x / W;
+        }
+      } else if (this.pattern === 'breach') {
+        const floor = H * this.yFrac;
+        x = this.p * W; y = floor;
+        if (this.phase === 'warn') {
+          if (!this.breachMark) {
+            this.breachMark = el('i', 'breach-mark');
+            this.breachMark.style.left = x + 'px';
+            this.breachMark.style.top = y + 'px';
+            this.layer.append(this.breachMark);
+          }
+          this.warning += dt;
+          if (this.warning >= this.warmup) {
+            this.phase = 'crawl';
+            this.node.classList.remove('buried');
+            this.node.classList.add('surfacing');
+            this.breachMark?.classList.add('is-open');
+            setTimeout(() => {
+              this.node.classList.remove('surfacing');
+              this.breachMark?.remove(); this.breachMark = null;
+            }, 420);
+          }
+        } else {
+          if (!this.attacking) this.p += (this.dir * this.speed / W) * dt;
+          x = this.p * W; y = floor + Math.sin(this.t * 10) * 1.4;
+        }
+      } else if (this.pattern === 'rope') {
         if (this.phase === 'walk') {
           this.p += (this.dir * this.speed * 1.5 / W) * dt;
           const there = this.dir > 0 ? this.p >= this.dropAt : this.p <= this.dropAt;
@@ -449,13 +532,84 @@
            at the floor. */
         this.upright = this.phase === 'crawl' || this.phase === 'climb' ? 1
           : this.phase === 'drop' ? clamp((this.descent - .8) / .2, 0, 1) : 0;
+      } else if (this.pattern === 'fly') {
+        if (this.phase === 'incoming') {
+          this.p += (this.dir * this.speed / W) * dt;
+          const hoverP = this.target - this.entryDir * .16;
+          const total = Math.max(.01, Math.abs(hoverP - this.flightStart));
+          const k = clamp(Math.abs(this.p - this.flightStart) / total, 0, 1);
+          const eased = k * k * (3 - 2 * k);
+          const cruiseY = this.yFrac - .22;
+          x = this.p * W;
+          y = H * (cruiseY + (this.targetY - cruiseY) * eased
+            + Math.sin(this.t * 2.2 + this.p * 7) * .055 * (1 - eased));
+          const atPoint = this.dir > 0 ? this.p >= hoverP : this.p <= hoverP;
+          if (atPoint) {
+            this.p = hoverP;
+            if (this.canLatch) {
+              this.phase = 'latched'; this.latchTime = 0;
+              this.latchX = hoverP; this.latchY = this.targetY;
+              this.node.classList.add('latched');
+            } else {
+              this.phase = 'waiting'; this.waitTime = 0;
+              this.node.classList.add('waiting');
+            }
+          }
+        } else if (this.phase === 'waiting') {
+          // One extractor owns the castle at a time. The queued bug keeps a
+          // slow holding pattern instead of freezing or stacking on the link.
+          this.waitTime += dt;
+          const a = this.orbit + this.waitTime * .72 * this.entryDir;
+          x = W * (this.target + Math.cos(a) * .18);
+          y = H * (this.anchorY + .105 + Math.sin(a) * .065);
+          this.p = x / W;
+          if (this.canLatch) {
+            this.phase = 'docking'; this.dockTime = 0;
+            this.dockFromX = this.p; this.dockFromY = y / H;
+            this.node.classList.remove('waiting');
+            this.node.classList.add('docking');
+          }
+        } else if (this.phase === 'docking') {
+          const hoverP = this.target - this.entryDir * .16;
+          this.dockTime = Math.min(1, this.dockTime + dt / .58);
+          const eased = this.dockTime * this.dockTime * (3 - 2 * this.dockTime);
+          x = W * (this.dockFromX + (hoverP - this.dockFromX) * eased);
+          y = H * (this.dockFromY + (this.targetY - this.dockFromY) * eased);
+          this.p = x / W;
+          if (this.dockTime >= 1) {
+            this.p = hoverP; this.phase = 'latched'; this.latchTime = 0;
+            this.latchX = hoverP; this.latchY = this.targetY;
+            this.node.classList.remove('docking');
+            this.node.classList.add('latched');
+          }
+        } else if (this.phase === 'latched') {
+          this.latchTime += dt;
+          // Hold the chassis on one exact point. The sheet keeps the wings alive;
+          // no orbit or bob disguises the three-second extraction window.
+          x = W * this.latchX; y = H * this.latchY;
+          if (this.latchTime >= 3) {
+            this.phase = 'escape'; this.dir = -this.entryDir;
+            this.node.classList.remove('latched');
+            this.node.classList.add('escaping');
+          }
+        } else {
+          this.p += (this.dir * this.speed * 1.72 / W) * dt;
+          x = this.p * W;
+          y = H * (this.latchY + Math.sin(this.t * 4.4 + this.orbit) * .035
+            - Math.min(.12, Math.abs(this.p - this.latchX) * .16));
+          const edge = this.dir > 0 ? 1.14 : -.14;
+          this.escapeProgress = clamp(Math.abs(this.p - this.latchX) / Math.max(.01, Math.abs(edge - this.latchX)), 0, 1);
+          this.escaped = this.p < -.14 || this.p > 1.14;
+        }
       } else {
         if (!this.attacking) this.p += (this.dir * this.speed / W) * dt;
         x = this.p * W; y = H * this.yFrac;
-        if (this.pattern === 'fly') y = H * (this.yFrac - .22) + Math.sin(this.t * 1.8 + this.p * 7) * H * .07;
         if (this.pattern === 'rail') y = H * (this.yFrac - .06);
       }
-      const s = clamp(Math.min(W / 375, H / 760), .40, .58) * (1 + this.hit * .12);
+      // The wing silhouette needs a little more screen room than a crawler's
+      // compact body or it disappears at phone scale.
+      const depthScale = this.pattern === 'vault-climb' ? .78 : this.pattern === 'fly' ? 1.38 : 1;
+      const s = clamp(Math.min(W / 375, H / 760), .40, .58) * depthScale * (1 + this.hit * .12);
       // Standing: its feet are on the floor line. Hanging: its back is against
       // the silk and the body is below it. The turn-over moves between the two.
       const u = this.upright == null ? 1 : this.upright;
@@ -469,31 +623,51 @@
       this.x = x; this.y = y;
       this.draw();
       // Only a bug that is actually on the floor can reach what it came for.
+      const reached = this.dir > 0 ? this.p >= this.target - .02 : this.p <= this.target + .02;
       const arrived = this.pattern === 'rope'
         ? this.phase === 'climb' && this.climb >= 1
-        : (this.dir > 0 ? this.p >= this.target - .02 : this.p <= this.target + .02);
-      if (arrived && !this.attacking) { this.attacking = true; this.node.classList.add('biting'); }
+        : this.pattern === 'breach' ? this.phase === 'crawl' && reached
+        : this.pattern === 'vault-climb' ? this.phase === 'climb' && this.path >= 1
+        : this.pattern === 'fly' ? this.phase === 'latched' || this.phase === 'escape' : reached;
+      if (arrived && !this.attacking) {
+        this.attacking = true;
+        if (this.pattern !== 'fly') this.node.classList.add('biting');
+      }
       return arrived;
     }
     draw() {
       const c = this.c, t = this.t, armoured = this.maxHp > 1;
-      const art = bugArt(armoured ? 'icon-bug-armour' : 'icon-bug');
+      const flying = this.pattern === 'fly';
+      const art = bugArt(flying ? 'icon-bug-fly' : armoured ? 'icon-bug-armour' : 'icon-bug');
       c.clearRect(0, 0, 64, 64);
       if (art.complete && art.naturalWidth && !art.broken) {
-        const step = Math.sin(t * 12) * 1.4;           // scuttle
+        const step = flying ? Math.sin(t * 18) * .45 : Math.sin(t * 12) * 1.4;
         const u = this.upright == null ? 1 : this.upright;
         c.save(); c.translate(32, 32 + step);
-        if (u < 1) c.rotate(Math.PI * (1 - u * u * (3 - 2 * u)));
+        if (this.pattern === 'vault-climb') c.rotate(Math.PI / 2);
+        else if (u < 1) c.rotate(Math.PI * (1 - u * u * (3 - 2 * u)));
         c.scale(this.dir, 1);
         if (this.hit > 0) { c.shadowColor = '#ffd9e4'; c.shadowBlur = 18 * this.hit; }
-        c.drawImage(art, -32, -32, 64, 64); c.restore();
+        if (flying) {
+          // Four equal columns at ~22 fps. The generated sheet has extra height
+          // below the characters, so crop one square per frame from a shared Y
+          // origin; this keeps the bug locked in place while the wings flap.
+          const frameSize = art.naturalWidth / 4;
+          const frame = Math.floor(t * 22) % 4;
+          const sourceY = Math.max(0, Math.round((art.naturalHeight - frameSize) / 3));
+          c.drawImage(art, frame * frameSize, sourceY, frameSize, frameSize, -32, -32, 64, 64);
+        } else {
+          c.drawImage(art, -32, -32, 64, 64);
+        }
+        c.restore();
         return;
       }
       /* Stand-in until the sprite lands: silhouette still reads at phone size. */
       const legs = Math.sin(t * 14) * 3;
       const up = this.upright == null ? 1 : this.upright;
       c.save(); c.translate(32, 34);
-      if (up < 1) c.rotate(Math.PI * (1 - up * up * (3 - 2 * up)));
+      if (this.pattern === 'vault-climb') c.rotate(Math.PI / 2);
+      else if (up < 1) c.rotate(Math.PI * (1 - up * up * (3 - 2 * up)));
       c.scale(this.dir, 1);
       c.strokeStyle = armoured ? '#d8e6f2' : '#9fb6c8'; c.lineWidth = 3; c.lineCap = 'round';
       for (let i = -1; i <= 1; i++) {
@@ -527,7 +701,7 @@
   }
 
   class Bubble {
-    constructor(layer, { name = 'Madhur Budhwani' } = {}) { this.layer = layer; this.node = null; this.name = name; this._reveal = null; this._resolve = null; this.anchor = null; }
+    constructor(layer, { name = 'Madhur' } = {}) { this.layer = layer; this.node = null; this.name = name; this._reveal = null; this._resolve = null; this.anchor = null; }
 
     /* anchor: { x, headY } — it sits above his head and the tail points at him. */
     say(text, tag, { anchor = null, cta = 'Tap to continue', logo = null, tone = '' } = {}) {
@@ -605,56 +779,113 @@
   }
 
   /* ---------------- Stage transition ---------------- */
-  /* The old view breaking apart under the discharge. Shards carry a snapshot of
-     the frame they came from, so what flies away is the scene the visitor was
-     just looking at rather than a grid of grey tiles. The fracture starts at
-     `origin` and runs outward, and every shard travels along its own radial
-     from that point, which is what makes it read as a blast instead of gravity. */
-  function shatter(host, { origin = { x: .5, y: .45 }, cols = 12, tone = '#84f5ad', snapshot = null, ms = 980 } = {}) {
+  /* The outgoing frame is one continuous pane until the fracture appears.
+     Every polygon below is made from the same set of ring/ray intersections,
+     so neighbouring pieces share an edge: there are no overlaps or tidy grid
+     cells to give the trick away. */
+  function shatter(host, { origin = { x: .5, y: .45 }, tone = '#84f5ad', snapshot = null, ms = 1550, forceMotion = false } = {}) {
     return new Promise(resolve => {
       const r = host.getBoundingClientRect();
-      if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      if (!r.width || !r.height) return resolve();
+      if (!forceMotion && matchMedia('(prefers-reduced-motion: reduce)').matches) {
         const veil = el('div', 'world-shatter is-gentle');
         host.append(veil);
         return setTimeout(() => { veil.remove(); resolve(); }, 320);
       }
-      const rows = Math.max(7, Math.round(cols * r.height / r.width));
       const wrap = el('div', 'world-shatter');
+      if (forceMotion) wrap.classList.add('force-motion');
       wrap.style.setProperty('--tone', tone);
+      const ox = origin.x * r.width, oy = origin.y * r.height;
+      wrap.style.setProperty('--ox', ox.toFixed(1) + 'px');
+      wrap.style.setProperty('--oy', oy.toFixed(1) + 'px');
+      const reach = Math.hypot(Math.max(ox, r.width - ox), Math.max(oy, r.height - oy)) * 1.15;
+      const rings = [0, .075, .18, .36, .62, 1];
+      const rays = r.width < 560 ? 13 : 16;
+      const step = Math.PI * 2 / rays;
+      const spin = Math.random() * Math.PI * 2;
+      const baseAngles = Array.from({ length: rays }, (_, i) => spin + i * step + (Math.random() - .5) * step * .28);
+      const point = (radius, angle) => [ox + Math.cos(angle) * radius, oy + Math.sin(angle) * radius];
+      const pct = (x, y) => (x / r.width * 100).toFixed(2) + '% ' + (y / r.height * 100).toFixed(2) + '%';
 
-      const ring = el('i', 'shock');
-      ring.style.left = (origin.x * 100) + '%';
-      ring.style.top = (origin.y * 100) + '%';
-      wrap.append(ring);
+      // Let the rays bend at each ring. The shared vertices keep the pane
+      // watertight before impact while making the crack paths feel organic.
+      const mesh = rings.map((ring, ri) => Array.from({ length: rays }, (_, si) => {
+        if (!ri) return [ox, oy];
+        const angle = baseAngles[si] + (Math.random() - .5) * step * .22;
+        const radius = ring * reach * (1 + (Math.random() - .5) * .12);
+        return point(radius, angle);
+      }));
 
-      const reach = Math.hypot(Math.max(origin.x, 1 - origin.x), Math.max(origin.y, 1 - origin.y));
-      for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
-        const cx = (x + .5) / cols, cy = (y + .5) / rows;
-        const vx = cx - origin.x, vy = cy - origin.y;
-        const dist = Math.hypot(vx, vy), unit = dist || .0001;
-        const near = 1 - Math.min(1, dist / reach);          // closest shards take the most force
-        const brick = el('i', 'shard');
-        brick.style.left = (x / cols * 100) + '%'; brick.style.top = (y / rows * 100) + '%';
-        brick.style.width = (100 / cols) + '%'; brick.style.height = (100 / rows) + '%';
-        if (snapshot) {
-          brick.style.backgroundImage = 'url(' + snapshot + ')';
-          brick.style.backgroundSize = r.width + 'px ' + r.height + 'px';
-          brick.style.backgroundPosition = (-x / cols * r.width) + 'px ' + (-y / rows * r.height) + 'px';
+      for (let ri = 0; ri < rings.length - 1; ri++) {
+        for (let si = 0; si < rays; si++) {
+          const next = (si + 1) % rays;
+          const points = [mesh[ri][si], mesh[ri + 1][si], mesh[ri + 1][next], mesh[ri][next]];
+          const cx = points.reduce((sum, p) => sum + p[0], 0) / points.length;
+          const cy = points.reduce((sum, p) => sum + p[1], 0) / points.length;
+          const am = Math.atan2(cy - oy, cx - ox);
+          const near = 1 - ri / (rings.length - 1);
+          const shard = el('i', 'shard');
+          shard.style.clipPath = 'polygon(' + points.map(([x, y]) => pct(x, y)).join(',') + ')';
+          shard.style.transformOrigin = cx.toFixed(1) + 'px ' + cy.toFixed(1) + 'px';
+          if (snapshot) shard.style.backgroundImage = 'url(' + snapshot + ')';
+          const throwBy = 65 + near * 330 + Math.random() * 45;
+          shard.style.setProperty('--dx', (Math.cos(am) * throwBy).toFixed(0) + 'px');
+          shard.style.setProperty('--dy', (Math.sin(am) * throwBy * .48 - near * 30).toFixed(0) + 'px');
+          shard.style.setProperty('--dz', (near * (110 + Math.random() * 180)).toFixed(0) + 'px');
+          shard.style.setProperty('--fall', (r.height * (.72 + Math.random() * .48)).toFixed(0) + 'px');
+          shard.style.setProperty('--rx', ((Math.random() - .5) * (55 + near * 130)).toFixed(0) + 'deg');
+          shard.style.setProperty('--ry', ((Math.random() - .5) * (45 + near * 110)).toFixed(0) + 'deg');
+          shard.style.setProperty('--rz', ((Math.random() - .5) * (30 + near * 100)).toFixed(0) + 'deg');
+          shard.style.setProperty('--lit', (.18 + near * .62).toFixed(2));
+          shard.style.setProperty('--sheen', (Math.random() * 180).toFixed(0) + 'deg');
+          shard.style.animationDuration = (.86 + ri * .075 + Math.random() * .18).toFixed(2) + 's';
+          shard.style.animationDelay = (210 + rings[ri] * 150 + Math.random() * 55) + 'ms';
+          wrap.append(shard);
         }
-        const throwBy = 120 + near * 460;
-        brick.style.setProperty('--dx', (vx / unit * throwBy).toFixed(0) + 'px');
-        brick.style.setProperty('--dy', (vy / unit * throwBy + 90).toFixed(0) + 'px');
-        brick.style.setProperty('--rot', ((Math.random() - .5) * (60 + near * 200)).toFixed(0) + 'deg');
-        brick.style.setProperty('--lit', (near * .85).toFixed(2));
-        brick.style.animationDelay = (dist / reach * 260 + Math.random() * 60) + 'ms';
-        wrap.append(brick);
       }
+
+      // The crack drawing uses the very same mesh as the clipped shards. It is
+      // visible just long enough for the eye to read glass before the pieces go.
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const cracks = document.createElementNS(svgNS, 'svg');
+      cracks.classList.add('fracture');
+      cracks.setAttribute('viewBox', `0 0 ${r.width} ${r.height}`);
+      cracks.setAttribute('preserveAspectRatio', 'none');
+      const addCrack = (a, b, minor = false) => {
+        const line = document.createElementNS(svgNS, 'line');
+        line.setAttribute('x1', a[0]); line.setAttribute('y1', a[1]);
+        line.setAttribute('x2', b[0]); line.setAttribute('y2', b[1]);
+        line.setAttribute('pathLength', '1');
+        if (minor) line.classList.add('minor');
+        cracks.append(line);
+      };
+      for (let si = 0; si < rays; si++) {
+        for (let ri = 0; ri < rings.length - 1; ri++) addCrack(mesh[ri][si], mesh[ri + 1][si], ri > 2);
+      }
+      for (let ri = 1; ri < rings.length - 1; ri++) {
+        for (let si = 0; si < rays; si++) if (Math.random() > .34) addCrack(mesh[ri][si], mesh[ri][(si + 1) % rays], ri > 2);
+      }
+      wrap.append(cracks);
+
+      const core = el('i', 'impact-core');
+      wrap.append(core);
+      for (let i = 0; i < 22; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const splinter = el('i', 'splinter');
+        splinter.style.setProperty('--sx', (Math.cos(angle) * (90 + Math.random() * 260)).toFixed(0) + 'px');
+        splinter.style.setProperty('--sy', (Math.sin(angle) * (60 + Math.random() * 170)).toFixed(0) + 'px');
+        splinter.style.setProperty('--sr', ((Math.random() - .5) * 600).toFixed(0) + 'deg');
+        splinter.style.animationDelay = (175 + Math.random() * 100) + 'ms';
+        wrap.append(splinter);
+      }
+
+      const shock = el('i', 'shock');
+      wrap.append(shock);
       host.append(wrap);
       setTimeout(() => { wrap.remove(); resolve(); }, ms);
     });
   }
-  // Kept for callers that just want the plain break, with no blast point.
-  function disintegrate(host) { return shatter(host, { cols: 9, ms: 900 }); }
+  function disintegrate(host) { return shatter(host, { ms: 1450 }); }
 
   window.WorldEngine = { Spring, Actor, Pet, Bug, Bubble, Web, disintegrate, shatter };
 })();

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Shimmer Lab · Three-layer lenticular</title>
+<style>
+:root{color-scheme:dark;--ink:#edf7fd;--soft:#96aec0;--line:#a1c8e233;--mono:Consolas,"SFMono-Regular",monospace;
+  font-family:"Segoe UI",system-ui,sans-serif;color:var(--ink);background:#05070f}
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;padding:18px 16px 40px;display:flex;flex-direction:column;align-items:center;gap:18px;
+  background:radial-gradient(ellipse at 50% 0%,#141d31,#05070f 70%)}
+h1{font-size:15px;font-weight:600;letter-spacing:.4px;margin:0}
+h1 small{display:block;font:10px/1.6 var(--mono);letter-spacing:1.6px;color:#7e9cb5;font-weight:400}
+#stage{position:relative;width:min(360px,92vw);aspect-ratio:2/3;border-radius:14px;overflow:hidden;
+  box-shadow:0 18px 50px #000a,0 0 0 1px #ffffff14}
+#card{display:block;width:100%;height:100%}
+#depth{position:absolute;left:10px;bottom:10px;right:10px;display:flex;gap:4px;pointer-events:none}
+#depth b{flex:1;height:3px;border-radius:2px;background:#ffffff1f;transition:background .18s}
+#depth b.on{background:#9fe8ff;box-shadow:0 0 8px #9fe8ffaa}
+.panel{width:min(360px,92vw);display:flex;flex-direction:column;gap:11px}
+.row{display:grid;grid-template-columns:96px 1fr 44px;align-items:center;gap:10px;font:10px/1.3 var(--mono);letter-spacing:.8px;color:var(--soft)}
+.row output{text-align:right;color:#cfe6f5}
+input[type=range]{width:100%;accent-color:#7fd8ff}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button{flex:1;min-width:104px;min-height:38px;padding:0 12px;border:1px solid var(--line);border-radius:19px;
+  background:#0b162acc;color:#d7e9f8;font:10px/1 var(--mono);letter-spacing:1.3px;cursor:pointer}
+button[aria-pressed=true]{border-color:#88dfc266;color:#c8f3e2;background:#0d2321cc}
+#status{font:10px/1.5 var(--mono);color:#7e9cb5;margin:0;min-height:2.2em}
+.files{display:flex;gap:6px}
+.files label{flex:1;display:grid;place-items:center;min-height:34px;border:1px dashed var(--line);border-radius:8px;
+  font:9px/1 var(--mono);letter-spacing:1.2px;color:#8fa9bd;cursor:pointer}
+.files input{display:none}
+</style></head>
+<body>
+<h1>Shimmer Lab<small>THREE-LAYER LENTICULAR · ARCHITECTURE CARD</small></h1>
+
+<div id="stage">
+  <canvas id="card"></canvas>
+  <div id="depth"><b class="on"></b><b></b><b></b></div>
+</div>
+
+<div class="panel">
+  <div class="row"><span>TILT</span><input id="tilt" type="range" min="0" max="1" step=".001" value="0"><output id="tiltOut">0.00</output></div>
+  <div class="btns">
+    <button id="rock" aria-pressed="false">AUTO-ROCK</button>
+    <button id="useTilt" data-state="off" aria-pressed="false">REAL TILT</button>
+  </div>
+
+  <div class="row"><span>SNAP</span><input id="sharp" type="range" min="0" max=".95" step=".01" value="0"><output id="sharpOut">0.00</output></div>
+  <div class="row"><span>LENS PITCH</span><input id="pitch" type="range" min="2" max="18" step=".5" value="3"><output id="pitchOut">3</output></div>
+  <div class="row"><span>CROSSTALK</span><input id="bleed" type="range" min="0" max="1" step=".01" value="0"><output id="bleedOut">0</output></div>
+  <div class="row"><span>FOIL</span><input id="foil" type="range" min="0" max="1" step=".01" value=".21"><output id="foilOut">0.21</output></div>
+  <div class="row"><span>GRAIN</span><input id="grain" type="range" min="0" max="1" step=".01" value="0"><output id="grainOut">0</output></div>
+  <div class="row"><span>PARALLAX</span><input id="plx" type="range" min="0" max="26" step=".5" value="0"><output id="plxOut">0</output></div>
+
+  <div class="files">
+    <label>UI<input type="file" accept="image/*" data-layer="0"></label>
+    <label>API<input type="file" accept="image/*" data-layer="1"></label>
+    <label>DATA<input type="file" accept="image/*" data-layer="2"></label>
+  </div>
+  <p id="status">Drag TILT, or hit AUTO-ROCK. Drop your own three images in to replace the placeholder art.</p>
+</div>
+
+<script src="./architecture-card.js"></script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const card=$('card');
+const api=createArchitectureCard(card,{
+  onFrame:near=>[...$('depth').children].forEach((b,i)=>b.classList.toggle('on',i===near)),
+});
+
+
+/* ---------- input ----------------------------------------------------------- */
+const opts=()=>({sharp:+$('sharp').value,pitch:+$('pitch').value,bleed:+$('bleed').value,
+                 foil:+$('foil').value,grain:+$('grain').value,plx:+$('plx').value});
+let manual=+$('tilt').value, rocking=false, tiltLive=false, sensor=null, neutral=null;
+for(const id of ['sharp','pitch','bleed','foil','grain','plx'])
+  $(id).addEventListener('input',()=>$(id+'Out').textContent=$(id).value);
+$('tilt').addEventListener('input',()=>{manual=+$('tilt').value;rocking=false;$('rock').setAttribute('aria-pressed','false');});
+$('rock').onclick=()=>{rocking=!rocking;$('rock').setAttribute('aria-pressed',String(rocking));};
+
+for(const inp of document.querySelectorAll('.files input')) inp.onchange=()=>{
+  const f=inp.files?.[0];if(!f)return;const im=new Image();
+  im.onload=()=>{api.setPlane(+inp.dataset.layer,im);
+    inp.parentElement.style.borderStyle='solid';inp.parentElement.style.color='#9fe8ff';};
+  im.src=URL.createObjectURL(f);
+};
+
+/* Same verified enable as the world: the listener can be accepted and then
+   never fire, so nothing switches over until a real reading arrives. */
+let seen=false,watch=0,handler=null;
+$('useTilt').onclick=async()=>{
+  if(tiltLive){stop('off','Real tilt off. Use the slider.');return;}
+  const D=window.DeviceOrientationEvent;
+  if(!D)return stop('off','No DeviceOrientationEvent on this browser.');
+  if(!isSecureContext)return stop('off','Needs https or localhost — the slider still works.');
+  try{ if(typeof D.requestPermission==='function'&&await D.requestPermission()!=='granted')
+        return stop('off','Motion access was not granted.'); }
+  catch{ return stop('off','Motion access was not granted.'); }
+  seen=false;neutral=null;
+  handler=e=>{
+    if(e.gamma===null||e.beta===null)return;
+    if(!seen){seen=true;clearTimeout(watch);tiltLive=true;
+      $('useTilt').setAttribute('aria-pressed','true');$('useTilt').textContent='TILT LIVE';
+      $('status').textContent='Reading the sensor. Tilt either way to go deeper.';}
+    neutral??={g:e.gamma,b:e.beta};
+    // Either direction goes deeper, so the whole comfortable range is usable
+    // instead of half of it.
+    const dg=Math.abs(e.gamma-neutral.g), db=Math.abs(e.beta-neutral.b);
+    sensor=Math.max(0,Math.min(1,Math.hypot(dg,db*.6)/26));
+  };
+  addEventListener('deviceorientation',handler);
+  $('status').textContent='Looking for the motion sensor…';
+  watch=setTimeout(()=>{if(!seen)stop('off','This device is not reporting motion. The slider still works.');},1200);
+};
+function stop(state,msg){
+  if(handler)removeEventListener('deviceorientation',handler);
+  handler=null;clearTimeout(watch);tiltLive=false;sensor=null;neutral=null;
+  $('useTilt').setAttribute('aria-pressed','false');$('useTilt').textContent='REAL TILT';
+  $('status').textContent=msg;
+}
+
+let shown=0,last=0;
+requestAnimationFrame(function tick(ts){
+  const dt=Math.min(.05,last?(ts-last)/1000:0);last=ts;
+  if(rocking)manual=.5-.5*Math.cos(ts/1400);
+  const want=tiltLive&&sensor!=null?sensor:manual;
+  // Low-pass: raw gamma/beta jitters enough to make the flip buzz.
+  shown+=(want-shown)*(1-Math.exp(-dt*11));
+  if(rocking||tiltLive)$('tilt').value=shown.toFixed(3);
+  $('tiltOut').textContent=shown.toFixed(2);
+  api.options=opts();api.draw(shown);
+  requestAnimationFrame(tick);
+});
+})();
+</script>
+</body></html>

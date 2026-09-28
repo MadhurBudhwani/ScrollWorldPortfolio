@@ -50,9 +50,17 @@
     ]
   };
   const renderer=new GyroRenderer($('world'),$('playfield'));let mode='design',epoch=0,busy=false,layoutFrame=0,selected='';
-  const design={built:false,change:'notify',notification:false,provider:'A',rule:'Manager approval'};
+  const design={opened:false,briefed:false,built:false,change:'notify',notification:false,provider:'A',rule:'Manager approval'};
   const people=[{name:'Priya',label:'Priya · site manager · North / River',company:'North',site:'River',scope:'site'},{name:'Arjun',label:'Arjun · company manager · North',company:'North',site:null,scope:'company'},{name:'Nadia',label:'Nadia · site manager · South / Harbour',company:'South',site:'Harbour',scope:'site'}];let person=0;
-  const reports=[{name:'Missing guardrail',company:'North',site:'River'},{name:'Forklift inspection',company:'North',site:'Hill'},{name:'Blocked exit',company:'South',site:'Harbour'}];
+  const reports=[
+    {name:'Missing guardrail',company:'North',site:'River'},
+    {name:'Chemical spill',company:'North',site:'River'},
+    {name:'Forklift inspection',company:'North',site:'Hill'},
+    {name:'Crane near miss',company:'North',site:'Hill'},
+    {name:'Blocked exit',company:'South',site:'Harbour'},
+    {name:'Ladder damage',company:'South',site:'Harbour'}];
+  const mayRead=(who,r)=>r.company===who.company&&(who.scope==='company'||r.site===who.site);
+  const access={opened:false};
   const cache={memory:false,redis:false,version:1,savedVersion:0};
   const protection={plain:'Confidential note: access review scheduled.',encrypted:false,cipher:null,key:null,iv:null,approved:false,audit:[]};
   const docs=[
@@ -89,11 +97,204 @@
   }
   function scheduleLayout(){cancelAnimationFrame(layoutFrame);layoutFrame=requestAnimationFrame(layout);}
   function layout(){const root=$('world').getBoundingClientRect(),brief=$('brief').getBoundingClientRect(),choices=$('choices'),out=$('outcome').getBoundingClientRect();choices.style.top=(brief.bottom-root.top+10)+'px';const cr=choices.getBoundingClientRect(),field=$('playfield'),landscape=root.width>root.height;
-    const top=landscape?75:Math.max(brief.bottom,cr.bottom)-root.top+10,bottom=out.top-root.top-5;field.style.top=top+'px';field.style.height=Math.max(80,bottom-top)+'px';field.style.left=landscape?'47%':'14px';field.style.right='14px';$('world').classList.toggle('compact',bottom-top<255);renderer.measure();}
+    const top=landscape?75:Math.max(brief.bottom,cr.bottom)-root.top+10,bottom=out.top-root.top-5;field.style.top=top+'px';field.style.height=Math.max(80,bottom-top)+'px';field.style.left=landscape?'47%':'14px';field.style.right='14px';$('world').classList.toggle('compact',bottom-top<255);renderer.measure();archFit();briefFit();}
   const observer=new ResizeObserver(scheduleLayout);for(const id of ['brief','choices','outcome','world'])observer.observe($(id));
   async function animate(ids,done){if(busy)return;busy=true;const token=epoch;for(const b of document.querySelectorAll('#actions button,#choices select,#choices input'))b.disabled=true;const completed=await renderer.route(ids);if(token!==epoch)return;busy=false;if(completed)done();for(const b of document.querySelectorAll('#actions button,#choices select,#choices input'))b.disabled=false;}
-  function enter(next){epoch++;busy=false;mode=next;renderer.cancel();$('route').value=mode;$('choices').replaceChildren();$('sceneReadout').replaceChildren();const c=chapters[mode];$('chapter').textContent=c[0];$('heading').textContent=c[1];$('goal').textContent=c[2];$('continue').textContent=mode==='search'?'Back to design ↺':chapters[order[order.indexOf(mode)+1]][0].split('/')[1].trim().toLowerCase()+' →';({design:showDesign,access:showAccess,cache:showCache,protect:showProtect,search:showSearch})[mode]();scheduleLayout();}
+  function enter(next){epoch++;busy=false;mode=next;renderer.cancel();archHide();briefHide();$('route').value=mode;$('choices').replaceChildren();$('sceneReadout').replaceChildren();const c=chapters[mode];$('chapter').textContent=c[0];$('heading').textContent=c[1];$('goal').textContent=c[2];$('continue').textContent=mode==='search'?'Back to design ↺':chapters[order[order.indexOf(mode)+1]][0].split('/')[1].trim().toLowerCase()+' →';({design:showDesign,access:showAccess,cache:showCache,protect:showProtect,search:showSearch})[mode]();scheduleLayout();}
+  /* The chapter opens on the card rather than on the diagram. Tilting is the
+     only thing asked for here, and it answers the question the whole chapter is
+     about — what is underneath the screen someone uses — before any of it is
+     named. Once that has landed, the existing build flow takes over unchanged. */
+  let card=null,cardEl=null,cardLines=null,archT=0,archFrame=0,archPlane=-1;
+  const CARDS={};
+  /* One line per depth, in the order the card reveals them. The heading stays
+     put; only this changes, so the card is doing the explaining and the words
+     are only naming what is on screen. */
+  // The heading already says to tilt, so these only have to name what is on
+  // screen right now. One short line each.
+  const archLine=i=>[
+    'A form and a button. All anyone ever sees.',
+    'The part that catches it and acts on it.',
+    'Where it is kept, safe for tomorrow.',
+  ][i];
+  function cardShow(kind,lines,screens){
+    const stage=$('archStage'), id=kind==='design'?'archCard':'accessCard';
+    cardLines=lines;archPlane=-1;
+    for(const el of stage.querySelectorAll('canvas'))el.hidden=el.id!==id;
+    cardEl=$(id);
+    if(!CARDS[kind])CARDS[kind]=createTiltCard(cardEl,{screens,onFrame:near=>{
+      // Only on a change of plane: this runs every frame, and #resultBody is
+      // read by a live region.
+      if(near===archPlane)return;archPlane=near;
+      const body=$('resultBody');if(body)body.textContent=cardLines(near);
+    }});
+    card=CARDS[kind];
+    reserveFor(lines);
+    stage.hidden=false;archT=0;$('world').classList.add('arch-intro');archFit();
+    cancelAnimationFrame(archFrame);archFrame=requestAnimationFrame(archTick);
+  }
+  function archHide(){
+    cancelAnimationFrame(archFrame);archFrame=0;
+    const body=$('resultBody');if(body)body.style.minHeight='';
+    const stage=document.getElementById('archStage');if(stage)stage.hidden=true;
+    document.getElementById('world').classList.remove('arch-intro');
+  }
+  // A canvas carries an intrinsic width, which fights aspect-ratio and left the
+  // handset short and wide. Size it here instead: the largest 2:3 that fits.
+  /* Hold the panel at the height of its longest line before any of them is
+     shown. The lines are close in length now, but a reworded one should not be
+     able to make the card grow and shrink as it is tilted. */
+  function reserveFor(lines){
+    const body=$('resultBody');if(!body)return;
+    const keep=body.textContent;
+    body.style.minHeight='';
+    let tallest=0;
+    for(let i=0;i<3;i++){body.textContent=lines(i);tallest=Math.max(tallest,body.scrollHeight);}
+    body.textContent=keep;
+    if(tallest)body.style.minHeight=tallest+'px';
+  }
+  function archFit(){
+    const stage=$('archStage');if(stage.hidden||!cardEl)return;
+    const r=stage.getBoundingClientRect();if(!r.width||!r.height)return;
+    // Width as a share of height. The artwork is 2:3, so going much below this
+    // buys a slimmer handset only by growing its bezels.
+    const RATIO=.60;
+    const h=Math.min(r.height,r.width/RATIO);
+    cardEl.style.width=Math.round(h*RATIO)+'px';
+    cardEl.style.height=Math.round(h)+'px';
+  }
+  function archTick(){
+    if(!card||$('archStage').hidden)return;
+    // renderer.target is whatever is steering the camera — the motion sensor
+    // when tilt is on, the drag when it is not — so the card follows either
+    // without needing its own input. Distance from rest is the depth.
+    // One signed axis, not the distance from rest. Distance meant a tilt in
+    // either direction dug deeper, so the only way back out was to find dead
+    // centre again. Signed, the same movement reversed brings you back, and it
+    // stops at each end rather than wrapping.
+    const want=Math.max(0,Math.min(1,renderer.target.x));
+    archT+=(want-archT)*.11;          // the raw signal jitters enough to buzz
+    card.draw(archT);
+    archFrame=requestAnimationFrame(archTick);
+  }
+
+  /* After the card, before anything is named: Madhur says what the tilt just
+     showed and why it is worth caring about. Three short stops, plain words, no
+     stack names — those come later, once there is something to hang them on. */
+  const BRIEF=[
+    ['One screen. Three different things.',
+     'You just tilted a phone. That is the shape of everything I build: the bit people touch, the bit that answers them, and the bit that remembers.'],
+    ['Nobody ever sees most of it.',
+     'People judge the screen on top. But when what sits underneath is wrong, a good-looking screen cannot rescue it.'],
+    ['That is the job.',
+     'I build all three so they fit each other — and so any one of them can change later without breaking the other two.'],
+  ];
+  /* Both sets were cut from their sheets by scripts/slice-sheet.py into one
+     shared box and one shared anchor, so the handover between them does not
+     move him. */
+  const FRAME=(set,n)=>'./assets/worlds/anim/'+set+'-'+String(n).padStart(2,'0')+'.webp';
+  let briefStep=0,briefTimer=0,idleAt=0,briefWarmed=false;
+  function briefWarm(){
+    if(briefWarmed)return;briefWarmed=true;
+    for(let i=1;i<=16;i++){new Image().src=FRAME('idle',i);new Image().src=FRAME('speak',i);}
+  }
+  // He speaks while the line lands, then settles. Running the cycle forever
+  // would turn him into wallpaper.
+  /* Idle was drawn as a loop — one breath in across the top row, one out across
+     the bottom — so it plays forward, forever. It never stops while he is on
+     screen: a character who freezes between lines reads as a still image
+     somebody forgot to take away. */
+  function briefIdle(){
+    clearInterval(briefTimer);
+    $('talkAvatar').src=FRAME('idle',idleAt+1);
+    briefTimer=setInterval(()=>{
+      idleAt=(idleAt+1)%16;
+      $('talkAvatar').src=FRAME('idle',idleAt+1);
+    },210);
+  }
+
+  /* Speak does not loop: it ends with his hand on his chest, and frame 1 has it
+     back at his side. So it runs out and then runs home again — the reverse of
+     a hand being raised is a hand coming down, which is the motion we want
+     anyway — and lands on the pose idle starts from. */
+  const SAY=[];
+  for(let i=1;i<=16;i++)SAY.push(i);
+  for(let i=15;i>=2;i--)SAY.push(i);
+  const SAY_STEP=115;
+  function briefSay(){
+    clearInterval(briefTimer);
+    let i=0;
+    briefTimer=setInterval(()=>{
+      if(i>=SAY.length){idleAt=0;briefIdle();return;}
+      $('talkAvatar').src=FRAME('speak',SAY[i++]);
+    },SAY_STEP);
+  }
+
+  /* The line arrives at the speed he says it: the whole paragraph lands on the
+     frame his hand comes back down. The tail of the sentence is already in the
+     box, coloured transparent, so nothing reflows as it fills in — otherwise
+     the panel would grow under him and shift the stage he is standing on. */
+  let typeTimer=0;
+  function typeInto(node,text,ms){
+    clearInterval(typeTimer);
+    node.replaceChildren();
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches){node.textContent=text;return;}
+    const inked=document.createElement('span'), ghost=document.createElement('span');
+    ghost.className='ghost';ghost.setAttribute('aria-hidden','true');
+    inked.textContent='';ghost.textContent=text;
+    node.append(inked,ghost);
+    let i=0;
+    const step=Math.max(12,Math.round(ms/Math.max(1,text.length)));
+    typeTimer=setInterval(()=>{
+      i++;
+      inked.textContent=text.slice(0,i);
+      ghost.textContent=text.slice(i);
+      if(i>=text.length){clearInterval(typeTimer);typeTimer=0;}
+    },step);
+  }
+  // The frames are square with the figure standing in the middle of a lot of
+  // empty space, so scale by height and let the stage clip the bare sides. A
+  // percentage height on the image resolved against its own natural size.
+  // Drawn at its own size wherever that fits, so the pixel grid stays whole and
+  // a dense screen scales it by a round number instead of smearing it.
+  function briefFit(){
+    const st=$('talkStage');if(st.hidden)return;
+    const r=st.getBoundingClientRect();if(!r.height)return;
+    const av=$('talkAvatar'), native=av.naturalHeight||339;
+    av.style.height=Math.round(Math.min(native,r.height*.92))+'px';
+  }
+  function briefHide(){
+    clearInterval(briefTimer);briefTimer=0;clearInterval(typeTimer);typeTimer=0;
+    const stage=document.getElementById('talkStage');if(stage)stage.hidden=true;
+  }
+  function briefShow(){
+    nodes([],[]);
+    $('talkStage').hidden=false;$('world').classList.add('arch-intro');
+    const [title,body]=BRIEF[briefStep];
+    briefWarm();briefSay();briefFit();
+    // naturalHeight is only known once the first frame has decoded.
+    $('talkAvatar').addEventListener('load',briefFit,{once:true});
+    // result() has already put the whole line into the live region, so a screen
+    // reader hears it once rather than one letter at a time.
+    result(title,body,'MADHUR');
+    typeInto($('resultBody'),body,SAY.length*SAY_STEP);
+    const last=briefStep===BRIEF.length-1;
+    actions([[last?'Now protect it →':'Go on',()=>{
+      if(last){design.briefed=true;enter('access');return;}
+      briefStep++;briefShow();
+    }]]);
+  }
+
   function showDesign(){
+    if(!design.opened){
+      nodes([],[]);cardShow('design',archLine);
+      const coarse=matchMedia('(pointer:coarse)').matches;
+      result('Tilt it and look underneath.',archLine(0),'LOOK INSIDE');
+      actions([['I see it',()=>{design.opened=true;briefStep=0;enter('design');}]]);
+      return;
+    }
+    if(!design.briefed){archHide();briefShow();return;}
+    briefHide();
     select('Try a new requirement',[['notify','Add email alerts'],['swap','Replace the delivery provider'],['approval','Change the approval rule']],design.change,v=>{design.change=v;designActions();result('A new requirement arrives.','Apply the change and watch which part of the application needs to respond.','TRY A CHANGE');});
     if(design.built)designNodes();else nodes([{id:'idea',art:'api',x:.5,y:.44,width:'76%',scale:1.5,title:'An incident-reporting application',description:'Reports · approvals · notifications'}],[]);
     result(design.built?'Built to work together.':'Start with a real requirement.',design.built?'Tap any named component to understand its job, or change a requirement.':'A team needs to report incidents, approve them and notify the right people.','APPLICATION DESIGN');designActions();
@@ -106,7 +307,142 @@
     else{design.rule=design.rule==='Manager approval'?'Manager + safety review':'Manager approval';result('Approval rule updated.','The business-rules component now requires '+design.rule.toLowerCase()+'. The rule has one clear home.','SEPARATE RESPONSIBILITIES');}
     const node=renderer.nodes.find(n=>n.id===id);if(node){node.dom.querySelector('strong').textContent=id==='service'&&design.notification?'Email alerts connected':node.title;node.dom.querySelector('small').textContent=id==='rules'?design.rule:'Delivery provider '+design.provider;}renderer.emphasis(id);
   });}
+  /* Chapter two's card is the same handset showing the same list to three
+     different people. Nothing about the screen changes between the faces — the
+     rows do not move, the header does not move — only who is allowed to read
+     them, which is the whole point and is hard to say in a sentence. */
+  /* One shape for all three, and near enough one length: the panel under the
+     card is sized by whatever sits in it, and a longer third line grew it,
+     shrank the playfield above and resized the card mid-tilt. */
+  const ACCESS_LINES=i=>[
+    'Priya manages one site. Same screen, her site.',
+    'Arjun runs the company. Same screen, more rows.',
+    'Nadia is another company. Same screen, not ours.',
+  ][i];
+  // What each of them says, in their own voice, inside the card.
+  const WHO_SAYS={
+    Priya:'I look after one site, so I see one site.',
+    Arjun:'What Priya sees, and the other sites too — they all report to me.',
+    Nadia:'Different company. Nothing they see reaches me; my list is its own.',
+  };
+  const accessOrder=[0,1,2];
+  /* Their portraits, when they exist. The faces are prepared once at resize,
+     so an arrival has to ask for them to be prepared again. */
+  const WHO_ART={};
+  function accessArt(){
+    for(const p of people){
+      const im=new Image();
+      im.onload=()=>{WHO_ART[p.name]=im;if(CARDS.access)CARDS.access.resize();};
+      im.src='./assets/worlds/anim/who-'+p.name.toLowerCase()+'.webp';
+    }
+  }
+  // Greedy wrap, measured in the font it will actually be drawn in.
+  function wrapTo(x,text,width,size){
+    x.save();x.font='400 '+size+'px Consolas,monospace';
+    const out=[];let line='';
+    for(const word of text.split(' ')){
+      const next=line?line+' '+word:word;
+      if(line&&x.measureText(next).width>width){out.push(line);line=word;}
+      else line=next;
+    }
+    if(line)out.push(line);
+    x.restore();return out;
+  }
+  function accessFace(x,w,h,kit,who){
+    const {BODY,bodyPlate,bodyTop,roundRect}=kit;
+    const {sx,sy,sw,sh,sr}=BODY(w,h);
+    bodyPlate(x,w,h);
+    x.save();roundRect(x,sx,sy,sw,sh,sr);x.clip();
+
+    const bg=x.createLinearGradient(sx,sy,sx,sy+sh);
+    bg.addColorStop(0,'#14263f');bg.addColorStop(.62,'#0c1828');bg.addColorStop(1,'#0a1422');
+    x.fillStyle=bg;x.fillRect(sx,sy,sw,sh);
+
+    const L=sx+sw*.085, R=sx+sw*.915, WID=R-L;
+    const FS=k=>Math.max(7,sh*k);
+    const put=(t,px,py,size,col,align,weight)=>{
+      x.save();x.textAlign=align||'left';x.textBaseline='middle';x.fillStyle=col;
+      x.font=(weight||'600')+' '+size+'px Consolas,monospace';
+      x.fillText(t,Math.round(px),Math.round(py));x.restore();};
+
+    put('INCIDENT REPORTS',L,sy+sh*.070,FS(.024),'#7fb6d8','left','700');
+
+    /* The person holding the phone stands at the top and says, in one line,
+       what they are allowed to see. A name in a chip would have been smaller
+       and cheaper, but the whole chapter is about people rather than rules, so
+       the people are on screen. */
+    const aw=WID*.30, ah=sh*.21, ax=L, ay=sy+sh*.100;
+    const art=WHO_ART[who.name];
+    if(art){
+      const s=Math.min(aw/art.width,ah/art.height);
+      x.drawImage(art,ax+(aw-art.width*s)/2,ay+ah-art.height*s,art.width*s,art.height*s);
+    }else{
+      // Stand-in until their art lands: head and shoulders, plus their initial.
+      x.fillStyle='#1b3350';roundRect(x,ax+aw*.10,ay+ah*.42,aw*.80,ah*.58,aw*.16);x.fill();
+      x.beginPath();x.arc(ax+aw*.5,ay+ah*.30,aw*.24,0,7);x.fill();
+      put(who.name[0],ax+aw*.5,ay+ah*.30,FS(.032),'#6e9dc4','center','700');
+    }
+
+    const bx=ax+aw+WID*.045, bw2=R-bx;
+    const said=WHO_SAYS[who.name], lines=wrapTo(x,said,bw2-WID*.075,FS(.021));
+    const bh2=Math.max(sh*.085,lines.length*FS(.030)+sh*.038);
+    const by=ay+ah*.42-bh2/2;
+    roundRect(x,bx,by,bw2,bh2,7);
+    x.fillStyle='#16304a';x.fill();x.strokeStyle='#3f86b0';x.lineWidth=1.2;x.stroke();
+    // a tail pointing back at whoever said it
+    x.beginPath();x.moveTo(bx,by+bh2*.52);x.lineTo(bx-WID*.030,by+bh2*.62);
+    x.lineTo(bx,by+bh2*.74);x.closePath();
+    x.fillStyle='#16304a';x.fill();x.strokeStyle='#3f86b0';x.stroke();
+    x.beginPath();x.moveTo(bx+1,by+bh2*.53);x.lineTo(bx+1,by+bh2*.73);
+    x.strokeStyle='#16304a';x.lineWidth=2.4;x.stroke();
+    lines.forEach((ln,k)=>put(ln,bx+WID*.037,by+sh*.024+k*FS(.030),FS(.021),'#d6ecfb','left','400'));
+    const where=who.scope==='company'?who.company+' · all sites':who.company+' / '+who.site;
+    put(who.name.toUpperCase()+' · '+where,ax,ay+ah+sh*.030,FS(.018),'#7d9cbe','left','700');
+
+    const rowH=sh*.072, gap=sh*.013;
+    let y=sy+sh*.395, shown=0;
+    reports.forEach((r,n)=>{
+      const ok=mayRead(who,r);
+      if(ok)shown++;
+      roundRect(x,L,y,WID,rowH,7);
+      x.fillStyle=ok?'#16283f':'#0f1726';x.fill();
+      x.strokeStyle=ok?'#3f7fa8':'#222f44';x.lineWidth=1.1;x.stroke();
+      if(ok){
+        put(r.name,L+WID*.055,y+rowH*.37,FS(.024),'#e2effb');
+        put(r.company+' / '+r.site,L+WID*.055,y+rowH*.73,FS(.018),'#82a0c0','left','400');
+      }else{
+        // Bars of uneven length, not one flat block: a redaction has to read as
+        // words that were taken away.
+        const bx=L+WID*.055;
+        x.fillStyle='#27344a';
+        roundRect(x,bx,y+rowH*.28,WID*(.30+(n%3)*.09),rowH*.18,2);x.fill();
+        x.fillStyle='#1c2637';
+        roundRect(x,bx,y+rowH*.60,WID*(.20+((n+1)%3)*.06),rowH*.14,2);x.fill();
+        // a shut padlock at the far end
+        const px2=R-WID*.075, py2=y+rowH*.50, u=rowH*.15;
+        x.strokeStyle='#4a5f7d';x.lineWidth=1.4;
+        x.beginPath();x.arc(px2,py2-u*.75,u*.55,Math.PI,0);x.stroke();
+        x.fillStyle='#4a5f7d';roundRect(x,px2-u*.8,py2-u*.25,u*1.6,u*1.35,1.5);x.fill();
+      }
+      y+=rowH+gap;
+    });
+
+    put(shown+' of '+reports.length+' visible',sx+sw/2,sy+sh*.935,FS(.021),
+        shown?'#8fb6d4':'#c08fa8','center','400');
+
+    x.restore();
+    bodyTop(x,w,h);
+  }
+  const ACCESS_FACES=accessOrder.map(i=>(x,w,h,kit)=>accessFace(x,w,h,kit,people[i]));
+
   function showAccess(){
+    if(!access.opened){
+      nodes([],[]);accessArt();cardShow('access',ACCESS_LINES,ACCESS_FACES);
+      result('Same screen. Different person.',ACCESS_LINES(0),'WHO IS LOOKING');
+      actions([['I see it',()=>{access.opened=true;enter('access');}]]);
+      return;
+    }
+    archHide();
     select('Who is asking?',people.map((p,i)=>[String(i),p.label]),person,v=>{person=Number(v);epoch++;busy=false;renderer.cancel();$('sceneReadout').replaceChildren();result('Same request. A different person.','Send “Open incident reports” to see which records this person receives.','COMPARE ACCESS');accessActions();});
     nodes([{id:'request',art:'person',x:.16,y:.19,width:'31%',title:'Open reports',description:'The user’s request'},{id:'checkpoint',art:'gate',x:.5,y:.19,width:'34%',title:'Attach access context',description:'Shared application rules'},{id:'vault',art:'database',x:.84,y:.19,width:'31%',title:'Filter in the database',description:'Only permitted rows return'}],[['request','checkpoint'],['checkpoint','vault']]);
     result('Try the same request as two people.','Priya manages one North site. Arjun manages the North company. Nadia belongs to South.','ONE SYSTEM / DIFFERENT ACCESS');accessActions();
@@ -165,8 +501,63 @@
   $('settingsButton').onclick=()=>$('settings').showModal();for(const d of document.querySelectorAll('dialog'))d.querySelector('.close').onclick=()=>d.close();
   let tiltEnabled=false,neutral=null,lastSensor=null;const setMotion=v=>{renderer.gentle=v;$('world').classList.toggle('gentle',v);$('motion').setAttribute('aria-pressed',String(v));$('motion').textContent=v?'Gentle motion · on':'Gentle motion';};setMotion(renderer.gentle);$('motion').onclick=()=>setMotion(!renderer.gentle);
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');reduced.addEventListener('change',e=>setMotion(e.matches));
-  $('tilt').onclick=async()=>{if(tiltEnabled){neutral=lastSensor?{...lastSensor}:null;renderer.target={x:0,y:0};return;}const D=window.DeviceOrientationEvent;try{if(!D)throw new Error('No motion sensor is available.');if(typeof D.requestPermission==='function'&&await D.requestPermission()!=='granted')throw new Error('Motion access was not granted.');tiltEnabled=true;$('tilt').textContent='Re-centre tilt';$('sensorStatus').textContent='Tilt changes your view. It never changes who can access the data.';addEventListener('deviceorientation',e=>{if(e.gamma===null||e.beta===null)return;lastSensor={x:e.gamma,y:e.beta};neutral??={...lastSensor};const x=Math.max(-1,Math.min(1,(e.gamma-neutral.x)/25)),y=Math.max(-1,Math.min(1,(e.beta-neutral.y)/30)),a=(screen.orientation?.angle??0)*Math.PI/180;renderer.target={x:x*Math.cos(a)+y*Math.sin(a),y:y*Math.cos(a)-x*Math.sin(a)};});}catch(e){$('sensorStatus').textContent=e.message+' All interactions still work by touch.';}};
+  /* Tilt is what this world is named after, and it used to sit inside the
+     options dialog where nobody opened it, so on a phone the camera only ever
+     answered to a drag. It is now a switch on the playfield itself.
+     Enabling it is verified rather than assumed: a browser will accept the
+     listener and then never fire an event — no sensor, a desktop, an in-app
+     webview, an http origin — and the old code had already switched the
+     pointer fallback off by then, so the camera simply froze. */
+  let tiltSeen=false,tiltWatch=0,orientHandler=null;
+  const chip=$('tiltChip'),chipLabel=chip.querySelector('span'),clamp=v=>Math.max(-1,Math.min(1,v));
+  // The chip only earns its space where a device can actually tilt. A desktop
+  // keeps the pointer parallax and the button inside the dialog.
+  if(matchMedia('(pointer:coarse)').matches||typeof window.DeviceOrientationEvent?.requestPermission==='function')chip.hidden=false;
+  const TOUCH_BACK=' Drag the world to look around instead.';
+  function paintTilt(state,message){
+    chip.dataset.state=state;chip.setAttribute('aria-pressed',String(state==='on'));
+    chipLabel.textContent=chip.dataset.used
+      ?({on:'TILT ON',waiting:'CHECKING',unavailable:'NO SENSOR'}[state]??'TILT')
+      :'TILT TO LOOK AROUND';
+    $('tilt').textContent=state==='on'?'Re-centre tilt':'Enable tilt to look around';
+    if(message)$('sensorStatus').textContent=message;
+  }
+  function stopTilt(state,message){
+    if(orientHandler)removeEventListener('deviceorientation',orientHandler);
+    orientHandler=null;clearTimeout(tiltWatch);tiltEnabled=false;neutral=null;
+    renderer.target={x:0,y:0};paintTilt(state,message);
+  }
+  async function startTilt(){
+    const D=window.DeviceOrientationEvent;
+    if(!D)return stopTilt('unavailable','This device has no motion sensor.'+TOUCH_BACK);
+    if(!isSecureContext)return stopTilt('unavailable','Tilt needs a secure (https) connection.'+TOUCH_BACK);
+    try{
+      if(typeof D.requestPermission==='function'&&await D.requestPermission()!=='granted')
+        return stopTilt('off','Motion access was not granted.'+TOUCH_BACK);
+    }catch{return stopTilt('off','Motion access was not granted.'+TOUCH_BACK);}
+    tiltSeen=false;neutral=null;
+    orientHandler=e=>{
+      if(e.gamma===null||e.beta===null)return;
+      // The first real reading is what confirms the sensor, and the pose it
+      // arrives in is the one the visitor is already holding the phone in.
+      if(!tiltSeen){tiltSeen=true;clearTimeout(tiltWatch);tiltEnabled=true;
+        paintTilt('on','Tilt changes your view. It never changes who can access the data.');}
+      lastSensor={x:e.gamma,y:e.beta};neutral??={...lastSensor};
+      const x=clamp((e.gamma-neutral.x)/25),y=clamp((e.beta-neutral.y)/30),a=(screen.orientation?.angle??0)*Math.PI/180;
+      renderer.target={x:x*Math.cos(a)+y*Math.sin(a),y:y*Math.cos(a)-x*Math.sin(a)};
+    };
+    addEventListener('deviceorientation',orientHandler);
+    paintTilt('waiting','Looking for the motion sensor…');
+    // A sensor that is going to report does it within a frame or two. Anything
+    // still silent after this is not coming, so hand the world back to touch
+    // rather than leaving a dead camera behind.
+    tiltWatch=setTimeout(()=>{if(!tiltSeen)stopTilt('unavailable','This device isn’t reporting motion.'+TOUCH_BACK);},1200);
+  }
+  const toggleTilt=()=>{chip.dataset.used='1';tiltEnabled?stopTilt('off','Tilt is off.'+TOUCH_BACK):startTilt();};
+  chip.onclick=toggleTilt;
+  // In the dialog the same control still re-centres while tilt is live.
+  $('tilt').onclick=()=>{if(tiltEnabled){neutral=lastSensor?{...lastSensor}:null;renderer.target={x:0,y:0};return;}toggleTilt();};
   $('playfield').addEventListener('pointermove',e=>{if(tiltEnabled)return;const r=$('playfield').getBoundingClientRect();renderer.target={x:(e.clientX-r.left)/r.width*2-1,y:(e.clientY-r.top)/r.height*2-1};});$('playfield').addEventListener('pointerleave',()=>{if(!tiltEnabled)renderer.target={x:0,y:0};});addEventListener('orientationchange',()=>{neutral=null;renderer.target={x:0,y:0};});
-  $('reset').onclick=()=>{if(mode==='design')Object.assign(design,{built:false,notification:false,provider:'A',rule:'Manager approval'});if(mode==='cache')Object.assign(cache,{memory:false,redis:false,version:1,savedVersion:0});if(mode==='access')person=0;if(mode==='protect')Object.assign(protection,{encrypted:false,cipher:null,key:null,iv:null,approved:false,audit:[]});if(mode==='search')searchMode='exact';$('settings').close();enter(mode);};
+  $('reset').onclick=()=>{if(mode==='design')Object.assign(design,{opened:false,briefed:false,built:false,notification:false,provider:'A',rule:'Manager approval'});if(mode==='cache')Object.assign(cache,{memory:false,redis:false,version:1,savedVersion:0});if(mode==='access'){person=0;access.opened=false;}if(mode==='protect')Object.assign(protection,{encrypted:false,cipher:null,key:null,iv:null,approved:false,audit:[]});if(mode==='search')searchMode='exact';$('settings').close();enter(mode);};
   renderer.ready.then(()=>{enter('design');$('loading').style.opacity='0';setTimeout(()=>$('loading').hidden=true,550);}).catch(()=>{$('loading').replaceChildren(el('p','The world artwork could not load.'),button('Retry',()=>location.reload()));});
 })();

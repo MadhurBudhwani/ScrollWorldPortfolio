@@ -12,4 +12,26 @@ dialog{position:fixed;inset:0;margin:auto;width:calc(100% - 24px);max-width:520p
 .compact .world-object small{display:none}.compact .world-object strong{font-size:13px}.compact #sceneReadout{gap:4px}.compact .record{padding:5px 8px;font-size:12px}.compact .record small{font-size:9px}
 @media(max-height:700px){#brief{top:calc(70px + env(safe-area-inset-top));left:20px;right:20px}h1{font-size:28px}#goal{font-size:13px}#brief .eyebrow{margin-bottom:5px}#outcome{padding:20px 20px calc(5px + env(safe-area-inset-bottom))}#resultBody{font-size:13px;line-height:1.4;margin-bottom:8px}h2{font-size:20px}#choices{left:20px;right:20px}.outcome-links{margin-top:1px}.outcome-links button{min-height:34px}}
 @media(orientation:landscape) and (max-height:650px){#world{width:min(100%,1100px)}header{width:46%}#brief{width:40%;right:auto}#choices{width:39%;right:auto}#outcome{left:46%;padding-top:12px;background:linear-gradient(transparent,#030914f2 18%)}#resultBody{font-size:13px}h1{font-size:27px}h2{font-size:19px}}
+/* On the card screen the heading steps back and its subtitle goes: the card
+   is the explanation there, and the space belongs to it. Both return for the
+   diagram that follows. */
+.arch-intro h1{font-size:clamp(19px,5.2vw,25px);letter-spacing:-.4px;margin-bottom:0}
+.arch-intro #goal{display:none}
+#resultBody .ghost{color:transparent}
+#archStage{position:absolute;inset:0;z-index:5;display:grid;place-items:center;pointer-events:none}/* The avatar stands on the floor of the playfield with a slow wheel of colour
+   turning behind him, so the explanation has somewhere to happen rather than
+   arriving as a wall of text. */
+#talkStage{position:absolute;inset:0;z-index:5;display:grid;place-items:end center;pointer-events:none;overflow:hidden}
+#talkAvatar{position:relative;display:block;width:auto;image-rendering:pixelated;filter:drop-shadow(0 16px 28px #000000a6)}
+.talk-aura{position:absolute;left:50%;top:52%;width:132%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
+  background:conic-gradient(from 0deg,#67daf53d,#c46bff3d,#3bf7c43d,#f3cc703d,#67daf53d);
+  filter:blur(30px);opacity:.62;animation:talk-spin 22s linear infinite}
+@keyframes talk-spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.talk-aura{animation:none}}
+/* The sheet-wide canvas rule pins every canvas to inset:0, which took this
+   one out of the grid and stuck it against the left edge. Put it back in flow
+   so the stage can centre it. */
+#archCard,#accessCard{position:static;display:block;filter:drop-shadow(0 16px 34px #00000082)}
 @media(prefers-reduced-motion:reduce){#backdrop{animation:none}.world-object{transition:none}}
+
+#tiltChip{position:absolute;z-index:7;top:0;right:0;display:flex;align-items:center;gap:8px;min-height:36px;padding:0 14px;border:1px solid #a1c8e240;border-radius:18px;background:#0a1426d9;color:#cfe4f5;font:10px/1 var(--mono);letter-spacing:1.4px;box-shadow:0 5px 16px #00000059}#tiltChip i{flex:none;width:8px;height:8px;border-radius:50%;background:#7d94a8;transition:background .25s,box-shadow .25s}#tiltChip[data-state=on]{border-color:#88dfc266;color:#c8f3e2}#tiltChip[data-state=on] i{background:#88dfc2;box-shadow:0 0 9px 1px #88dfc2aa}#tiltChip[data-state=waiting] i{background:#e8d38a;animation:tilt-seek .7s ease-in-out infinite}#tiltChip[data-state=unavailable]{opacity:.5}@keyframes tilt-seek{50%{opacity:.25}}

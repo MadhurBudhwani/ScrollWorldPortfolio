@@ -147,6 +147,25 @@ window.TraceRenderer = class {
     for (const c of [this.c, this.bc]) { c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); c.imageSmoothingEnabled = false; }
   }
 
+  // Map a normalised point from the active artwork into the live, cover-scaled
+  // and parallax-shifted scene. Gameplay uses this to attach effects to things
+  // that are painted into a background instead of placing duplicate DOM props.
+  scenePoint(nx, ny) {
+    const img = this.images[this.scene];
+    if (!img) return { x: this.w * nx, y: this.h * ny };
+    const t = this.gentle ? 0 : this.time;
+    const scale = Math.max(this.w / img.naturalWidth, this.h / img.naturalHeight)
+      * (1.09 + Math.sin(t * .11) * .022);
+    const iw = img.naturalWidth * scale, ih = img.naturalHeight * scale;
+    const sy = ny * img.naturalHeight;
+    const sliceShift = this.gentle ? 0
+      : Math.sin(sy * .019 + t * .7) * 3.1 + Math.sin(sy * .006 - t * .38) * 2.1;
+    return {
+      x: (this.w - iw) / 2 - this.camera.x * 20 + nx * iw + sliceShift,
+      y: (this.h - ih) / 2 - this.camera.y * 15 + ny * ih,
+    };
+  }
+
   set(scene) {
     if (!this.images[scene] || scene === this.scene) return;
     this.previous = this.scene; this.scene = scene; this.blend = 0;
