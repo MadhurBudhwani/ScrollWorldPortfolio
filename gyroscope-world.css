@@ -15,7 +15,10 @@ dialog{position:fixed;inset:0;margin:auto;width:calc(100% - 24px);max-width:520p
 /* On the card screen the heading steps back and its subtitle goes: the card
    is the explanation there, and the space belongs to it. Both return for the
    diagram that follows. */
-.arch-intro h1{font-size:clamp(19px,5.2vw,25px);letter-spacing:-.4px;margin-bottom:0}
+/* Fixed, not a viewport clamp. At 5.2vw a narrow phone landed on the 19px
+   floor while a wider view got 21.4px, so the heading changed size against a
+   body that never does, and the two did not look like the same screen. */
+.arch-intro h1{font-size:21px;letter-spacing:-.4px;margin-bottom:0}
 .arch-intro #goal{display:none}
 #resultBody .ghost{color:transparent}
 #archStage{position:absolute;inset:0;z-index:5;display:grid;place-items:center;pointer-events:none}/* The avatar stands on the floor of the playfield with a slow wheel of colour

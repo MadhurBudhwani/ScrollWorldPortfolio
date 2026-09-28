@@ -263,7 +263,7 @@
     const st=$('talkStage');if(st.hidden)return;
     const r=st.getBoundingClientRect();if(!r.height||!r.width)return;
     const av=$('talkAvatar'), nh=av.naturalHeight||339, nw=av.naturalWidth||178;
-    av.style.height=Math.round(Math.min(r.height*.88,r.width*.88*(nh/nw)))+'px';
+    av.style.height=Math.round(Math.min(r.height*.72,r.width*.80*(nh/nw)))+'px';
   }
   function briefHide(){
     clearInterval(briefTimer);briefTimer=0;clearInterval(typeTimer);typeTimer=0;
