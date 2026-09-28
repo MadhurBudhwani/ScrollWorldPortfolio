@@ -13,7 +13,7 @@
 (function(global){
   'use strict';
   const DEFAULTS={
-    sharp:0,        // how hard the planes switch; 0 is a plain crossfade
+    sharp:.56,      // how hard the planes switch; 0 is a plain crossfade
     pitch:3,        // lens pitch in CSS pixels
     bleed:0,        // crosstalk between neighbouring strips
     foil:.21,       // strength of the sweep that answers the viewer's movement
