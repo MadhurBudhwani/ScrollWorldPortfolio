@@ -47,16 +47,7 @@ dialog{position:fixed;inset:0;margin:auto;width:calc(100% - 24px);max-width:520p
   mask-image:radial-gradient(ellipse 58% 72% at 50% 83%,#000 8%,rgba(0,0,0,.5) 40%,transparent 82%);
   animation:talk-spin 22s linear infinite}
 @keyframes talk-spin{to{transform:rotate(360deg)}}
-/* Shown only while the browser is zoomed past 100%, and it clears itself the
-   moment the zoom comes back, so there is nothing to dismiss and no way to be
-   stuck behind it. */
-#zoomGuard{position:absolute;inset:0;z-index:40;display:grid;place-items:center;padding:28px;
-  background:#04070ff2;backdrop-filter:blur(6px);text-align:center}
-#zoomGuard>div{max-width:34ch}
-#zoomGuard h2{font-size:22px;margin:0 0 10px}
-#zoomGuard p{font-size:14px;line-height:1.5;color:#c2d5e2;margin:0 0 10px}
-#zoomGuard .zoom-now{font:11px/1.5 var(--mono);color:#8aa6bd;letter-spacing:1px}
-#zoomGuard b{color:#ffd9a0;font-weight:600}
+
 @media(prefers-reduced-motion:reduce){.talk-aura{animation:none}}
 /* The sheet-wide canvas rule pins every canvas to inset:0, which took this
    one out of the grid and stuck it against the left edge. Put it back in flow

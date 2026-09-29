@@ -98,29 +98,6 @@
   function scheduleLayout(){cancelAnimationFrame(layoutFrame);layoutFrame=requestAnimationFrame(layout);}
   function layout(){const root=$('world').getBoundingClientRect(),brief=$('brief').getBoundingClientRect(),choices=$('choices'),out=$('outcome').getBoundingClientRect();choices.style.top=(brief.bottom-root.top+10)+'px';const cr=choices.getBoundingClientRect(),field=$('playfield'),landscape=root.width>root.height;
     const top=landscape?75:Math.max(brief.bottom,cr.bottom)-root.top+10,bottom=out.top-root.top-5;field.style.top=top+'px';field.style.height=Math.max(80,bottom-top)+'px';field.style.left=landscape?'47%':'14px';field.style.right='14px';$('world').classList.toggle('compact',bottom-top<255);renderer.measure();archFit();briefFit();}
-  /* Page zoom, read as the gap between the window and the page inside it.
-     outerWidth is the window and does not move when the zoom does, so the ratio
-     is the zoom. screen.width looks like it would work and does on a phone, but
-     on a desktop it is the whole monitor: measured here it claimed 1.5x on a
-     windowed browser at 100%.
-     Both directions are called out, but not symmetrically. A scrollbar puts
-     the ratio a percent or two over 1 on its own, so the zoomed-in threshold
-     sits above that rather than at exactly 1. Zooming out is harmless until it
-     is extreme, so that side is left alone until 60%. */
-  function zoomLevel(){return outerWidth&&innerWidth?outerWidth/innerWidth:1;}
-  function checkZoom(){
-    const z=zoomLevel(), inTooFar=z>1.06, outTooFar=z<.60;
-    const off=inTooFar||outTooFar;
-    $('zoomGuard').hidden=!off;
-    if(!off)return;
-    $('zoomGuardTitle').textContent=inTooFar
-      ?'Your browser is zoomed in.'
-      :'Your browser is zoomed out too far.';
-    $('zoomNow').textContent=Math.round(z*100)+'%';
-  }
-  addEventListener('resize',checkZoom);
-  visualViewport?.addEventListener('resize',checkZoom);
-  checkZoom();
   const observer=new ResizeObserver(scheduleLayout);for(const id of ['brief','choices','outcome','world'])observer.observe($(id));
   async function animate(ids,done){if(busy)return;busy=true;const token=epoch;for(const b of document.querySelectorAll('#actions button,#choices select,#choices input'))b.disabled=true;const completed=await renderer.route(ids);if(token!==epoch)return;busy=false;if(completed)done();for(const b of document.querySelectorAll('#actions button,#choices select,#choices input'))b.disabled=false;}
   function enter(next){epoch++;busy=false;mode=next;renderer.cancel();archHide();briefHide();$('route').value=mode;$('choices').replaceChildren();$('sceneReadout').replaceChildren();const c=chapters[mode];$('chapter').textContent=c[0];$('heading').textContent=c[1];$('goal').textContent=c[2];$('continue').textContent=mode==='search'?'Back to design ↺':chapters[order[order.indexOf(mode)+1]][0].split('/')[1].trim().toLowerCase()+' →';({design:showDesign,access:showAccess,cache:showCache,protect:showProtect,search:showSearch})[mode]();scheduleLayout();}

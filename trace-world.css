@@ -12,7 +12,7 @@ body{display:grid;place-items:center;font-family:"Segoe UI",system-ui,sans-serif
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 
 /* Scoped resets — only apply inside world containers */
-#trace,#boot{position:relative;isolation:isolate;width:min(100%,620px);height:100dvh;overflow:hidden;background:#070917}
+#trace,#boot{container-type:inline-size;position:relative;isolation:isolate;width:min(100%,620px);height:100dvh;overflow:hidden;background:#070917}
 #trace button,#trace select,#trace input,#boot button,#boot select,#boot input{font:inherit;color:inherit}
 #trace button,#trace a,#trace select,#boot button,#boot a,#boot select{-webkit-tap-highlight-color:transparent;touch-action:manipulation;outline-offset:4px}
 #trace button,#boot button{cursor:pointer}
@@ -21,38 +21,38 @@ body{display:grid;place-items:center;font-family:"Segoe UI",system-ui,sans-serif
 #scenery{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .scanlines{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.12;background:repeating-linear-gradient(0deg,transparent 0 3px,#000 3px 4px)}
 #trace>header,#boot>header{position:absolute;inset:0 0 auto;z-index:8;display:flex;align-items:center;gap:12px;padding:calc(9px + env(safe-area-inset-top)) 20px 8px;background:linear-gradient(#050918e8,#05091877,transparent)}
-#trace>header>a,#trace>header>button,#boot>header>a,#boot>header>button{display:grid;place-items:center;flex:none;width:44px;height:44px;border:1px solid #a9cfe22e;border-radius:50%;background:#08182a99;text-decoration:none;color:#d9f4ff;font-size:20px}
-.wordmark{flex:1;font:15px var(--mono);letter-spacing:5px}
-.wordmark span{display:block;font-size:8px;letter-spacing:1.4px;color:var(--muted);margin-top:5px}
+#trace>header>a,#trace>header>button,#boot>header>a,#boot>header>button{display:grid;place-items:center;flex:none;width:44px;height:44px;border:1px solid #a9cfe22e;border-radius:50%;background:#08182a99;text-decoration:none;color:#d9f4ff;font-size:clamp(20px,3.87cqw,27px)}
+.wordmark{flex:1;font:15px var(--mono);font-size:clamp(15px,2.9cqw,20.25px);letter-spacing:5px}
+.wordmark span{display:block;font-size:clamp(8px,1.55cqw,10.8px);letter-spacing:1.4px;color:var(--muted);margin-top:5px}
 
 #brief{position:absolute;z-index:3;left:24px;right:24px;top:calc(81px + env(safe-area-inset-top));pointer-events:none;text-shadow:0 2px 14px #000}
-.eyebrow{font:10px/1.5 var(--mono);letter-spacing:1.7px;color:var(--accent);margin:0 0 8px}
-#trace h1,#boot h1{font-size:clamp(28px,8vw,40px);line-height:1.06;letter-spacing:-1.1px;font-weight:500;margin:0 0 10px;text-wrap:balance}
-#intro{font-size:15px;line-height:1.45;color:#ccdae4;margin:0;max-width:43ch}
+.eyebrow{font:10px/1.5 var(--mono);font-size:clamp(10px,1.94cqw,13.5px);letter-spacing:1.7px;color:var(--accent);margin:0 0 8px}
+#trace h1,#boot h1{font-size:clamp(28px,5.6cqw,40px);line-height:1.06;letter-spacing:-1.1px;font-weight:500;margin:0 0 10px;text-wrap:balance}
+#intro{font-size:clamp(15px,2.7cqw,19px);line-height:1.45;color:#ccdae4;margin:0;max-width:43ch}
 
 /* ---------------- dock ---------------- */
 #dock{position:absolute;z-index:6;bottom:0;left:0;right:0;padding:16px 24px calc(8px + env(safe-area-inset-bottom));background:linear-gradient(transparent,#050a1bf2 15%,#050916 80%)}
-#feedback{font-size:13px;line-height:1.45;margin:0 0 10px;color:#c5dbe6;min-height:19px}
+#feedback{font-size:clamp(13px,2.3cqw,16px);line-height:1.45;margin:0 0 10px;color:#c5dbe6;min-height:19px}
 .utility{display:flex;justify-content:space-between;gap:12px}
-.utility button{min-height:42px;background:none;border:0;padding:8px 0;color:#acc3d8;font-size:11px}
-.utility span{display:inline-grid;place-items:center;min-width:18px;height:18px;border:1px solid #5a7a98;border-radius:5px;font:9px var(--mono);margin-left:4px}
-.sample{font:8px/1.4 var(--mono);color:#7c96b0;text-align:center;letter-spacing:.2px;margin:0}
+.utility button{min-height:42px;background:none;border:0;padding:8px 0;color:#acc3d8;font-size:clamp(11px,2.13cqw,14.85px)}
+.utility span{display:inline-grid;place-items:center;min-width:18px;height:18px;border:1px solid #5a7a98;border-radius:5px;font:9px var(--mono);font-size:clamp(9px,1.74cqw,12.15px);margin-left:4px}
+.sample{font:8px/1.4 var(--mono);font-size:clamp(8px,1.55cqw,10.8px);color:#7c96b0;text-align:center;letter-spacing:.2px;margin:0}
 
 #loading{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;justify-content:center;padding:38px;background:#070917}
-#loading h2{max-width:14ch;font-size:32px;font-weight:500;letter-spacing:-.7px}
-#loading>p:last-child{font-size:14px;color:#a9c8da}
+#loading h2{max-width:14ch;font-size:clamp(32px,6.19cqw,43.2px);font-weight:500;letter-spacing:-.7px}
+#loading>p:last-child{font-size:clamp(14px,2.71cqw,18.9px);color:#a9c8da}
 #loading button{min-height:44px;color:#e6f4ff;background:#16384b;border:1px solid #5e9bb4;border-radius:6px}
 
 /* ---------------- dialogs ---------------- */
-#trace select,#boot select{width:100%;min-height:44px;min-width:0;border:1px solid #6ea0b85e;border-radius:7px;background:#14263b;padding:9px;color:#e6f3ff;font-size:14px}
+#trace select,#boot select{width:100%;min-height:44px;min-width:0;border:1px solid #6ea0b85e;border-radius:7px;background:#14263b;padding:9px;color:#e6f3ff;font-size:clamp(14px,2.71cqw,18.9px)}
 #trace dialog,#boot dialog{width:calc(100% - 28px);max-width:480px;max-height:calc(100dvh - 28px);margin:auto;border:1px solid #567c9b;border-radius:16px;background:linear-gradient(140deg,#172c44,#090f21);color:#ecf6ff;padding:24px;overflow:auto;box-shadow:0 20px 100px #000a}
 #trace dialog::backdrop,#boot dialog::backdrop{background:#02050ee8;backdrop-filter:blur(9px)}
-#trace dialog .close,#boot dialog .close{float:right;width:44px;height:44px;margin:-12px -12px 0 8px;background:none;border:0;font-size:28px}
-#trace dialog h2,#boot dialog h2{font-size:28px;font-weight:500;line-height:1.15;letter-spacing:-.5px;margin:12px 0 22px}
-#trace dialog h3,#boot dialog h3{font-size:20px;font-weight:500;line-height:1.2;margin:22px 0 10px}
-#trace dialog p,#boot dialog p{font-size:16px;line-height:1.6;color:#bed4e4}
-#trace dialog label,#boot dialog label{display:flex;flex-direction:column;gap:7px;font-size:12px;color:#a8c5da}
-.technical{font:12px/1.55 var(--mono)!important;color:#94b0c9!important;border-top:1px solid #637f9d44;padding-top:13px}
+#trace dialog .close,#boot dialog .close{float:right;width:44px;height:44px;margin:-12px -12px 0 8px;background:none;border:0;font-size:clamp(28px,5.42cqw,37.8px)}
+#trace dialog h2,#boot dialog h2{font-size:clamp(28px,5.42cqw,37.8px);font-weight:500;line-height:1.15;letter-spacing:-.5px;margin:12px 0 22px}
+#trace dialog h3,#boot dialog h3{font-size:clamp(20px,3.87cqw,27px);font-weight:500;line-height:1.2;margin:22px 0 10px}
+#trace dialog p,#boot dialog p{font-size:clamp(16px,3.1cqw,21.6px);line-height:1.6;color:#bed4e4}
+#trace dialog label,#boot dialog label{display:flex;flex-direction:column;gap:7px;font-size:clamp(12px,2.32cqw,16.2px);color:#a8c5da}
+.technical{font:12px/1.55 var(--mono)!important;font-size:clamp(12px,2.32cqw,16.2px)!important;color:#94b0c9!important;border-top:1px solid #637f9d44;padding-top:13px}
 #detailBenefit{color:#ade5ce}
 #options>button:not(.close),#options>a{display:block;width:100%;text-align:left;min-height:48px;padding:12px;margin:9px 0;background:#18314b;border:1px solid #6687a277;border-radius:8px;text-decoration:none;color:#dceefd}
 
@@ -89,8 +89,8 @@ body{display:grid;place-items:center;font-family:"Segoe UI",system-ui,sans-serif
   background:linear-gradient(140deg,#0e2135ee,#080f20f2);
   box-shadow:0 8px 22px #0003;transition:border-color .2s,box-shadow .2s,background .2s,transform .12s}
 .trace-destination img{grid-area:1/1/3/2;width:40px;height:40px;object-fit:contain;image-rendering:pixelated}
-.trace-destination strong{grid-column:2;font-size:14.5px;font-weight:500;line-height:1.25}
-.trace-destination span{grid-column:2;margin-top:4px;font-size:11.5px;line-height:1.4;color:#a8c6d7}
+.trace-destination strong{grid-column:2;font-size:clamp(14.5px,2.81cqw,19.58px);font-weight:500;line-height:1.25}
+.trace-destination span{grid-column:2;margin-top:4px;font-size:clamp(11.5px,2.23cqw,15.53px);line-height:1.4;color:#a8c6d7}
 .trace-destination:active{transform:scale(.99)}
 
 /* the one state that matters mid-drag: this is where it will land */
@@ -125,8 +125,8 @@ body{display:grid;place-items:center;font-family:"Segoe UI",system-ui,sans-serif
   background:linear-gradient(90deg,#17414d,#2a7f6d);transition:width .4s cubic-bezier(.2,.8,.2,1)}
 .trace-meter.heavy:before{background:linear-gradient(90deg,#4d2434,#8a4a52)}
 .trace-meter strong,.trace-meter span{position:relative;display:block}
-.trace-meter strong{font-size:13px;font-weight:500}
-.trace-meter span{margin-top:3px;font:9px/1.4 var(--mono);letter-spacing:.8px;color:#a8c6d7}
+.trace-meter strong{font-size:clamp(13px,2.52cqw,17.55px);font-weight:500}
+.trace-meter span{margin-top:3px;font:9px/1.4 var(--mono);font-size:clamp(9px,1.74cqw,12.15px);letter-spacing:.8px;color:#a8c6d7}
 
 /* ---- the packet the player actually moves ---- */
 .trace-packet{position:relative;z-index:14;margin-top:auto;
@@ -136,8 +136,8 @@ body{display:grid;place-items:center;font-family:"Segoe UI",system-ui,sans-serif
   box-shadow:0 10px 26px #0005,inset 0 1px #b9dfff14;
   cursor:grab;touch-action:none;transition:transform .3s cubic-bezier(.2,.9,.3,1),box-shadow .2s}
 .trace-packet img{grid-area:1/1/3/2;width:34px;height:34px;object-fit:contain;image-rendering:pixelated}
-.trace-packet strong{grid-column:2;font-size:14.5px;font-weight:500}
-.trace-packet span{grid-column:2;margin-top:3px;font:9px/1.4 var(--mono);letter-spacing:1px;color:#9fd6ea}
+.trace-packet strong{grid-column:2;font-size:clamp(14.5px,2.81cqw,19.58px);font-weight:500}
+.trace-packet span{grid-column:2;margin-top:3px;font:9px/1.4 var(--mono);font-size:clamp(9px,1.74cqw,12.15px);letter-spacing:1px;color:#9fd6ea}
 .trace-packet.is-dragging{cursor:grabbing;z-index:40;transition:none;
   box-shadow:0 18px 34px #0007,0 0 30px #83e5fa4d}
 
@@ -152,9 +152,9 @@ body{display:grid;place-items:center;font-family:"Segoe UI",system-ui,sans-serif
 .trace-plaque{padding:14px;border:1px solid #86c8e63b;border-radius:12px;
   background:linear-gradient(125deg,#102338ec,#080f23ee);box-shadow:0 15px 38px #0004,inset 0 1px #b9dfff0a;
   transition:border-color .3s,box-shadow .3s}
-.trace-plaque>small{display:block;color:var(--accent);font:9px/1.5 var(--mono);letter-spacing:1.2px;margin-bottom:7px}
-.trace-plaque>strong{display:block;font-size:17px;font-weight:500;line-height:1.25}
-.trace-plaque p{font-size:13.5px;line-height:1.5;color:#c5d8e4;margin:9px 0 0}
+.trace-plaque>small{display:block;color:var(--accent);font:9px/1.5 var(--mono);font-size:clamp(9px,1.74cqw,12.15px);letter-spacing:1.2px;margin-bottom:7px}
+.trace-plaque>strong{display:block;font-size:clamp(17px,3.29cqw,22.95px);font-weight:500;line-height:1.25}
+.trace-plaque p{font-size:clamp(13.5px,2.61cqw,18.23px);line-height:1.5;color:#c5d8e4;margin:9px 0 0}
 .trace-plaque.validated{border-color:#84f5ad77;box-shadow:0 15px 38px #0004,0 0 24px #84f5ad1f}
 /* A plaque is the reading matter; the controls beside it are the decision. When the
    scene is taller than the stage, the reading shrinks and scrolls (shrink only, never
@@ -163,7 +163,7 @@ body{display:grid;place-items:center;font-family:"Segoe UI",system-ui,sans-serif
   box-shadow:0 15px 38px #0004,inset 0 1px #b9dfff0a,inset 0 -22px 17px -18px #060c1aee}
 .trace-scene>.trace-plaque::-webkit-scrollbar{display:none}
 .trace-query{display:block;margin:10px 0 0;padding:9px 10px;border-left:2px solid var(--accent);
-  font:12px/1.6 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;color:#b0e7f3;background:#0a1a2a99}
+  font:12px/1.6 var(--mono);font-size:clamp(12px,2.32cqw,16.2px);white-space:pre-wrap;overflow-wrap:anywhere;color:#b0e7f3;background:#0a1a2a99}
 .trace-plaque.validated .trace-query{border-left-color:#84f5ad;color:#c8f5df}
 
 /* ---- deliberate actions: hold, with a tap route that is not a lesser citizen ---- */
@@ -177,11 +177,11 @@ body{display:grid;place-items:center;font-family:"Segoe UI",system-ui,sans-serif
 .trace-hold:before{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--held,0%);
   background:linear-gradient(90deg,#1d5a52,#2f8f79)}
 .trace-hold strong,.trace-hold span{position:relative;display:block}
-.trace-hold strong{font-size:14.5px;font-weight:500}
-.trace-hold span{margin-top:3px;font:9px/1.4 var(--mono);letter-spacing:1px;color:#a6d8cd}
+.trace-hold strong{font-size:clamp(14.5px,2.81cqw,19.58px);font-weight:500}
+.trace-hold span{margin-top:3px;font:9px/1.4 var(--mono);font-size:clamp(9px,1.74cqw,12.15px);letter-spacing:1px;color:#a6d8cd}
 .trace-hold:disabled{opacity:1;border-color:#84f5ad}
 .trace-tap-alternative,.trace-discard,.trace-inline-action{min-height:46px;width:100%;padding:11px;
-  border:1px solid #5d7495aa;border-radius:9px;background:#0f1d33e8;color:#baccdf;font-size:13px;text-align:left}
+  border:1px solid #5d7495aa;border-radius:9px;background:#0f1d33e8;color:#baccdf;font-size:clamp(13px,2.52cqw,17.55px);text-align:left}
 .trace-inline-action{margin-top:9px}
 .trace-inline-action:before{content:"\25B8  ";color:var(--accent)}
 .trace-discard{border-color:#8a5d6e88;color:#e2bcc8}
@@ -189,7 +189,7 @@ body{display:grid;place-items:center;font-family:"Segoe UI",system-ui,sans-serif
 /* ---- results ---- */
 .trace-rows{display:grid;border:1px solid #86b5d42e;border-radius:10px;background:#0a172699;padding:2px 12px}
 .trace-row{display:flex;justify-content:space-between;align-items:center;gap:12px;
-  font-size:12.5px;line-height:1.35;padding:6px 0;border-bottom:1px solid #86b5d422;
+  font-size:clamp(12.5px,2.42cqw,16.88px);line-height:1.35;padding:6px 0;border-bottom:1px solid #86b5d422;
   transition:color .3s,opacity .3s}
 .trace-row:last-child{border-bottom:0}
 .trace-row span{color:#a7c2d4}
@@ -201,46 +201,46 @@ body{display:grid;place-items:center;font-family:"Segoe UI",system-ui,sans-serif
 .trace-row.redacted b{color:#ffb8c8}
 
 .trace-chart-row{display:grid;grid-template-columns:minmax(0,1fr) 38% 24px;align-items:center;gap:10px;
-  font-size:13px;margin-top:11px}
+  font-size:clamp(13px,2.52cqw,17.55px);margin-top:11px}
 .trace-chart-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#c5d8e4}
 .trace-chart-row i{display:block;height:10px;border-radius:3px;background:#70ddcf19;position:relative;overflow:hidden}
 .trace-chart-row i:after{content:"";position:absolute;inset:0;width:var(--bar);
   background:linear-gradient(90deg,#399cbe,#a6f3d7);border-radius:3px;
   transform-origin:left;animation:bar-grow .7s ease both}
-.trace-chart-row b{font:13px var(--mono);font-weight:500;text-align:right}
+.trace-chart-row b{font:13px var(--mono);font-size:clamp(13px,2.52cqw,17.55px);font-weight:500;text-align:right}
 @keyframes bar-grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 
 /* ---- the draft you approve ---- */
 .trace-subject{display:flex;flex-direction:column;gap:6px;margin-top:11px}
-.trace-subject>span{font:9px/1.4 var(--mono);letter-spacing:1.2px;color:var(--accent)}
+.trace-subject>span{font:9px/1.4 var(--mono);font-size:clamp(9px,1.74cqw,12.15px);letter-spacing:1.2px;color:var(--accent)}
 .trace-subject input{width:100%;min-height:44px;padding:9px;border:1px solid #7299b655;border-radius:7px;
-  background:#13263b;font-size:14px}
+  background:#13263b;font-size:clamp(14px,2.71cqw,18.9px)}
 .trace-source-preview{margin-top:11px;padding:11px;border:1px solid #86b5d42e;border-radius:9px;background:#0a172699}
 .trace-source-preview .trace-subject{margin-top:0}
-.trace-source-text{font-size:13.5px!important;line-height:1.55!important;color:#dceefd!important;margin:10px 0 0!important}
-.trace-preview-note{font:10px/1.5 var(--mono)!important;color:#9bb6c8!important;margin-top:9px!important}
+.trace-source-text{font-size:clamp(13.5px,2.61cqw,18.23px)!important;line-height:1.55!important;color:#dceefd!important;margin:10px 0 0!important}
+.trace-preview-note{font:10px/1.5 var(--mono)!important;font-size:clamp(10px,1.94cqw,13.5px)!important;color:#9bb6c8!important;margin-top:9px!important}
 
 /* ---- short screens: tighten the scene, never hide what it explains ---- */
 .compact-trace .trace-scene{gap:8px}
 .compact-trace .trace-destination{min-height:54px;padding:9px 11px}
 .compact-trace .trace-destination img{width:32px;height:32px}
-.compact-trace .trace-destination strong{font-size:13.5px}
-.compact-trace .trace-destination span{font-size:11px}
+.compact-trace .trace-destination strong{font-size:clamp(13.5px,2.61cqw,18.23px)}
+.compact-trace .trace-destination span{font-size:clamp(11px,2.13cqw,14.85px)}
 .compact-trace .trace-gates .trace-destination{min-height:94px}
 .compact-trace .trace-shards .trace-destination{min-height:62px}
 .compact-trace .trace-plaque{padding:11px}
-.compact-trace .trace-plaque>strong{font-size:15.5px}
+.compact-trace .trace-plaque>strong{font-size:clamp(15.5px,3cqw,20.93px)}
 .compact-trace .trace-hold{min-height:50px}
 .compact-trace .trace-packet{padding:9px 11px}
-.compact-trace .trace-row{padding:5px 0;font-size:12px}
+.compact-trace .trace-row{padding:5px 0;font-size:clamp(12px,2.32cqw,16.2px)}
 .compact-trace .trace-chart-row{margin-top:9px}
 .compact-trace .trace-meter{padding:7px 11px}
 
 @media(max-height:740px){
   #brief{top:calc(69px + env(safe-area-inset-top))}
-  #trace h1,#boot h1{font-size:29px;margin-bottom:7px}
+  #trace h1,#boot h1{font-size:clamp(29px,5.61cqw,39.15px);margin-bottom:7px}
   .eyebrow{margin-bottom:5px}
-  #intro{font-size:14px}
+  #intro{font-size:clamp(14px,2.71cqw,18.9px)}
   #dock{padding-top:12px}
   #feedback{margin-bottom:8px}
 }
@@ -249,10 +249,10 @@ body{display:grid;place-items:center;font-family:"Segoe UI",system-ui,sans-serif
   #trace,#boot{width:min(100%,1100px)}
   header,#brief{width:43%}
   #brief{right:auto}
-  #trace h1,#boot h1{font-size:28px}
-  #intro{font-size:14px}
+  #trace h1,#boot h1{font-size:clamp(28px,5.42cqw,37.8px)}
+  #intro{font-size:clamp(14px,2.71cqw,18.9px)}
   #dock{right:55%;padding-top:12px}
-  .sample{font-size:8px}
+  .sample{font-size:clamp(8px,1.55cqw,10.8px)}
   .trace-scene{left:48%;right:24px}
 }
 

@@ -17,7 +17,7 @@
   position:absolute;z-index:65;
   width:320px;max-width:calc(100% - 28px);
   padding:0 0 var(--tailH);border:0;background:var(--accent);
-  font:13px/1.55 Consolas,"SFMono-Regular",monospace;
+  font:13px/1.55 Consolas,"SFMono-Regular",monospace;font-size:clamp(13px,2.52cqw,17.55px);
   color:var(--ink);
   clip-path:polygon(
     var(--notch) 0, calc(100% - var(--notch)) 0,
@@ -65,22 +65,22 @@
   image-rendering:pixelated;overflow:hidden}
 .bubble-logo img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
 .speech-bubble strong,
-.bubble-name{font-size:12px;letter-spacing:.9px;color:var(--accent);text-transform:none}
+.bubble-name{font-size:clamp(12px,2.32cqw,16.2px);letter-spacing:.9px;color:var(--accent);text-transform:none}
 
 /* ---- body ---- */
 .speech-bubble p,
-.bubble-line{margin:0;padding:11px 13px 12px;font-size:13.5px;line-height:1.62;color:var(--ink)}
+.bubble-line{margin:0;padding:11px 13px 12px;font-size:clamp(13.5px,2.61cqw,18.23px);line-height:1.62;color:var(--ink)}
 .bubble-line.typing:after{content:"\258C";margin-left:2px;color:var(--accent);animation:bubble-caret .8s steps(1) infinite}
 @keyframes bubble-caret{50%{opacity:0}}
 
 /* ---- technical tag: the keyword engineers scan for ---- */
 .bubble-tag{display:inline-block;margin:0 13px 12px;padding:5px 8px;
-  font:9px/1 Consolas,monospace;letter-spacing:1.6px;
+  font:9px/1 Consolas,monospace;font-size:clamp(9px,1.74cqw,12.15px);letter-spacing:1.6px;
   color:#04140d;background:var(--accent);
   clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px)}
 
 /* ---- continue hint ---- */
-.bubble-cta{display:block;padding:0 13px 11px;font:10px/1 Consolas,monospace;letter-spacing:1.5px;
+.bubble-cta{display:block;padding:0 13px 11px;font:10px/1 Consolas,monospace;font-size:clamp(10px,1.94cqw,13.5px);letter-spacing:1.5px;
   color:color-mix(in srgb,var(--accent) 70%,#93aebd)}
 .bubble-cta:before{content:"\25B8  "}
 
