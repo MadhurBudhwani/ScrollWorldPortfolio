@@ -1,5 +1,5 @@
 :root{color-scheme:dark;--ink:#edf7fd;--soft:#b2c7d4;--accent:#a5d9ff;--mono:Consolas,"SFMono-Regular",monospace;font-family:"Segoe UI",system-ui,sans-serif;color:var(--ink);background:#030611}*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none}body{display:grid;place-items:center;background:radial-gradient(ellipse,#182237,#030611 75%)}button,a,select,input{-webkit-tap-highlight-color:transparent}button,select,input{font:inherit;color:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:default}[hidden]{display:none!important}:focus-visible{outline:2px solid #c1f7ff;outline-offset:3px}
-#world{position:relative;isolation:isolate;width:min(100%,620px);height:100dvh;overflow:hidden;background:#050610}canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}#backdrop{z-index:0;animation:colour-breath 14s ease-in-out infinite}#machinery{z-index:1}.grain{position:absolute;inset:0;pointer-events:none;z-index:2;opacity:.17;background:repeating-linear-gradient(0deg,#0004 0 1px,transparent 1px 4px)}
+#world{container-type:inline-size;position:relative;isolation:isolate;width:min(100%,620px);height:100dvh;overflow:hidden;background:#050610}canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}#backdrop{z-index:0;animation:colour-breath 14s ease-in-out infinite}#machinery{z-index:1}.grain{position:absolute;inset:0;pointer-events:none;z-index:2;opacity:.17;background:repeating-linear-gradient(0deg,#0004 0 1px,transparent 1px 4px)}
 header{position:absolute;z-index:10;inset:0 0 auto;display:flex;align-items:center;gap:12px;padding:calc(9px + env(safe-area-inset-top)) 18px 10px;background:linear-gradient(#0306119e,#0306114d,transparent)}header>a,header>button{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:1px solid #a1c8e233;background:#0a142680;text-decoration:none;color:#d9ebfa;font-size:21px}.route{flex:1;min-width:0}.route>span{font:9px var(--mono);letter-spacing:3px;color:#8baac4}.route select{display:block;width:100%;min-height:32px;padding:4px 0;background:transparent;border:0;font-size:13px;color:#d5e7f6}.route option{background:#101f30}
 #brief{position:absolute;z-index:4;top:calc(79px + env(safe-area-inset-top));left:24px;right:24px;pointer-events:none;text-shadow:0 2px 18px #020611}.eyebrow{font:10px/1.4 var(--mono);letter-spacing:1.7px;color:var(--accent);margin:0 0 8px}h1{font-size:clamp(28px,8vw,39px);line-height:1.08;font-weight:500;letter-spacing:-.9px;margin:0 0 8px;text-wrap:balance}#goal{font-size:14px;line-height:1.45;color:#c3d5df;margin:0;max-width:44ch}
 #choices{position:absolute;z-index:6;left:24px;right:24px;display:flex;align-items:center;gap:8px}#choices label{display:flex;flex-direction:column;gap:4px;width:100%;font:10px var(--mono);color:#a9c4d9}#choices select,#choices input{width:100%;min-height:44px;border:1px solid #789bba66;border-radius:6px;background:#0b1727e8;padding:9px 10px;color:#e2f2fd;font-size:14px;min-width:0}#choices .search-controls{display:flex;flex-direction:column;width:100%;gap:7px}#choices input{flex:1}#choices .search-input{display:flex;gap:8px}#choices .query-label{font-size:12px;line-height:1.4;color:#c1d4e1;margin:0}#choices .sample-tag{font:9px var(--mono);color:#94a9bc}
@@ -15,10 +15,18 @@ dialog{position:fixed;inset:0;margin:auto;width:calc(100% - 24px);max-width:520p
 /* On the card screen the heading steps back and its subtitle goes: the card
    is the explanation there, and the space belongs to it. Both return for the
    diagram that follows. */
-/* Fixed, not a viewport clamp. At 5.2vw a narrow phone landed on the 19px
-   floor while a wider view got 21.4px, so the heading changed size against a
-   body that never does, and the two did not look like the same screen. */
-.arch-intro h1{font-size:21px;letter-spacing:-.4px;margin-bottom:0}
+/* Sized against the world column, not the window and not a fixed pixel. The
+   column runs from a narrow phone up to its 620px cap, and on a wide device
+   it sits at that cap: fixed type then reads as tiny beside a card that grew
+   to fill it. cqw ties the two together, with floors so a small phone keeps
+   the sizes it already had. */
+.arch-intro h1{font-size:clamp(21px,4.2cqw,30px);letter-spacing:-.4px;margin-bottom:0}
+.arch-intro h2{font-size:clamp(21px,4.2cqw,30px)}
+.arch-intro #resultBody{font-size:clamp(13.5px,2.7cqw,19px)}
+.arch-intro .eyebrow{font-size:clamp(10px,1.7cqw,13px)}
+/* #resultLabel carries an id, so it outranks the class rule above. */
+.arch-intro #resultLabel{font-size:clamp(9px,1.5cqw,12px)}
+.arch-intro #actions button{font-size:clamp(14px,2.6cqw,18px)}
 .arch-intro #goal{display:none}
 #resultBody .ghost{color:transparent}
 #archStage{position:absolute;inset:0;z-index:5;display:grid;place-items:center;pointer-events:none}/* The avatar stands on the floor of the playfield with a slow wheel of colour

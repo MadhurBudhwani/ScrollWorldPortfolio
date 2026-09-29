@@ -263,7 +263,7 @@
     const st=$('talkStage');if(st.hidden)return;
     const r=st.getBoundingClientRect();if(!r.height||!r.width)return;
     const av=$('talkAvatar'), nh=av.naturalHeight||339, nw=av.naturalWidth||178;
-    av.style.height=Math.round(Math.min(r.height*.72,r.width*.80*(nh/nw)))+'px';
+    av.style.height=Math.round(Math.min(r.height*.50,r.width*.80*(nh/nw)))+'px';
   }
   function briefHide(){
     clearInterval(briefTimer);briefTimer=0;clearInterval(typeTimer);typeTimer=0;
@@ -559,6 +559,19 @@
   chip.onclick=toggleTilt;
   // In the dialog the same control still re-centres while tilt is live.
   $('tilt').onclick=()=>{if(tiltEnabled){neutral=lastSensor?{...lastSensor}:null;renderer.target={x:0,y:0};return;}toggleTilt();};
+  /* On by default, because the world is named after it and asking first meant
+     most visitors never turned it on. Not attempted where the browser demands
+     a gesture for the sensor — iOS rejects requestPermission() outside a tap,
+     and a rejection here would look to the visitor like a device that cannot
+     do it at all. There the chip still asks. The watchdog inside startTilt
+     covers the rest: no reading, no harm, and the drag keeps working. */
+  if(window.DeviceOrientationEvent&&isSecureContext&&
+     typeof window.DeviceOrientationEvent.requestPermission!=='function'){
+    // The chip reads as an invitation until somebody has used it. Coming on by
+    // itself counts, or it would sit there saying TILT TO LOOK AROUND while
+    // the tilt was already working.
+    chip.dataset.used='1';startTilt();
+  }
   $('playfield').addEventListener('pointermove',e=>{if(tiltEnabled)return;const r=$('playfield').getBoundingClientRect();renderer.target={x:(e.clientX-r.left)/r.width*2-1,y:(e.clientY-r.top)/r.height*2-1};});$('playfield').addEventListener('pointerleave',()=>{if(!tiltEnabled)renderer.target={x:0,y:0};});addEventListener('orientationchange',()=>{neutral=null;renderer.target={x:0,y:0};});
   $('reset').onclick=()=>{if(mode==='design')Object.assign(design,{opened:false,briefed:false,built:false,notification:false,provider:'A',rule:'Manager approval'});if(mode==='cache')Object.assign(cache,{memory:false,redis:false,version:1,savedVersion:0});if(mode==='access'){person=0;access.opened=false;}if(mode==='protect')Object.assign(protection,{encrypted:false,cipher:null,key:null,iv:null,approved:false,audit:[]});if(mode==='search')searchMode='exact';$('settings').close();enter(mode);};
   renderer.ready.then(()=>{enter('design');$('loading').style.opacity='0';setTimeout(()=>$('loading').hidden=true,550);}).catch(()=>{$('loading').replaceChildren(el('p','The world artwork could not load.'),button('Retry',()=>location.reload()));});
