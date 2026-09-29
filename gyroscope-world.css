@@ -29,15 +29,34 @@ dialog{position:fixed;inset:0;margin:auto;width:calc(100% - 24px);max-width:520p
 .arch-intro #actions button{font-size:clamp(14px,2.6cqw,18px)}
 .arch-intro #goal{display:none}
 #resultBody .ghost{color:transparent}
-#archStage{position:absolute;inset:0;z-index:5;display:grid;place-items:center;pointer-events:none}/* The avatar stands on the floor of the playfield with a slow wheel of colour
+#archStage{position:absolute;inset:0;z-index:5;display:grid;place-items:center;pointer-events:none}
+/* The avatar stands on the floor of the playfield with a slow wheel of colour
    turning behind him, so the explanation has somewhere to happen rather than
    arriving as a wall of text. */
-#talkStage{position:absolute;inset:0;z-index:5;display:grid;place-items:end center;pointer-events:none;overflow:hidden}
+#talkStage{position:absolute;inset:0;z-index:5;display:grid;place-items:end center;pointer-events:none}
 #talkAvatar{position:relative;display:block;width:auto;image-rendering:pixelated;filter:drop-shadow(0 16px 28px #000000a6)}
-.talk-aura{position:absolute;left:50%;top:52%;width:132%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
+/* A circle sized off the stage's width only covered a square of it: on a tall
+   stage it fell short top and bottom, and on a short one it overran and the
+   stage's own overflow cut it into a hard-edged block. It now overruns in both
+   directions and is masked to fade out well before any edge, so there is
+   nothing left for a clip to show at any shape or zoom. */
+.talk-aura{position:absolute;left:-20%;right:-20%;bottom:-8%;top:-85%;transform:none;border-radius:0;
   background:conic-gradient(from 0deg,#67daf53d,#c46bff3d,#3bf7c43d,#f3cc703d,#67daf53d);
-  filter:blur(30px);opacity:.62;animation:talk-spin 22s linear infinite}
-@keyframes talk-spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+  filter:blur(34px);opacity:.62;
+  -webkit-mask-image:radial-gradient(ellipse 58% 72% at 50% 83%,#000 8%,rgba(0,0,0,.5) 40%,transparent 82%);
+  mask-image:radial-gradient(ellipse 58% 72% at 50% 83%,#000 8%,rgba(0,0,0,.5) 40%,transparent 82%);
+  animation:talk-spin 22s linear infinite}
+@keyframes talk-spin{to{transform:rotate(360deg)}}
+/* Shown only while the browser is zoomed past 100%, and it clears itself the
+   moment the zoom comes back, so there is nothing to dismiss and no way to be
+   stuck behind it. */
+#zoomGuard{position:absolute;inset:0;z-index:40;display:grid;place-items:center;padding:28px;
+  background:#04070ff2;backdrop-filter:blur(6px);text-align:center}
+#zoomGuard>div{max-width:34ch}
+#zoomGuard h2{font-size:22px;margin:0 0 10px}
+#zoomGuard p{font-size:14px;line-height:1.5;color:#c2d5e2;margin:0 0 10px}
+#zoomGuard .zoom-now{font:11px/1.5 var(--mono);color:#8aa6bd;letter-spacing:1px}
+#zoomGuard b{color:#ffd9a0;font-weight:600}
 @media(prefers-reduced-motion:reduce){.talk-aura{animation:none}}
 /* The sheet-wide canvas rule pins every canvas to inset:0, which took this
    one out of the grid and stuck it against the left edge. Put it back in flow
@@ -45,4 +64,8 @@ dialog{position:fixed;inset:0;margin:auto;width:calc(100% - 24px);max-width:520p
 #archCard,#accessCard{position:static;display:block;filter:drop-shadow(0 16px 34px #00000082)}
 @media(prefers-reduced-motion:reduce){#backdrop{animation:none}.world-object{transition:none}}
 
-#tiltChip{position:absolute;z-index:7;top:0;right:0;display:flex;align-items:center;gap:8px;min-height:36px;padding:0 14px;border:1px solid #a1c8e240;border-radius:18px;background:#0a1426d9;color:#cfe4f5;font:10px/1 var(--mono);letter-spacing:1.4px;box-shadow:0 5px 16px #00000059}#tiltChip i{flex:none;width:8px;height:8px;border-radius:50%;background:#7d94a8;transition:background .25s,box-shadow .25s}#tiltChip[data-state=on]{border-color:#88dfc266;color:#c8f3e2}#tiltChip[data-state=on] i{background:#88dfc2;box-shadow:0 0 9px 1px #88dfc2aa}#tiltChip[data-state=waiting] i{background:#e8d38a;animation:tilt-seek .7s ease-in-out infinite}#tiltChip[data-state=unavailable]{opacity:.5}@keyframes tilt-seek{50%{opacity:.25}}
+/* In the header, beside the other world controls. The round 44px rule for
+   header buttons has to be undone for this one, since it carries a word. */
+header #tiltChip{flex:none;width:auto;height:38px;border-radius:19px;padding:0 13px;
+  display:flex;align-items:center;gap:7px;border:1px solid #a1c8e240;background:#0a142680;
+  color:#cfe4f5;font:10px/1 var(--mono);letter-spacing:1.4px}#tiltChip i{flex:none;width:8px;height:8px;border-radius:50%;background:#7d94a8;transition:background .25s,box-shadow .25s}#tiltChip[data-state=on]{border-color:#88dfc266;color:#c8f3e2}#tiltChip[data-state=on] i{background:#88dfc2;box-shadow:0 0 9px 1px #88dfc2aa}#tiltChip[data-state=waiting] i{background:#e8d38a;animation:tilt-seek .7s ease-in-out infinite}#tiltChip[data-state=unavailable]{opacity:.5}@keyframes tilt-seek{50%{opacity:.25}}

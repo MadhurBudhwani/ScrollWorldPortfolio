@@ -98,6 +98,29 @@
   function scheduleLayout(){cancelAnimationFrame(layoutFrame);layoutFrame=requestAnimationFrame(layout);}
   function layout(){const root=$('world').getBoundingClientRect(),brief=$('brief').getBoundingClientRect(),choices=$('choices'),out=$('outcome').getBoundingClientRect();choices.style.top=(brief.bottom-root.top+10)+'px';const cr=choices.getBoundingClientRect(),field=$('playfield'),landscape=root.width>root.height;
     const top=landscape?75:Math.max(brief.bottom,cr.bottom)-root.top+10,bottom=out.top-root.top-5;field.style.top=top+'px';field.style.height=Math.max(80,bottom-top)+'px';field.style.left=landscape?'47%':'14px';field.style.right='14px';$('world').classList.toggle('compact',bottom-top<255);renderer.measure();archFit();briefFit();}
+  /* Page zoom, read as the gap between the window and the page inside it.
+     outerWidth is the window and does not move when the zoom does, so the ratio
+     is the zoom. screen.width looks like it would work and does on a phone, but
+     on a desktop it is the whole monitor: measured here it claimed 1.5x on a
+     windowed browser at 100%.
+     Both directions are called out, but not symmetrically. A scrollbar puts
+     the ratio a percent or two over 1 on its own, so the zoomed-in threshold
+     sits above that rather than at exactly 1. Zooming out is harmless until it
+     is extreme, so that side is left alone until 60%. */
+  function zoomLevel(){return outerWidth&&innerWidth?outerWidth/innerWidth:1;}
+  function checkZoom(){
+    const z=zoomLevel(), inTooFar=z>1.06, outTooFar=z<.60;
+    const off=inTooFar||outTooFar;
+    $('zoomGuard').hidden=!off;
+    if(!off)return;
+    $('zoomGuardTitle').textContent=inTooFar
+      ?'Your browser is zoomed in.'
+      :'Your browser is zoomed out too far.';
+    $('zoomNow').textContent=Math.round(z*100)+'%';
+  }
+  addEventListener('resize',checkZoom);
+  visualViewport?.addEventListener('resize',checkZoom);
+  checkZoom();
   const observer=new ResizeObserver(scheduleLayout);for(const id of ['brief','choices','outcome','world'])observer.observe($(id));
   async function animate(ids,done){if(busy)return;busy=true;const token=epoch;for(const b of document.querySelectorAll('#actions button,#choices select,#choices input'))b.disabled=true;const completed=await renderer.route(ids);if(token!==epoch)return;busy=false;if(completed)done();for(const b of document.querySelectorAll('#actions button,#choices select,#choices input'))b.disabled=false;}
   function enter(next){epoch++;busy=false;mode=next;renderer.cancel();archHide();briefHide();$('route').value=mode;$('choices').replaceChildren();$('sceneReadout').replaceChildren();const c=chapters[mode];$('chapter').textContent=c[0];$('heading').textContent=c[1];$('goal').textContent=c[2];$('continue').textContent=mode==='search'?'Back to design ↺':chapters[order[order.indexOf(mode)+1]][0].split('/')[1].trim().toLowerCase()+' →';({design:showDesign,access:showAccess,cache:showCache,protect:showProtect,search:showSearch})[mode]();scheduleLayout();}
@@ -518,9 +541,7 @@
   const TOUCH_BACK=' Drag the world to look around instead.';
   function paintTilt(state,message){
     chip.dataset.state=state;chip.setAttribute('aria-pressed',String(state==='on'));
-    chipLabel.textContent=chip.dataset.used
-      ?({on:'TILT ON',waiting:'CHECKING',unavailable:'NO SENSOR'}[state]??'TILT')
-      :'TILT TO LOOK AROUND';
+    chipLabel.textContent={on:'TILT ON',waiting:'…',unavailable:'NO TILT'}[state]??'TILT';
     $('tilt').textContent=state==='on'?'Re-centre tilt':'Enable tilt to look around';
     if(message)$('sensorStatus').textContent=message;
   }
@@ -529,14 +550,24 @@
     orientHandler=null;clearTimeout(tiltWatch);tiltEnabled=false;neutral=null;
     renderer.target={x:0,y:0};paintTilt(state,message);
   }
-  async function startTilt(){
+  /* A silent attempt that did not take leaves no trace behind it. Some browsers
+     refuse the sensor when it is asked for without a tap but allow the very same
+     call from one, so the chip goes back to inviting that tap rather than
+     reporting a failure the visitor cannot act on. */
+  function quietFail(){
+    if(orientHandler)removeEventListener('deviceorientation',orientHandler);
+    orientHandler=null;clearTimeout(tiltWatch);tiltEnabled=false;neutral=null;
+    delete chip.dataset.used;paintTilt('off');
+  }
+  async function startTilt(quiet){
+    const give=(state,message)=>quiet?quietFail():stopTilt(state,message);
     const D=window.DeviceOrientationEvent;
-    if(!D)return stopTilt('unavailable','This device has no motion sensor.'+TOUCH_BACK);
-    if(!isSecureContext)return stopTilt('unavailable','Tilt needs a secure (https) connection.'+TOUCH_BACK);
+    if(!D)return give('unavailable','This device has no motion sensor.'+TOUCH_BACK);
+    if(!isSecureContext)return give('unavailable','Tilt needs a secure (https) connection.'+TOUCH_BACK);
     try{
       if(typeof D.requestPermission==='function'&&await D.requestPermission()!=='granted')
-        return stopTilt('off','Motion access was not granted.'+TOUCH_BACK);
-    }catch{return stopTilt('off','Motion access was not granted.'+TOUCH_BACK);}
+        return give('off','Motion access was not granted.'+TOUCH_BACK);
+    }catch{return give('off','Motion access was not granted.'+TOUCH_BACK);}
     tiltSeen=false;neutral=null;
     orientHandler=e=>{
       if(e.gamma===null||e.beta===null)return;
@@ -553,7 +584,7 @@
     // A sensor that is going to report does it within a frame or two. Anything
     // still silent after this is not coming, so hand the world back to touch
     // rather than leaving a dead camera behind.
-    tiltWatch=setTimeout(()=>{if(!tiltSeen)stopTilt('unavailable','This device isn’t reporting motion.'+TOUCH_BACK);},1200);
+    tiltWatch=setTimeout(()=>{if(!tiltSeen)give('unavailable','This device isn’t reporting motion.'+TOUCH_BACK);},1200);
   }
   const toggleTilt=()=>{chip.dataset.used='1';tiltEnabled?stopTilt('off','Tilt is off.'+TOUCH_BACK):startTilt();};
   chip.onclick=toggleTilt;
@@ -565,12 +596,17 @@
      and a rejection here would look to the visitor like a device that cannot
      do it at all. There the chip still asks. The watchdog inside startTilt
      covers the rest: no reading, no harm, and the drag keeps working. */
-  if(window.DeviceOrientationEvent&&isSecureContext&&
-     typeof window.DeviceOrientationEvent.requestPermission!=='function'){
+  /* On by default, because the world is named after it and asking first meant
+     most visitors never turned it on. It is attempted everywhere rather than
+     only where no permission call exists: Chrome on Android carries
+     requestPermission() too, and skipping on its presence meant the attempt was
+     never made on the very phones it works on. Where the call needs a tap it
+     rejects, and quietFail puts the chip back the way it was. */
+  if(window.DeviceOrientationEvent&&isSecureContext){
     // The chip reads as an invitation until somebody has used it. Coming on by
-    // itself counts, or it would sit there saying TILT TO LOOK AROUND while
-    // the tilt was already working.
-    chip.dataset.used='1';startTilt();
+    // itself counts, or it would sit there saying TILT TO LOOK AROUND while the
+    // tilt was already working.
+    chip.dataset.used='1';startTilt(true);
   }
   $('playfield').addEventListener('pointermove',e=>{if(tiltEnabled)return;const r=$('playfield').getBoundingClientRect();renderer.target={x:(e.clientX-r.left)/r.width*2-1,y:(e.clientY-r.top)/r.height*2-1};});$('playfield').addEventListener('pointerleave',()=>{if(!tiltEnabled)renderer.target={x:0,y:0};});addEventListener('orientationchange',()=>{neutral=null;renderer.target={x:0,y:0};});
   $('reset').onclick=()=>{if(mode==='design')Object.assign(design,{opened:false,briefed:false,built:false,notification:false,provider:'A',rule:'Manager approval'});if(mode==='cache')Object.assign(cache,{memory:false,redis:false,version:1,savedVersion:0});if(mode==='access'){person=0;access.opened=false;}if(mode==='protect')Object.assign(protection,{encrypted:false,cipher:null,key:null,iv:null,approved:false,audit:[]});if(mode==='search')searchMode='exact';$('settings').close();enter(mode);};
