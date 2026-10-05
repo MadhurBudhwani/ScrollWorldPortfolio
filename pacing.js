@@ -104,7 +104,16 @@ class ScrollPacer {
     this.heldControl=null;this.direction=0;this.endGesture();
   }
   // Explicit navigation is a seek, never a long-running trip through chapters.
-  go(destination){window.portfolioTour?.stop();this.cancel();lenis.scrollTo(destination,{immediate:true});}
+  go(destination,immediate=false){
+    window.portfolioTour?.stop();this.cancel();
+    if(immediate||reducedMotion.matches){lenis.scrollTo(destination,{immediate:true});return;}
+    // Longer jumps take longer, but not in proportion: crossing the whole page
+    // at a per-chapter rate would take half a minute. Roughly a third of a
+    // second per chapter, held between a beat and a couple of seconds.
+    const chapters=Math.abs(destination-lenis.animatedScroll)/state.travel*scenes.length;
+    const duration=Math.min(2.2,Math.max(.6,chapters*.35));
+    lenis.scrollTo(destination,{duration,easing:t=>1-Math.pow(1-t,3)});
+  }
   cancel(){this.releaseControl();this.touchY=null;this.keys.clear();}
   tick(time,dt){
     if(state.exit||window.landscapePrompt?.blocked||(reducedMotion.matches&&!this.heldControl)){this.cancel();return;}

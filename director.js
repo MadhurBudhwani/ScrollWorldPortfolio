@@ -162,7 +162,7 @@ const lenis = new Lenis({ autoRaf:false, smoothWheel:false, syncTouch:false });
 const scrollPacer=new ScrollPacer();
 scrollPacer.bindButtons(document.querySelectorAll('[data-scroll-direction]'));
 const autoplayTour=window.portfolioTour=new AutoplayTour({
-  getState:()=>({scroll:lenis.animatedScroll,title:scenes[state.scene]?.key.toUpperCase()}),
+  getState:()=>({scroll:lenis.animatedScroll,progress:state.progress,title:scenes[state.scene]?.key.toUpperCase()}),
   seek:progress=>lenis.scrollTo(state.top+state.travel*progress,{immediate:true}),
   cancelInput:()=>scrollPacer.cancel()
 });
@@ -830,6 +830,9 @@ menuToggle.addEventListener('click',()=>{
   chapterNavigation.inert=!open;
 });
 document.addEventListener('pointerdown',e=>{if(!hud.contains(e.target))closeMenu();});
+// Starting the tour from the dropdown should put the dropdown away; it would
+// otherwise sit over the first thing the tour moves to.
+document.querySelector('#autoplayStart').addEventListener('click',()=>closeMenu());
 document.querySelectorAll('.hud a').forEach(a=>a.addEventListener('click',e=>{
   e.preventDefault();history.replaceState(null,'',a.hash);navigate(a.hash.slice(1));
 }));
